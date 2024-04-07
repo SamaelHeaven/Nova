@@ -50,6 +50,12 @@ export declare abstract class Component {
     onTransitionEnd(event: Events.Transition): void;
     onTransitionCancel(event: Events.Transition): void;
 }
+export declare class Debounce {
+    private readonly _callback;
+    private _timeoutId;
+    constructor(callback: Function, wait: number);
+    call(...args: any[]): void;
+}
 export declare namespace Events {
     type BaseEvent = Event & {
         target: HTMLElement;
