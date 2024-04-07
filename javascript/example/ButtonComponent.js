@@ -28,9 +28,5 @@ export class ButtonComponent extends Component {
 }
 __decorate([
     State,
-    __metadata("design:type", String)
-], ButtonComponent.prototype, "_content", void 0);
-__decorate([
-    State,
     __metadata("design:type", Number)
 ], ButtonComponent.prototype, "_count", void 0);

@@ -1,7 +1,7 @@
 import {Component, Events, State} from "../nova/lib.js";
 
 export class ButtonComponent extends Component {
-    @State private _content: string = super.input("content");
+    private _content: string = super.input("content");
     @State private _count: number = 0;
 
     public onClick(_: Events.Mouse): void {
