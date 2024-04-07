@@ -38,6 +38,8 @@ export abstract class Component {
         return keys;
     }
 
+    public onStart(): void {}
+
     public onClick(event: Events.Mouse): void {}
 
     public onDblClick(event: Events.Mouse): void {}
@@ -73,10 +75,6 @@ export abstract class Component {
     public onSubmit(event: Events.Normal): void {}
 
     public onScroll(event: Events.Normal): void {}
-
-    public onLoad(event: Events.Normal): void {}
-
-    public onUnload(event: Events.Normal): void {}
 
     public onError(event: Events.Error): void {}
 
