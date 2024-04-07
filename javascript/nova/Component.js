@@ -1,35 +1,50 @@
+import { Application } from "./Application.js";
 export class Component {
     constructor(element) {
-        this.element = element;
+        this._element = element;
     }
-    input(key, defaultValue = null) {
-        const attribute = this.element.attributes.getNamedItem(key);
+    get id() {
+        return this._element.id;
+    }
+    get element() {
+        return this._element;
+    }
+    getAttribute(name, defaultValue = null) {
+        const attribute = this._element.attributes.getNamedItem(name);
         if (attribute) {
             return attribute.value;
         }
         return defaultValue;
     }
-    update(value) {
+    update(state) {
         for (const key of this.getKeys()) {
-            if (this[key] === value) {
-                this[key] = value;
+            if (this[key] === state) {
+                this[key] = state;
             }
         }
     }
     getKeys() {
         let keys = [];
-        let prototype = this;
-        while (prototype) {
-            const parentPrototype = Object.getPrototypeOf(prototype);
+        let currentPrototype = this;
+        while (currentPrototype) {
+            const parentPrototype = Object.getPrototypeOf(currentPrototype);
             if (parentPrototype && Object.getPrototypeOf(parentPrototype)) {
-                keys = keys.concat(Object.getOwnPropertyNames(prototype));
+                keys = keys.concat(Object.getOwnPropertyNames(currentPrototype));
             }
-            prototype = parentPrototype;
+            currentPrototype = parentPrototype;
         }
-        keys = [...new Set(keys)];
-        return keys;
+        return [...new Set(keys)];
     }
-    onStart() { }
+    getComponentById(id) {
+        return Application.getComponentById(id);
+    }
+    getComponentByClass(clazz) {
+        return Application.getComponentByClass(clazz);
+    }
+    getComponentsByClass(clazz) {
+        return Application.getComponentsByClass(clazz);
+    }
+    onInit() { }
     onClick(event) { }
     onDblClick(event) { }
     onMouseDown(event) { }

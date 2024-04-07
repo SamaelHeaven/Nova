@@ -1,12 +1,26 @@
 import {Events} from "./Events.js";
+import {Application} from "./Application.js";
 
 export abstract class Component {
-    constructor(public readonly element: HTMLElement) {}
+    /** @internal */
+    private readonly _element: HTMLElement;
+
+    constructor(element: HTMLElement) {
+        this._element = element;
+    }
 
     public abstract render(): string;
 
-    public input(key: string, defaultValue: string | null = null): string | null {
-        const attribute: Attr = this.element.attributes.getNamedItem(key);
+    public get id(): string {
+        return this._element.id;
+    }
+
+    public get element(): HTMLElement {
+        return this._element;
+    }
+
+    public getAttribute(name: string, defaultValue: string | null = null): string | null {
+        const attribute: Attr = this._element.attributes.getNamedItem(name);
         if (attribute) {
             return attribute.value;
         }
@@ -14,31 +28,42 @@ export abstract class Component {
         return defaultValue;
     }
 
-    public update(value: object): void {
+    public update(state: object): void {
         for (const key of this.getKeys()) {
-            if (this[key] === value) {
-                this[key] = value;
+            if (this[key] === state) {
+                this[key] = state;
             }
         }
     }
 
     public getKeys(): string[] {
         let keys: string[] = [];
-        let prototype = this;
-        while (prototype) {
-            const parentPrototype = Object.getPrototypeOf(prototype);
+        let currentPrototype = this;
+        while (currentPrototype) {
+            const parentPrototype = Object.getPrototypeOf(currentPrototype);
             if (parentPrototype && Object.getPrototypeOf(parentPrototype)) {
-                keys = keys.concat(Object.getOwnPropertyNames(prototype));
+                keys = keys.concat(Object.getOwnPropertyNames(currentPrototype));
             }
 
-            prototype = parentPrototype;
+            currentPrototype = parentPrototype;
         }
 
-        keys = [...new Set(keys)];
-        return keys;
+        return [...new Set(keys)];
     }
 
-    public onStart(): void {}
+    public getComponentById<T extends Component>(id: string): T | null {
+        return Application.getComponentById(id);
+    }
+
+    public getComponentByClass<T extends Component>(clazz: (new (...args: any[]) => T)): T | null {
+        return Application.getComponentByClass(clazz);
+    }
+
+    public getComponentsByClass<T extends Component>(clazz: (new (...args: any[]) => T)): T[] {
+        return Application.getComponentsByClass(clazz);
+    }
+
+    public onInit(): void {}
 
     public onClick(event: Events.Mouse): void {}
 
@@ -70,17 +95,17 @@ export abstract class Component {
 
     public onInput(event: Events.Input): void {}
 
-    public onChange(event: Events.Normal): void {}
+    public onChange(event: Events.BaseEvent): void {}
 
-    public onSubmit(event: Events.Normal): void {}
+    public onSubmit(event: Events.BaseEvent): void {}
 
-    public onScroll(event: Events.Normal): void {}
+    public onScroll(event: Events.BaseEvent): void {}
 
     public onError(event: Events.Error): void {}
 
     public onResize(event: Events.UI): void {}
 
-    public onSelect(event: Events.Normal): void {}
+    public onSelect(event: Events.BaseEvent): void {}
 
     public onTouchStart(event: Events.Touch): void {}
 

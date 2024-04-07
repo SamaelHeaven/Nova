@@ -1,12 +1,16 @@
 import { Events } from "./Events.js";
 export declare abstract class Component {
-    readonly element: HTMLElement;
     constructor(element: HTMLElement);
     abstract render(): string;
-    input(key: string, defaultValue?: string | null): string | null;
-    update(value: object): void;
+    get id(): string;
+    get element(): HTMLElement;
+    getAttribute(name: string, defaultValue?: string | null): string | null;
+    update(state: object): void;
     getKeys(): string[];
-    onStart(): void;
+    getComponentById<T extends Component>(id: string): T | null;
+    getComponentByClass<T extends Component>(clazz: (new (...args: any[]) => T)): T | null;
+    getComponentsByClass<T extends Component>(clazz: (new (...args: any[]) => T)): T[];
+    onInit(): void;
     onClick(event: Events.Mouse): void;
     onDblClick(event: Events.Mouse): void;
     onMouseDown(event: Events.Mouse): void;
@@ -22,12 +26,12 @@ export declare abstract class Component {
     onFocus(event: Events.Focus): void;
     onBlur(event: Events.Focus): void;
     onInput(event: Events.Input): void;
-    onChange(event: Events.Normal): void;
-    onSubmit(event: Events.Normal): void;
-    onScroll(event: Events.Normal): void;
+    onChange(event: Events.BaseEvent): void;
+    onSubmit(event: Events.BaseEvent): void;
+    onScroll(event: Events.BaseEvent): void;
     onError(event: Events.Error): void;
     onResize(event: Events.UI): void;
-    onSelect(event: Events.Normal): void;
+    onSelect(event: Events.BaseEvent): void;
     onTouchStart(event: Events.Touch): void;
     onTouchMove(event: Events.Touch): void;
     onTouchEnd(event: Events.Touch): void;

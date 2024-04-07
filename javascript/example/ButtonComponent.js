@@ -11,17 +11,20 @@ import { Component, State } from "../nova/lib.js";
 export class ButtonComponent extends Component {
     constructor() {
         super(...arguments);
-        this._content = super.input("content");
-        this._count = 0;
+        this._content = this.getAttribute("data-content");
+        this.count = 0;
+    }
+    onInit() {
+        console.log("Initializing Button Component");
     }
     onClick(_) {
-        this._count++;
+        this.count++;
         console.log("Clicked!");
     }
     render() {
         return `
             <button>
-                ${this._content}${this._count === 0 ? "" : ": " + this._count}
+                ${this._content}${this.count === 0 ? "" : ": " + this.count}
             </button>
         `;
     }
@@ -29,4 +32,4 @@ export class ButtonComponent extends Component {
 __decorate([
     State,
     __metadata("design:type", Number)
-], ButtonComponent.prototype, "_count", void 0);
+], ButtonComponent.prototype, "count", void 0);

@@ -5,8 +5,8 @@ export function State(target, key) {
     const getter = function () {
         return value;
     };
-    const setter = function (newVal) {
-        value = newVal;
+    const setter = function (newValue) {
+        value = newValue;
         if (this instanceof Component) {
             Application.update(this);
         }

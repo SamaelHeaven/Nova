@@ -8,10 +8,10 @@ export function State(target: any, key: string): void {
         return value;
     };
 
-    const setter = function (newVal: any): void {
-        value = newVal;
+    const setter = function (newValue: any): void {
+        value = newValue;
         if (this instanceof Component) {
-            Application.update(this as Component);
+            Application.update(this);
         }
     };
 

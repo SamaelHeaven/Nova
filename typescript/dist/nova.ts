@@ -507,59 +507,28 @@ export class Application {
     /** @internal */
     private static _instance: Application | null = null;
     /** @internal */
-    private readonly _components: { name: string, ctor: (new (...args: any[]) => Component) }[];
+    private readonly _componentDefinitions: { name: string, ctor: (new (...args: any[]) => Component) }[];
     /** @internal */
-    private readonly _morphdomOption: object;
+    private readonly _morphdomOptions: object;
     /** @internal */
-    private readonly _eventNames: string[] = [
-        "click",
-        "dblclick",
-        "mousedown",
-        "mouseup",
-        "mousemove",
-        "mouseenter",
-        "mouseleave",
-        "mouseover",
-        "mouseout",
-        "keydown",
-        "keypress",
-        "keyup",
-        "focus",
-        "blur",
-        "input",
-        "change",
-        "submit",
-        "scroll",
-        "error",
-        "resize",
-        "select",
-        "touchstart",
-        "touchmove",
-        "touchend",
-        "touchcancel",
-        "animationstart",
-        "animationend",
-        "animationiteration",
-        "transitionstart",
-        "transitionend",
-        "transitioncancel"
-    ];
+    private readonly _eventNames: string[];
 
     private constructor() {
-        this._components = [];
-        this._morphdomOption = {
+        this._componentDefinitions = [];
+        this._morphdomOptions = {
             onBeforeElUpdated: function (fromElement: { isEqualNode: (arg0: any) => any; }, toElement: any) {
                 return !fromElement.isEqualNode(toElement);
             }
         };
+        this._eventNames = ["click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseenter", "mouseleave", "mouseover", "mouseout", "keydown", "keypress", "keyup", "focus", "blur", "input", "change", "submit", "scroll", "error", "resize", "select", "touchstart", "touchmove", "touchend", "touchcancel", "animationstart", "animationend", "animationiteration", "transitionstart", "transitionend", "transitioncancel"];
     }
 
-    public static launch(components: (new (...args: any[]) => Component)[]): void {
+    public static launch(componentClasses: (new (...args: any[]) => Component)[]): void {
         const app: Application = this._getInstance();
-        for (const component of components) {
-            app._components.push({
-                name: Application._getComponentName(component.name),
-                ctor: component
+        for (const componentClass of componentClasses) {
+            app._componentDefinitions.push({
+                name: Application._getComponentName(componentClass),
+                ctor: componentClass
             });
         }
 
@@ -567,19 +536,22 @@ export class Application {
     }
 
     public static update(component: Component): void {
-        if (Application._instance === null) {
+        Application._throwIfUninitialized();
+        if ((component.element as any).component !== component) {
             return;
         }
 
         Application._getInstance()._updateComponent(component);
     }
 
-    public static getComponent<T extends Component>(clazz: (new (...args: any[]) => T)): T | null {
-        if (Application._instance === null) {
-            return null;
-        }
+    public static getComponentById<T extends Component>(id: string): T | null {
+        Application._throwIfUninitialized();
+        return (document.getElementById(id) as any).component ?? null;
+    }
 
-        const name: string = Application._getComponentName(clazz.name);
+    public static getComponentByClass<T extends Component>(clazz: (new (...args: any[]) => T)): T | null {
+        Application._throwIfUninitialized();
+        const name: string = Application._getComponentName(clazz);
         const element: HTMLElement = document.querySelector(name);
         if (!element) {
             return null;
@@ -588,12 +560,9 @@ export class Application {
         return (element as any).component ?? null;
     }
 
-    public static getComponents<T extends Component>(clazz: (new (...args: any[]) => T)): T[] {
-        if (Application._instance === null) {
-            return [];
-        }
-
-        const name: string = Application._getComponentName(clazz.name);
+    public static getComponentsByClass<T extends Component>(clazz: (new (...args: any[]) => T)): T[] {
+        Application._throwIfUninitialized();
+        const name: string = Application._getComponentName(clazz);
         const elements: HTMLElement[] = Array.from(document.querySelectorAll(name));
         const result: T[] = [];
         for (const element of elements) {
@@ -611,52 +580,63 @@ export class Application {
     }
 
     /** @internal */
-    private static _getComponentName(input: string): string {
+    private static _getComponentName<T extends Component>(clazz: (new (...args: any[]) => T)): string {
+        const className: string = clazz.name;
         let result: string = '';
-        for (let i = 0; i < input.length; i++) {
-            if (i > 0 && input[i] === input[i].toUpperCase()) {
+        for (let i = 0; i < className.length; i++) {
+            if (i > 0 && className[i] === className[i].toUpperCase()) {
                 result += '-';
             }
-            result += input[i].toLowerCase();
+            result += className[i].toLowerCase();
         }
 
         return result;
     }
 
     /** @internal */
-    private _updateElement(root: HTMLElement): void {
-        const components: Component[] = [];
-        for (const component of this._components) {
-            for (const element of Array.from(root.querySelectorAll(component.name)) as HTMLElement[]) {
-                const loaded: Attr = element.attributes.getNamedItem("nova-loaded");
-                if (loaded && loaded.value === "true") {
-                    continue;
-                }
-
-                element.setAttribute("nova-loaded", "true");
-                element.style.display = "inline-block";
-                element.style.width = "fit-content";
-                element.style.height = "fit-content";
-                const componentInstance: Component = new component.ctor(element);
-                components.push(componentInstance);
-                this._registerEventListeners(componentInstance);
-                (element as any).component = componentInstance;
-                element.innerHTML = componentInstance.render();
-            }
-        }
-
-        for (const component of components) {
-            component.onStart();
+    private static _throwIfUninitialized(): void {
+        if (Application._instance === null) {
+            throw new Error("Application has not been launched");
         }
     }
 
     /** @internal */
-    private _registerEventListeners(componentInstance: Component): void {
-        for (const key of componentInstance.getKeys()) {
+    private _updateElement(root: HTMLElement): void {
+        for (const componentDefinition of this._componentDefinitions) {
+            for (const element of Array.from(root.querySelectorAll(componentDefinition.name)) as HTMLElement[]) {
+                if ((element as any).component) {
+                    continue;
+                }
+
+                if (!element.id || document.querySelectorAll(`#${element.id}`).length > 1) {
+                    throw new Error("Components must have an unique id");
+                }
+
+                element.style.display = "contents";
+                const existingElement: HTMLElement = document.getElementById(element.id);
+                let component: Component;
+                if (!existingElement || !(existingElement as any).component) {
+                    component = new componentDefinition.ctor(element);
+                    this._registerEventListeners(component);
+                    (element as any).component = component;
+                    component.onInit();
+                } else {
+                    component = (existingElement as any).component;
+                }
+
+                element.innerHTML = component.render();
+                this._updateElement(element);
+            }
+        }
+    }
+
+    /** @internal */
+    private _registerEventListeners(component: Component): void {
+        for (const key of component.getKeys()) {
             const eventType: string = key.substring(2).toLowerCase();
             if (this._eventNames.indexOf(eventType) !== -1) {
-                componentInstance.element.addEventListener(eventType, (event: Event) => {
-                    (componentInstance as any)[key](event);
+                component.element.addEventListener(eventType, (event: Event) => {
+                    (component as any)[key](event);
                 });
             }
         }
@@ -666,18 +646,31 @@ export class Application {
     private _updateComponent(component: Component): void {
         const newElement: HTMLElement = component.element.cloneNode(false) as HTMLElement;
         newElement.innerHTML = component.render();
-        morphdom(component.element, newElement, this._morphdomOption);
-        this._updateElement(component.element);
+        this._updateElement(newElement);
+        morphdom(component.element, newElement, this._morphdomOptions);
     }
 }
 
 export abstract class Component {
-    constructor(public readonly element: HTMLElement) {}
+    /** @internal */
+    private readonly _element: HTMLElement;
+
+    constructor(element: HTMLElement) {
+        this._element = element;
+    }
 
     public abstract render(): string;
 
-    public input(key: string, defaultValue: string | null = null): string | null {
-        const attribute: Attr = this.element.attributes.getNamedItem(key);
+    public get id(): string {
+        return this._element.id;
+    }
+
+    public get element(): HTMLElement {
+        return this._element;
+    }
+
+    public getAttribute(name: string, defaultValue: string | null = null): string | null {
+        const attribute: Attr = this._element.attributes.getNamedItem(name);
         if (attribute) {
             return attribute.value;
         }
@@ -685,31 +678,42 @@ export abstract class Component {
         return defaultValue;
     }
 
-    public update(value: object): void {
+    public update(state: object): void {
         for (const key of this.getKeys()) {
-            if (this[key] === value) {
-                this[key] = value;
+            if (this[key] === state) {
+                this[key] = state;
             }
         }
     }
 
     public getKeys(): string[] {
         let keys: string[] = [];
-        let prototype = this;
-        while (prototype) {
-            const parentPrototype = Object.getPrototypeOf(prototype);
+        let currentPrototype = this;
+        while (currentPrototype) {
+            const parentPrototype = Object.getPrototypeOf(currentPrototype);
             if (parentPrototype && Object.getPrototypeOf(parentPrototype)) {
-                keys = keys.concat(Object.getOwnPropertyNames(prototype));
+                keys = keys.concat(Object.getOwnPropertyNames(currentPrototype));
             }
 
-            prototype = parentPrototype;
+            currentPrototype = parentPrototype;
         }
 
-        keys = [...new Set(keys)];
-        return keys;
+        return [...new Set(keys)];
     }
 
-    public onStart(): void {}
+    public getComponentById<T extends Component>(id: string): T | null {
+        return Application.getComponentById(id);
+    }
+
+    public getComponentByClass<T extends Component>(clazz: (new (...args: any[]) => T)): T | null {
+        return Application.getComponentByClass(clazz);
+    }
+
+    public getComponentsByClass<T extends Component>(clazz: (new (...args: any[]) => T)): T[] {
+        return Application.getComponentsByClass(clazz);
+    }
+
+    public onInit(): void {}
 
     public onClick(event: Events.Mouse): void {}
 
@@ -741,17 +745,17 @@ export abstract class Component {
 
     public onInput(event: Events.Input): void {}
 
-    public onChange(event: Events.Normal): void {}
+    public onChange(event: Events.BaseEvent): void {}
 
-    public onSubmit(event: Events.Normal): void {}
+    public onSubmit(event: Events.BaseEvent): void {}
 
-    public onScroll(event: Events.Normal): void {}
+    public onScroll(event: Events.BaseEvent): void {}
 
     public onError(event: Events.Error): void {}
 
     public onResize(event: Events.UI): void {}
 
-    public onSelect(event: Events.Normal): void {}
+    public onSelect(event: Events.BaseEvent): void {}
 
     public onTouchStart(event: Events.Touch): void {}
 
@@ -775,17 +779,16 @@ export abstract class Component {
 }
 
 export namespace Events {
-    type Target = { target: HTMLElement }
-    export type Mouse = MouseEvent & Target;
-    export type Keyboard = KeyboardEvent & Target;
-    export type Focus = FocusEvent & Target;
-    export type Input = InputEvent & Target;
-    export type Normal = Event & Target;
-    export type Error = ErrorEvent & Target;
-    export type UI = UIEvent & Target;
-    export type Touch = TouchEvent & Target;
-    export type Animation = AnimationEvent & Target;
-    export type Transition = TransitionEvent & Target;
+    export type BaseEvent = Event & { target: HTMLElement, currentTarget: HTMLElement, relatedTarget: HTMLElement }
+    export type Mouse = MouseEvent & BaseEvent;
+    export type Keyboard = KeyboardEvent & BaseEvent;
+    export type Focus = FocusEvent & BaseEvent;
+    export type Input = InputEvent & BaseEvent;
+    export type Error = ErrorEvent & BaseEvent;
+    export type UI = UIEvent & BaseEvent;
+    export type Touch = TouchEvent & BaseEvent;
+    export type Animation = AnimationEvent & BaseEvent;
+    export type Transition = TransitionEvent & BaseEvent;
 }
 
 type Item<T> = {
@@ -825,10 +828,10 @@ export function State(target: any, key: string): void {
         return value;
     };
 
-    const setter = function (newVal: any): void {
-        value = newVal;
+    const setter = function (newValue: any): void {
+        value = newValue;
         if (this instanceof Component) {
-            Application.update(this as Component);
+            Application.update(this);
         }
     };
 
