@@ -1,5 +1,7 @@
 export class Debounce {
+    /** @internal */
     private readonly _callback: (...args: any[]) => void;
+    /** @internal */
     private _timeoutId: number | null;
 
     constructor(callback: Function, wait: number) {
