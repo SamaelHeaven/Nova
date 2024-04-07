@@ -14,7 +14,7 @@ export class Application {
         for (const componentClass of componentClasses) {
             app._componentDefinitions.push({
                 name: Application._getComponentName(componentClass),
-                ctor: componentClass
+                class: componentClass
             });
         }
         app._updateElement(document.documentElement);
@@ -86,7 +86,7 @@ export class Application {
                 const existingElement = document.getElementById(element.id);
                 let component;
                 if (!existingElement || !existingElement.component) {
-                    component = new componentDefinition.ctor(element);
+                    component = new componentDefinition.class(element);
                     this._registerEventListeners(component);
                     element.component = component;
                     component.onInit();

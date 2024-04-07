@@ -5,7 +5,7 @@ export class Application {
     /** @internal */
     private static _instance: Application | null = null;
     /** @internal */
-    private readonly _componentDefinitions: { name: string, ctor: (new (...args: any[]) => Component) }[];
+    private readonly _componentDefinitions: { name: string, class: (new (...args: any[]) => Component) }[];
     /** @internal */
     private readonly _morphdomOptions: object;
     /** @internal */
@@ -26,7 +26,7 @@ export class Application {
         for (const componentClass of componentClasses) {
             app._componentDefinitions.push({
                 name: Application._getComponentName(componentClass),
-                ctor: componentClass
+                class: componentClass
             });
         }
 
@@ -114,7 +114,7 @@ export class Application {
                 const existingElement: HTMLElement = document.getElementById(element.id);
                 let component: Component;
                 if (!existingElement || !(existingElement as any).component) {
-                    component = new componentDefinition.ctor(element);
+                    component = new componentDefinition.class(element);
                     this._registerEventListeners(component);
                     (element as any).component = component;
                     component.onInit();
