@@ -502,79 +502,49 @@ function morphdomFactory(morphAttrs) {
 var morphdom = morphdomFactory(morphAttrs);
 export class Application {
     constructor() {
-        this._eventNames = [
-            "click",
-            "dblclick",
-            "mousedown",
-            "mouseup",
-            "mousemove",
-            "mouseenter",
-            "mouseleave",
-            "mouseover",
-            "mouseout",
-            "keydown",
-            "keypress",
-            "keyup",
-            "focus",
-            "blur",
-            "input",
-            "change",
-            "submit",
-            "scroll",
-            "error",
-            "resize",
-            "select",
-            "touchstart",
-            "touchmove",
-            "touchend",
-            "touchcancel",
-            "animationstart",
-            "animationend",
-            "animationiteration",
-            "transitionstart",
-            "transitionend",
-            "transitioncancel"
-        ];
-        this._components = [];
-        this._morphdomOption = {
+        this._componentDefinitions = [];
+        this._morphdomOptions = {
             onBeforeElUpdated: function (fromElement, toElement) {
                 return !fromElement.isEqualNode(toElement);
             }
         };
+        this._eventNames = ["click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseenter", "mouseleave", "mouseover", "mouseout", "keydown", "keypress", "keyup", "focus", "blur", "input", "change", "submit", "scroll", "error", "resize", "select", "touchstart", "touchmove", "touchend", "touchcancel", "animationstart", "animationend", "animationiteration", "transitionstart", "transitionend", "transitioncancel"];
     }
-    static launch(components) {
+    static launch(componentClasses) {
         const app = this._getInstance();
-        for (const component of components) {
-            app._components.push({
-                name: Application._getComponentName(component.name),
-                ctor: component
+        for (const componentClass of componentClasses) {
+            app._componentDefinitions.push({
+                name: Application._getComponentName(componentClass),
+                ctor: componentClass
             });
         }
         app._updateElement(document.documentElement);
     }
     static update(component) {
-        if (Application._instance === null) {
+        Application._throwIfUninitialized();
+        if (component.element.component !== component) {
             return;
         }
         Application._getInstance()._updateComponent(component);
     }
-    static getComponent(clazz) {
+    static getComponentById(id) {
         var _a;
-        if (Application._instance === null) {
-            return null;
-        }
-        const name = Application._getComponentName(clazz.name);
+        Application._throwIfUninitialized();
+        return (_a = document.getElementById(id).component) !== null && _a !== void 0 ? _a : null;
+    }
+    static getComponentByClass(clazz) {
+        var _a;
+        Application._throwIfUninitialized();
+        const name = Application._getComponentName(clazz);
         const element = document.querySelector(name);
         if (!element) {
             return null;
         }
         return (_a = element.component) !== null && _a !== void 0 ? _a : null;
     }
-    static getComponents(clazz) {
-        if (Application._instance === null) {
-            return [];
-        }
-        const name = Application._getComponentName(clazz.name);
+    static getComponentsByClass(clazz) {
+        Application._throwIfUninitialized();
+        const name = Application._getComponentName(clazz);
         const elements = Array.from(document.querySelectorAll(name));
         const result = [];
         for (const element of elements) {
@@ -588,45 +558,54 @@ export class Application {
         var _a;
         return (_a = Application._instance) !== null && _a !== void 0 ? _a : (Application._instance = new Application());
     }
-    static _getComponentName(input) {
+    static _getComponentName(clazz) {
+        const className = clazz.name;
         let result = '';
-        for (let i = 0; i < input.length; i++) {
-            if (i > 0 && input[i] === input[i].toUpperCase()) {
+        for (let i = 0; i < className.length; i++) {
+            if (i > 0 && className[i] === className[i].toUpperCase()) {
                 result += '-';
             }
-            result += input[i].toLowerCase();
+            result += className[i].toLowerCase();
         }
         return result;
     }
-    _updateElement(root) {
-        const components = [];
-        for (const component of this._components) {
-            for (const element of Array.from(root.querySelectorAll(component.name))) {
-                const loaded = element.attributes.getNamedItem("nova-loaded");
-                if (loaded && loaded.value === "true") {
-                    continue;
-                }
-                element.setAttribute("nova-loaded", "true");
-                element.style.display = "inline-block";
-                element.style.width = "fit-content";
-                element.style.height = "fit-content";
-                const componentInstance = new component.ctor(element);
-                components.push(componentInstance);
-                this._registerEventListeners(componentInstance);
-                element.component = componentInstance;
-                element.innerHTML = componentInstance.render();
-            }
-        }
-        for (const component of components) {
-            component.onStart();
+    static _throwIfUninitialized() {
+        if (Application._instance === null) {
+            throw new Error("Application has not been launched");
         }
     }
-    _registerEventListeners(componentInstance) {
-        for (const key of componentInstance.getKeys()) {
+    _updateElement(root) {
+        for (const componentDefinition of this._componentDefinitions) {
+            for (const element of Array.from(root.querySelectorAll(componentDefinition.name))) {
+                if (element.component) {
+                    continue;
+                }
+                if (!element.id || document.querySelectorAll(`#${element.id}`).length > 1) {
+                    throw new Error("Components must have an unique id");
+                }
+                element.style.display = "contents";
+                const existingElement = document.getElementById(element.id);
+                let component;
+                if (!existingElement || !existingElement.component) {
+                    component = new componentDefinition.ctor(element);
+                    this._registerEventListeners(component);
+                    element.component = component;
+                    component.onInit();
+                }
+                else {
+                    component = existingElement.component;
+                }
+                element.innerHTML = component.render();
+                this._updateElement(element);
+            }
+        }
+    }
+    _registerEventListeners(component) {
+        for (const key of component.getKeys()) {
             const eventType = key.substring(2).toLowerCase();
             if (this._eventNames.indexOf(eventType) !== -1) {
-                componentInstance.element.addEventListener(eventType, (event) => {
-                    componentInstance[key](event);
+                component.element.addEventListener(eventType, (event) => {
+                    component[key](event);
                 });
             }
         }
@@ -634,43 +613,57 @@ export class Application {
     _updateComponent(component) {
         const newElement = component.element.cloneNode(false);
         newElement.innerHTML = component.render();
-        morphdom(component.element, newElement, this._morphdomOption);
-        this._updateElement(component.element);
+        this._updateElement(newElement);
+        morphdom(component.element, newElement, this._morphdomOptions);
     }
 }
 Application._instance = null;
 export class Component {
     constructor(element) {
-        this.element = element;
+        this._element = element;
     }
-    input(key, defaultValue = null) {
-        const attribute = this.element.attributes.getNamedItem(key);
+    get id() {
+        return this._element.id;
+    }
+    get element() {
+        return this._element;
+    }
+    getAttribute(name, defaultValue = null) {
+        const attribute = this._element.attributes.getNamedItem(name);
         if (attribute) {
             return attribute.value;
         }
         return defaultValue;
     }
-    update(value) {
+    update(state) {
         for (const key of this.getKeys()) {
-            if (this[key] === value) {
-                this[key] = value;
+            if (this[key] === state) {
+                this[key] = state;
             }
         }
     }
     getKeys() {
         let keys = [];
-        let prototype = this;
-        while (prototype) {
-            const parentPrototype = Object.getPrototypeOf(prototype);
+        let currentPrototype = this;
+        while (currentPrototype) {
+            const parentPrototype = Object.getPrototypeOf(currentPrototype);
             if (parentPrototype && Object.getPrototypeOf(parentPrototype)) {
-                keys = keys.concat(Object.getOwnPropertyNames(prototype));
+                keys = keys.concat(Object.getOwnPropertyNames(currentPrototype));
             }
-            prototype = parentPrototype;
+            currentPrototype = parentPrototype;
         }
-        keys = [...new Set(keys)];
-        return keys;
+        return [...new Set(keys)];
     }
-    onStart() { }
+    getComponentById(id) {
+        return Application.getComponentById(id);
+    }
+    getComponentByClass(clazz) {
+        return Application.getComponentByClass(clazz);
+    }
+    getComponentsByClass(clazz) {
+        return Application.getComponentsByClass(clazz);
+    }
+    onInit() { }
     onClick(event) { }
     onDblClick(event) { }
     onMouseDown(event) { }
@@ -729,8 +722,8 @@ export function State(target, key) {
     const getter = function () {
         return value;
     };
-    const setter = function (newVal) {
-        value = newVal;
+    const setter = function (newValue) {
+        value = newValue;
         if (this instanceof Component) {
             Application.update(this);
         }

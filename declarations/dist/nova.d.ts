@@ -1,18 +1,23 @@
 export declare class Application {
     private constructor();
-    static launch(components: (new (...args: any[]) => Component)[]): void;
+    static launch(componentClasses: (new (...args: any[]) => Component)[]): void;
     static update(component: Component): void;
-    static getComponent<T extends Component>(clazz: (new (...args: any[]) => T)): T | null;
-    static getComponents<T extends Component>(clazz: (new (...args: any[]) => T)): T[];
+    static getComponentById<T extends Component>(id: string): T | null;
+    static getComponentByClass<T extends Component>(clazz: (new (...args: any[]) => T)): T | null;
+    static getComponentsByClass<T extends Component>(clazz: (new (...args: any[]) => T)): T[];
 }
 export declare abstract class Component {
-    readonly element: HTMLElement;
     constructor(element: HTMLElement);
     abstract render(): string;
-    input(key: string, defaultValue?: string | null): string | null;
-    update(value: object): void;
+    get id(): string;
+    get element(): HTMLElement;
+    getAttribute(name: string, defaultValue?: string | null): string | null;
+    update(state: object): void;
     getKeys(): string[];
-    onStart(): void;
+    getComponentById<T extends Component>(id: string): T | null;
+    getComponentByClass<T extends Component>(clazz: (new (...args: any[]) => T)): T | null;
+    getComponentsByClass<T extends Component>(clazz: (new (...args: any[]) => T)): T[];
+    onInit(): void;
     onClick(event: Events.Mouse): void;
     onDblClick(event: Events.Mouse): void;
     onMouseDown(event: Events.Mouse): void;
@@ -28,12 +33,12 @@ export declare abstract class Component {
     onFocus(event: Events.Focus): void;
     onBlur(event: Events.Focus): void;
     onInput(event: Events.Input): void;
-    onChange(event: Events.Normal): void;
-    onSubmit(event: Events.Normal): void;
-    onScroll(event: Events.Normal): void;
+    onChange(event: Events.BaseEvent): void;
+    onSubmit(event: Events.BaseEvent): void;
+    onScroll(event: Events.BaseEvent): void;
     onError(event: Events.Error): void;
     onResize(event: Events.UI): void;
-    onSelect(event: Events.Normal): void;
+    onSelect(event: Events.BaseEvent): void;
     onTouchStart(event: Events.Touch): void;
     onTouchMove(event: Events.Touch): void;
     onTouchEnd(event: Events.Touch): void;
@@ -46,20 +51,20 @@ export declare abstract class Component {
     onTransitionCancel(event: Events.Transition): void;
 }
 export declare namespace Events {
-    type Target = {
+    type BaseEvent = Event & {
         target: HTMLElement;
+        currentTarget: HTMLElement;
+        relatedTarget: HTMLElement;
     };
-    export type Mouse = MouseEvent & Target;
-    export type Keyboard = KeyboardEvent & Target;
-    export type Focus = FocusEvent & Target;
-    export type Input = InputEvent & Target;
-    export type Normal = Event & Target;
-    export type Error = ErrorEvent & Target;
-    export type UI = UIEvent & Target;
-    export type Touch = TouchEvent & Target;
-    export type Animation = AnimationEvent & Target;
-    export type Transition = TransitionEvent & Target;
-    export {};
+    type Mouse = MouseEvent & BaseEvent;
+    type Keyboard = KeyboardEvent & BaseEvent;
+    type Focus = FocusEvent & BaseEvent;
+    type Input = InputEvent & BaseEvent;
+    type Error = ErrorEvent & BaseEvent;
+    type UI = UIEvent & BaseEvent;
+    type Touch = TouchEvent & BaseEvent;
+    type Animation = AnimationEvent & BaseEvent;
+    type Transition = TransitionEvent & BaseEvent;
 }
 export declare class LocalStorage {
     static getItem<T>(key: string): T | null;
