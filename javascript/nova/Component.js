@@ -29,6 +29,7 @@ export class Component {
         keys = [...new Set(keys)];
         return keys;
     }
+    onStart() { }
     onClick(event) { }
     onDblClick(event) { }
     onMouseDown(event) { }
@@ -47,8 +48,6 @@ export class Component {
     onChange(event) { }
     onSubmit(event) { }
     onScroll(event) { }
-    onLoad(event) { }
-    onUnload(event) { }
     onError(event) { }
     onResize(event) { }
     onSelect(event) { }

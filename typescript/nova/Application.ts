@@ -28,8 +28,6 @@ export class Application {
         "change",
         "submit",
         "scroll",
-        "load",
-        "unload",
         "error",
         "resize",
         "select",
@@ -125,34 +123,39 @@ export class Application {
 
     /** @internal */
     private _updateElement(root: HTMLElement): void {
+        const components: Component[] = [];
         for (const component of this._components) {
             for (const element of Array.from(root.querySelectorAll(component.name)) as HTMLElement[]) {
                 const loaded: Attr = element.attributes.getNamedItem("nova-loaded");
                 if (loaded && loaded.value === "true") {
                     continue;
                 }
+
                 element.setAttribute("nova-loaded", "true");
                 element.style.display = "inline-block";
                 element.style.width = "fit-content";
                 element.style.height = "fit-content";
                 const componentInstance: Component = new component.ctor(element);
+                components.push(componentInstance);
                 this._registerEventListeners(componentInstance);
                 (element as any).component = componentInstance;
                 element.innerHTML = componentInstance.render();
             }
+        }
+
+        for (const component of components) {
+            component.onStart();
         }
     }
 
     /** @internal */
     private _registerEventListeners(componentInstance: Component): void {
         for (const key of componentInstance.getKeys()) {
-            if (typeof componentInstance[key] === "function" && key.startsWith('on')) {
-                const eventType: string = key.substring(2).toLowerCase();
-                if (this._eventNames.indexOf(eventType) !== -1) {
-                    componentInstance.element.addEventListener(eventType, (event: Event) => {
-                        (componentInstance as any)[key](event);
-                    });
-                }
+            const eventType: string = key.substring(2).toLowerCase();
+            if (this._eventNames.indexOf(eventType) !== -1) {
+                componentInstance.element.addEventListener(eventType, (event: Event) => {
+                    (componentInstance as any)[key](event);
+                });
             }
         }
     }

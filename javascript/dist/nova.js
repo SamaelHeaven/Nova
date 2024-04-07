@@ -521,8 +521,6 @@ export class Application {
             "change",
             "submit",
             "scroll",
-            "load",
-            "unload",
             "error",
             "resize",
             "select",
@@ -601,6 +599,7 @@ export class Application {
         return result;
     }
     _updateElement(root) {
+        const components = [];
         for (const component of this._components) {
             for (const element of Array.from(root.querySelectorAll(component.name))) {
                 const loaded = element.attributes.getNamedItem("nova-loaded");
@@ -612,21 +611,23 @@ export class Application {
                 element.style.width = "fit-content";
                 element.style.height = "fit-content";
                 const componentInstance = new component.ctor(element);
+                components.push(componentInstance);
                 this._registerEventListeners(componentInstance);
                 element.component = componentInstance;
                 element.innerHTML = componentInstance.render();
             }
         }
+        for (const component of components) {
+            component.onStart();
+        }
     }
     _registerEventListeners(componentInstance) {
         for (const key of componentInstance.getKeys()) {
-            if (typeof componentInstance[key] === "function" && key.startsWith('on')) {
-                const eventType = key.substring(2).toLowerCase();
-                if (this._eventNames.indexOf(eventType) !== -1) {
-                    componentInstance.element.addEventListener(eventType, (event) => {
-                        componentInstance[key](event);
-                    });
-                }
+            const eventType = key.substring(2).toLowerCase();
+            if (this._eventNames.indexOf(eventType) !== -1) {
+                componentInstance.element.addEventListener(eventType, (event) => {
+                    componentInstance[key](event);
+                });
             }
         }
     }
@@ -669,6 +670,7 @@ export class Component {
         keys = [...new Set(keys)];
         return keys;
     }
+    start() { }
     onClick(event) { }
     onDblClick(event) { }
     onMouseDown(event) { }
@@ -687,8 +689,6 @@ export class Component {
     onChange(event) { }
     onSubmit(event) { }
     onScroll(event) { }
-    onLoad(event) { }
-    onUnload(event) { }
     onError(event) { }
     onResize(event) { }
     onSelect(event) { }

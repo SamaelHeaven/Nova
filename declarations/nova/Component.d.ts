@@ -6,6 +6,7 @@ export declare abstract class Component {
     input(key: string, defaultValue?: string | null): string | null;
     update(value: object): void;
     getKeys(): string[];
+    onStart(): void;
     onClick(event: Events.Mouse): void;
     onDblClick(event: Events.Mouse): void;
     onMouseDown(event: Events.Mouse): void;
@@ -24,8 +25,6 @@ export declare abstract class Component {
     onChange(event: Events.Normal): void;
     onSubmit(event: Events.Normal): void;
     onScroll(event: Events.Normal): void;
-    onLoad(event: Events.Normal): void;
-    onUnload(event: Events.Normal): void;
     onError(event: Events.Error): void;
     onResize(event: Events.UI): void;
     onSelect(event: Events.Normal): void;
