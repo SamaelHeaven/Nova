@@ -670,7 +670,7 @@ export class Component {
         keys = [...new Set(keys)];
         return keys;
     }
-    start() { }
+    onStart() { }
     onClick(event) { }
     onDblClick(event) { }
     onMouseDown(event) { }

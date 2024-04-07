@@ -709,7 +709,7 @@ export abstract class Component {
         return keys;
     }
 
-    public start(): void {}
+    public onStart(): void {}
 
     public onClick(event: Events.Mouse): void {}
 

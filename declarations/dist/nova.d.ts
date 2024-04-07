@@ -12,7 +12,7 @@ export declare abstract class Component {
     input(key: string, defaultValue?: string | null): string | null;
     update(value: object): void;
     getKeys(): string[];
-    start(): void;
+    onStart(): void;
     onClick(event: Events.Mouse): void;
     onDblClick(event: Events.Mouse): void;
     onMouseDown(event: Events.Mouse): void;
