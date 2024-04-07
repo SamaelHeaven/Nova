@@ -503,6 +503,42 @@ function morphdomFactory(morphAttrs) {
 var morphdom = morphdomFactory(morphAttrs);
 export class Application {
     constructor() {
+        /** @internal */
+        this._eventNames = [
+            "click",
+            "dblclick",
+            "mousedown",
+            "mouseup",
+            "mousemove",
+            "mouseenter",
+            "mouseleave",
+            "mouseover",
+            "mouseout",
+            "keydown",
+            "keypress",
+            "keyup",
+            "focus",
+            "blur",
+            "input",
+            "change",
+            "submit",
+            "scroll",
+            "load",
+            "unload",
+            "error",
+            "resize",
+            "select",
+            "touchstart",
+            "touchmove",
+            "touchend",
+            "touchcancel",
+            "animationstart",
+            "animationend",
+            "animationiteration",
+            "transitionstart",
+            "transitionend",
+            "transitioncancel"
+        ];
         this._components = [];
         this._morphdomOption = {
             onBeforeElUpdated: function (fromElement, toElement) {
@@ -592,9 +628,11 @@ export class Application {
         for (const key of componentInstance.getKeys()) {
             if (typeof componentInstance[key] === "function" && key.startsWith('on')) {
                 const eventType = key.substring(2).toLowerCase();
-                componentInstance.element.addEventListener(eventType, (event) => {
-                    componentInstance[key](event);
-                });
+                if (this._eventNames.indexOf(eventType) !== -1) {
+                    componentInstance.element.addEventListener(eventType, (event) => {
+                        componentInstance[key](event);
+                    });
+                }
             }
         }
     }

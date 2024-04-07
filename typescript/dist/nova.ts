@@ -510,6 +510,42 @@ export class Application {
     private readonly _components: { name: string, ctor: (new (...args: any[]) => Component) }[];
     /** @internal */
     private readonly _morphdomOption: object;
+    /** @internal */
+    private readonly _eventNames: string[] = [
+        "click",
+        "dblclick",
+        "mousedown",
+        "mouseup",
+        "mousemove",
+        "mouseenter",
+        "mouseleave",
+        "mouseover",
+        "mouseout",
+        "keydown",
+        "keypress",
+        "keyup",
+        "focus",
+        "blur",
+        "input",
+        "change",
+        "submit",
+        "scroll",
+        "load",
+        "unload",
+        "error",
+        "resize",
+        "select",
+        "touchstart",
+        "touchmove",
+        "touchend",
+        "touchcancel",
+        "animationstart",
+        "animationend",
+        "animationiteration",
+        "transitionstart",
+        "transitionend",
+        "transitioncancel"
+    ];
 
     private constructor() {
         this._components = [];
@@ -614,9 +650,11 @@ export class Application {
         for (const key of componentInstance.getKeys()) {
             if (typeof componentInstance[key] === "function" && key.startsWith('on')) {
                 const eventType: string = key.substring(2).toLowerCase();
-                componentInstance.element.addEventListener(eventType, (event: Event) => {
-                    (componentInstance as any)[key](event);
-                });
+                if (this._eventNames.indexOf(eventType) !== -1) {
+                    componentInstance.element.addEventListener(eventType, (event: Event) => {
+                        (componentInstance as any)[key](event);
+                    });
+                }
             }
         }
     }
