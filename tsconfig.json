@@ -6,6 +6,7 @@
     "declaration": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
+    "stripInternal": true,
     "lib": [
       "es6",
       "dom"

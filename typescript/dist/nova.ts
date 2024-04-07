@@ -504,8 +504,11 @@ function morphdomFactory(morphAttrs) {
 var morphdom = morphdomFactory(morphAttrs);
 
 export class Application {
+    /** @internal */
     private static _instance: Application | null = null;
+    /** @internal */
     private readonly _components: { name: string, ctor: (new (...args: any[]) => Component) }[];
+    /** @internal */
     private readonly _morphdomOption: object;
 
     private constructor() {
@@ -568,10 +571,12 @@ export class Application {
         return result;
     }
 
+    /** @internal */
     private static _getInstance(): Application {
         return Application._instance ??= new Application();
     }
 
+    /** @internal */
     private static _getComponentName(input: string): string {
         let result: string = '';
         for (let i = 0; i < input.length; i++) {
@@ -584,6 +589,7 @@ export class Application {
         return result;
     }
 
+    /** @internal */
     private _updateElement(root: HTMLElement): void {
         for (const component of this._components) {
             for (const element of Array.from(root.querySelectorAll(component.name)) as HTMLElement[]) {
@@ -603,6 +609,7 @@ export class Application {
         }
     }
 
+    /** @internal */
     private _registerEventListeners(componentInstance: Component): void {
         for (const key of componentInstance.getKeys()) {
             if (typeof componentInstance[key] === "function" && key.startsWith('on')) {
@@ -614,6 +621,7 @@ export class Application {
         }
     }
 
+    /** @internal */
     private _updateComponent(component: Component): void {
         const newElement: HTMLElement = component.element.cloneNode(false) as HTMLElement;
         newElement.innerHTML = component.render();
