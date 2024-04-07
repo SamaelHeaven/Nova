@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use strict';
 var DOCUMENT_FRAGMENT_NODE = 11;
 function morphAttrs(fromNode, toNode) {
@@ -503,7 +502,6 @@ function morphdomFactory(morphAttrs) {
 var morphdom = morphdomFactory(morphAttrs);
 export class Application {
     constructor() {
-        /** @internal */
         this._eventNames = [
             "click",
             "dblclick",
@@ -588,12 +586,10 @@ export class Application {
         }
         return result;
     }
-    /** @internal */
     static _getInstance() {
         var _a;
         return (_a = Application._instance) !== null && _a !== void 0 ? _a : (Application._instance = new Application());
     }
-    /** @internal */
     static _getComponentName(input) {
         let result = '';
         for (let i = 0; i < input.length; i++) {
@@ -604,7 +600,6 @@ export class Application {
         }
         return result;
     }
-    /** @internal */
     _updateElement(root) {
         for (const component of this._components) {
             for (const element of Array.from(root.querySelectorAll(component.name))) {
@@ -623,7 +618,6 @@ export class Application {
             }
         }
     }
-    /** @internal */
     _registerEventListeners(componentInstance) {
         for (const key of componentInstance.getKeys()) {
             if (typeof componentInstance[key] === "function" && key.startsWith('on')) {
@@ -636,7 +630,6 @@ export class Application {
             }
         }
     }
-    /** @internal */
     _updateComponent(component) {
         const newElement = component.element.cloneNode(false);
         newElement.innerHTML = component.render();
@@ -644,7 +637,6 @@ export class Application {
         this._updateElement(component.element);
     }
 }
-/** @internal */
 Application._instance = null;
 export class Component {
     constructor(element) {
