@@ -23,7 +23,7 @@ export class ButtonComponent extends Component {
     }
     render() {
         return `
-            <button>
+            <button class="btn btn-primary">
                 ${this._content}${this._count === 0 ? "" : ": " + this._count}
             </button>
         `;

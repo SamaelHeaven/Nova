@@ -710,6 +710,118 @@ export class Debounce {
         this._callback.apply(this, args);
     }
 }
+export var Format;
+(function (Format) {
+    function date(arg, format) {
+        let date;
+        if (arg instanceof Date) {
+            date = arg;
+        }
+        else if (arg === "today" || Validation.isNumber(arg) || Validation.isNullOrUndefinedOrEmpty(arg)) {
+            date = new Date();
+        }
+        else if (arg === "tomorrow") {
+            date = new Date();
+            date.setDate(date.getDate() + 1);
+        }
+        else if (arg === "yesterday") {
+            date = new Date();
+            date.setDate(date.getDate() - 1);
+        }
+        else {
+            date = new Date(arg);
+        }
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        return format.replace(/(d{1,4}|m{1,4}|y{2,4}|h{1,2}|H{1,2}|M{1,2}|s{1,2}|l|L|t{1,2}|T{1,2}'[^']*'|"[^"]*")/g, function (match) {
+            switch (match) {
+                case "d":
+                    return date.getDate().toString();
+                case "dd":
+                    return date.getDate().toString().padStart(2, "0");
+                case "ddd":
+                    return dayNames[date.getDay()].slice(0, 3);
+                case "dddd":
+                    return dayNames[date.getDay()];
+                case "m":
+                    return (date.getMonth() + 1).toString();
+                case "mm":
+                    return String(date.getMonth() + 1).padStart(2, "0");
+                case "mmm":
+                    return monthNames[date.getMonth()].slice(0, 3);
+                case "mmmm":
+                    return monthNames[date.getMonth()];
+                case "yy":
+                    return String(date.getFullYear()).slice(-2);
+                case "yyyy":
+                    return date.getFullYear().toString();
+                case "h":
+                    return (date.getHours() % 12 || 12).toString();
+                case "hh":
+                    return String(date.getHours() % 12 || 12).padStart(2, "0");
+                case "H":
+                    return date.getHours().toString();
+                case "HH":
+                    return String(date.getHours()).padStart(2, "0");
+                case "M":
+                    return date.getMinutes().toString();
+                case "MM":
+                    return String(date.getMinutes()).padStart(2, "0");
+                case "s":
+                    return date.getSeconds().toString();
+                case "ss":
+                    return String(date.getSeconds()).padStart(2, "0");
+                case "l":
+                    return String(date.getMilliseconds()).padStart(3, "0");
+                case "L":
+                    return String(date.getMilliseconds()).padStart(3, "0").substring(0, 2);
+                case "t":
+                    return date.getHours() < 12 ? "a" : "p";
+                case "tt":
+                    return date.getHours() < 12 ? "am" : "pm";
+                case "T":
+                    return date.getHours() < 12 ? "A" : "P";
+                case "TT":
+                    return date.getHours() < 12 ? "AM" : "PM";
+                default:
+                    return match.slice(1, -1);
+            }
+        });
+    }
+    Format.date = date;
+    function titleCase(arg) {
+        const str = String(arg).trim();
+        return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+    Format.titleCase = titleCase;
+    function upperCase(arg) {
+        const str = String(arg).trim();
+        return str.toUpperCase();
+    }
+    Format.upperCase = upperCase;
+    function lowerCase(arg) {
+        const str = String(arg).trim();
+        return str.toLowerCase();
+    }
+    Format.lowerCase = lowerCase;
+    function percentage(arg, digits) {
+        const value = Number(arg);
+        return (value).toFixed(digits) + "%";
+    }
+    Format.percentage = percentage;
+    function decimal(arg, digits) {
+        const value = Number(arg);
+        return value.toFixed(digits);
+    }
+    Format.decimal = decimal;
+    function currency(amount, code = "USD") {
+        return amount.toLocaleString(undefined, {
+            style: 'currency',
+            currency: code
+        });
+    }
+    Format.currency = currency;
+})(Format || (Format = {}));
 export class LocalStorage {
     static getItem(key) {
         const itemString = localStorage.getItem(key);
@@ -749,3 +861,158 @@ export function State(target, key) {
         configurable: true,
     });
 }
+export var Validation;
+(function (Validation) {
+    function equals(value, expected) {
+        return value === expected;
+    }
+    Validation.equals = equals;
+    function notEquals(value, expected) {
+        return value !== expected;
+    }
+    Validation.notEquals = notEquals;
+    function email(email) {
+        return !!email.match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
+    }
+    Validation.email = email;
+    function phoneNumber(phoneNumber) {
+        return !!phoneNumber.match(/^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/im);
+    }
+    Validation.phoneNumber = phoneNumber;
+    function date(date, expected) {
+        return date.getTime() === expected.getTime();
+    }
+    Validation.date = date;
+    function dateMin(date, minDate) {
+        return date.getTime() >= minDate.getTime();
+    }
+    Validation.dateMin = dateMin;
+    function dateMax(date, maxDate) {
+        return date.getTime() <= maxDate.getTime();
+    }
+    Validation.dateMax = dateMax;
+    function dateRange(date, minDate, maxDate) {
+        return date.getTime() >= minDate.getTime() && date.getTime() <= maxDate.getTime();
+    }
+    Validation.dateRange = dateRange;
+    function positiveInteger(value) {
+        return !!value.match(/^\d+$/);
+    }
+    Validation.positiveInteger = positiveInteger;
+    function negativeInteger(value) {
+        return !!value.match(/^-\d+$/);
+    }
+    Validation.negativeInteger = negativeInteger;
+    function integer(value) {
+        return !!value.match(/^(-?\d+)$/);
+    }
+    Validation.integer = integer;
+    function positiveNumeric(value) {
+        return !!value.match(/^\d+(\.\d+)?$/);
+    }
+    Validation.positiveNumeric = positiveNumeric;
+    function negativeNumeric(value) {
+        return !!value.match(/^-\d+(\.\d+)?$/);
+    }
+    Validation.negativeNumeric = negativeNumeric;
+    function numeric(value) {
+        return !!value.match(/^(-?\d+(\.\d+)?)$/);
+    }
+    Validation.numeric = numeric;
+    function numberMin(value, min) {
+        return value >= min;
+    }
+    Validation.numberMin = numberMin;
+    function numberMax(value, max) {
+        return value <= max;
+    }
+    Validation.numberMax = numberMax;
+    function numberRange(value, min, max) {
+        return value >= min && value <= max;
+    }
+    Validation.numberRange = numberRange;
+    function isString(value) {
+        return typeof value === "string";
+    }
+    Validation.isString = isString;
+    function isNumber(value) {
+        return typeof value === "number";
+    }
+    Validation.isNumber = isNumber;
+    function notNaN(value) {
+        return !isNaN(value);
+    }
+    Validation.notNaN = notNaN;
+    function isNan(value) {
+        return isNaN(value);
+    }
+    Validation.isNan = isNan;
+    function notInfinity(value) {
+        return value !== Infinity && value !== -Infinity;
+    }
+    Validation.notInfinity = notInfinity;
+    function isInfinity(value) {
+        return value === Infinity || value === -Infinity;
+    }
+    Validation.isInfinity = isInfinity;
+    function regex(value, regex) {
+        return regex.test(value);
+    }
+    Validation.regex = regex;
+    function length(value, expectedLength) {
+        return value.length === expectedLength;
+    }
+    Validation.length = length;
+    function lengthMin(value, minLength) {
+        return value.length >= minLength;
+    }
+    Validation.lengthMin = lengthMin;
+    function lengthMax(value, maxLength) {
+        return value.length <= maxLength;
+    }
+    Validation.lengthMax = lengthMax;
+    function lengthRange(value, minLength, maxLength) {
+        return value.length >= minLength && value.length <= maxLength;
+    }
+    Validation.lengthRange = lengthRange;
+    function isEmpty(value) {
+        return value.length === 0;
+    }
+    Validation.isEmpty = isEmpty;
+    function notEmpty(value) {
+        return value.length > 0;
+    }
+    Validation.notEmpty = notEmpty;
+    function isNull(value) {
+        return value === null;
+    }
+    Validation.isNull = isNull;
+    function notNull(value) {
+        return value !== null;
+    }
+    Validation.notNull = notNull;
+    function isUndefined(value) {
+        return value === undefined;
+    }
+    Validation.isUndefined = isUndefined;
+    function notUndefined(value) {
+        return value !== undefined;
+    }
+    Validation.notUndefined = notUndefined;
+    function notNullOrUndefined(value) {
+        return value !== null && value !== undefined;
+    }
+    Validation.notNullOrUndefined = notNullOrUndefined;
+    function isNullOrUndefined(value) {
+        return value === null || value === undefined;
+    }
+    Validation.isNullOrUndefined = isNullOrUndefined;
+    function notNullOrUndefinedOrEmpty(value) {
+        return value !== null && value !== undefined && value.length > 0;
+    }
+    Validation.notNullOrUndefinedOrEmpty = notNullOrUndefinedOrEmpty;
+    function isNullOrUndefinedOrEmpty(value) {
+        return value === null || value === undefined || value.length <= 0;
+    }
+    Validation.isNullOrUndefinedOrEmpty = isNullOrUndefinedOrEmpty;
+})(Validation || (Validation = {}));

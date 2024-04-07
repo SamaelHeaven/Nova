@@ -4,18 +4,18 @@ export class ButtonComponent extends Component {
     private _content: string = this.getAttribute("data-content");
     @State private _count: number = 0;
 
-    public onInit(): void {
+    public override onInit(): void {
         console.log("Initializing Button Component")
     }
 
-    public onClick(_: Events.Mouse): void {
+    public override onClick(_: Events.Mouse): void {
         this._count++;
         console.log("Clicked!");
     }
 
-    public render(): string {
+    public override render(): string {
         return `
-            <button>
+            <button class="btn btn-primary">
                 ${this._content}${this._count === 0 ? "" : ": " + this._count}
             </button>
         `;
