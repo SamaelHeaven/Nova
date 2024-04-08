@@ -783,7 +783,7 @@ export var Format;
     Format.lowerCase = lowerCase;
     function percentage(arg, digits) {
         const value = Number(arg);
-        return (value).toFixed(digits) + "%";
+        return value.toFixed(digits) + "%";
     }
     Format.percentage = percentage;
     function decimal(arg, digits) {

@@ -888,7 +888,7 @@ export namespace Format {
 
     export function percentage(arg: any, digits: number): string {
         const value: number = Number(arg);
-        return (value).toFixed(digits) + "%";
+        return value.toFixed(digits) + "%";
     }
 
     export function decimal(arg: any, digits: number): string {
