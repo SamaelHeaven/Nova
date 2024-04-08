@@ -6,6 +6,6 @@ export declare class Application {
         class: (new (...args: any[]) => Component);
     }[]): void;
     static updateComponent(component: Component): void;
-    static getComponent<T extends Component>(clazz: (new (...args: any[]) => T), element?: HTMLElement): T | null;
-    static getComponents<T extends Component>(clazz: (new (...args: any[]) => T), element?: HTMLElement): T[];
+    static getComponent<T extends Component>(componentClass: (new (...args: any[]) => T), element?: HTMLElement): T | null;
+    static getComponents<T extends Component>(componentClass: (new (...args: any[]) => T), element?: HTMLElement): T[];
 }

@@ -25,12 +25,12 @@ export abstract class Component {
         }
     }
 
-    public getComponent<T extends Component>(clazz: (new (...args: any[]) => T), element?: HTMLElement): T | null {
-        return Application.getComponent(clazz, element);
+    public getComponent<T extends Component>(componentClass: (new (...args: any[]) => T), element?: HTMLElement): T | null {
+        return Application.getComponent(componentClass, element);
     }
 
-    public getComponents<T extends Component>(clazz: (new (...args: any[]) => T), element?: HTMLElement): T[] {
-        return Application.getComponents(clazz, element);
+    public getComponents<T extends Component>(componentClass: (new (...args: any[]) => T), element?: HTMLElement): T[] {
+        return Application.getComponents(componentClass, element);
     }
 
     public onInit(): void {}

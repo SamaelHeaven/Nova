@@ -5,16 +5,16 @@ export declare class Application {
         class: (new (...args: any[]) => Component);
     }[]): void;
     static updateComponent(component: Component): void;
-    static getComponent<T extends Component>(clazz: (new (...args: any[]) => T), element?: HTMLElement): T | null;
-    static getComponents<T extends Component>(clazz: (new (...args: any[]) => T), element?: HTMLElement): T[];
+    static getComponent<T extends Component>(componentClass: (new (...args: any[]) => T), element?: HTMLElement): T | null;
+    static getComponents<T extends Component>(componentClass: (new (...args: any[]) => T), element?: HTMLElement): T[];
 }
 export declare abstract class Component {
     constructor(element: HTMLElement);
     render(): string | undefined;
     get element(): HTMLElement;
     update(state: object): void;
-    getComponent<T extends Component>(clazz: (new (...args: any[]) => T), element?: HTMLElement): T | null;
-    getComponents<T extends Component>(clazz: (new (...args: any[]) => T), element?: HTMLElement): T[];
+    getComponent<T extends Component>(componentClass: (new (...args: any[]) => T), element?: HTMLElement): T | null;
+    getComponents<T extends Component>(componentClass: (new (...args: any[]) => T), element?: HTMLElement): T[];
     onInit(): void;
     onAppear(): void;
     onDestroy(): void;

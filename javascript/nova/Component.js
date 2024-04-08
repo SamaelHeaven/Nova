@@ -16,11 +16,11 @@ export class Component {
             }
         }
     }
-    getComponent(clazz, element) {
-        return Application.getComponent(clazz, element);
+    getComponent(componentClass, element) {
+        return Application.getComponent(componentClass, element);
     }
-    getComponents(clazz, element) {
-        return Application.getComponents(clazz, element);
+    getComponents(componentClass, element) {
+        return Application.getComponents(componentClass, element);
     }
     onInit() { }
     onAppear() { }

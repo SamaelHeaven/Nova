@@ -40,15 +40,15 @@ export class Application {
         Application._getInstance()._updateComponent(component);
     }
 
-    public static getComponent<T extends Component>(clazz: (new (...args: any[]) => T), element: HTMLElement = document.documentElement): T | null {
+    public static getComponent<T extends Component>(componentClass: (new (...args: any[]) => T), element: HTMLElement = document.documentElement): T | null {
         Application._throwIfUninitialized();
-        const name: string = Application._getInstance()._components.find(component => component.class == clazz).name;
+        const name: string = Application._getInstance()._components.find(component => component.class == componentClass).name;
         return (element.getElementsByTagName(name) as any)?.component || null;
     }
 
-    public static getComponents<T extends Component>(clazz: (new (...args: any[]) => T), element: HTMLElement = document.documentElement): T[] {
+    public static getComponents<T extends Component>(componentClass: (new (...args: any[]) => T), element: HTMLElement = document.documentElement): T[] {
         Application._throwIfUninitialized();
-        const name: string = Application._getInstance()._components.find(component => component.class == clazz).name;
+        const name: string = Application._getInstance()._components.find(component => component.class == componentClass).name;
         const components: T[] = [];
         for (const componentElement of Array.from(element.getElementsByTagName(name))) {
             if ((componentElement as any).component) {

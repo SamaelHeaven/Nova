@@ -522,15 +522,15 @@ export class Application {
         Application._throwIfUninitialized();
         Application._getInstance()._updateComponent(component);
     }
-    static getComponent(clazz, element = document.documentElement) {
+    static getComponent(componentClass, element = document.documentElement) {
         var _a;
         Application._throwIfUninitialized();
-        const name = Application._getInstance()._components.find(component => component.class == clazz).name;
+        const name = Application._getInstance()._components.find(component => component.class == componentClass).name;
         return ((_a = element.getElementsByTagName(name)) === null || _a === void 0 ? void 0 : _a.component) || null;
     }
-    static getComponents(clazz, element = document.documentElement) {
+    static getComponents(componentClass, element = document.documentElement) {
         Application._throwIfUninitialized();
-        const name = Application._getInstance()._components.find(component => component.class == clazz).name;
+        const name = Application._getInstance()._components.find(component => component.class == componentClass).name;
         const components = [];
         for (const componentElement of Array.from(element.getElementsByTagName(name))) {
             if (componentElement.component) {
@@ -619,11 +619,11 @@ export class Component {
             }
         }
     }
-    getComponent(clazz, element) {
-        return Application.getComponent(clazz, element);
+    getComponent(componentClass, element) {
+        return Application.getComponent(componentClass, element);
     }
-    getComponents(clazz, element) {
-        return Application.getComponents(clazz, element);
+    getComponents(componentClass, element) {
+        return Application.getComponents(componentClass, element);
     }
     onInit() { }
     onAppear() { }
