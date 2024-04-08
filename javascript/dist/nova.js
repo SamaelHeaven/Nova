@@ -526,8 +526,9 @@ export class Application {
         app._updating = false;
     }
     static updateComponent(component) {
+        var _a;
         Application._throwIfUninitialized();
-        if (component.element.component !== component) {
+        if (((_a = component.element) === null || _a === void 0 ? void 0 : _a.component) !== component) {
             return;
         }
         const app = Application._getInstance();
@@ -549,17 +550,16 @@ export class Application {
     static getComponentById(id) {
         var _a;
         Application._throwIfUninitialized();
-        return (_a = document.getElementById(id).component) !== null && _a !== void 0 ? _a : null;
+        return ((_a = document.getElementById(id)) === null || _a === void 0 ? void 0 : _a.component) || null;
     }
     static getComponentByClass(clazz) {
-        var _a;
         Application._throwIfUninitialized();
         const name = Application._getComponentName(clazz);
         const element = document.querySelector(name);
         if (!element) {
             return null;
         }
-        return (_a = element.component) !== null && _a !== void 0 ? _a : null;
+        return (element === null || element === void 0 ? void 0 : element.component) || null;
     }
     static getComponentsByClass(clazz) {
         Application._throwIfUninitialized();
@@ -567,8 +567,8 @@ export class Application {
         const elements = Array.from(document.querySelectorAll(name));
         const result = [];
         for (const element of elements) {
-            if (element.component) {
-                result.push(element.component);
+            if (element === null || element === void 0 ? void 0 : element.component) {
+                result.push(element === null || element === void 0 ? void 0 : element.component);
             }
         }
         return result;
@@ -601,14 +601,14 @@ export class Application {
                 }
                 const existingElement = document.getElementById(element.id);
                 let component;
-                if (!existingElement || !existingElement.component) {
+                if (!existingElement || !(existingElement === null || existingElement === void 0 ? void 0 : existingElement.component)) {
                     component = new componentDefinition.class(element);
                     this._registerEventListeners(component);
                     element.component = component;
                     component.onInit();
                 }
                 else {
-                    component = existingElement.component;
+                    component = existingElement === null || existingElement === void 0 ? void 0 : existingElement.component;
                 }
                 const renderedContent = component.render();
                 if (!Validation.isNullOrUndefined(renderedContent)) {

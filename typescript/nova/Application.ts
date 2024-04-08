@@ -44,7 +44,7 @@ export class Application {
 
     public static updateComponent(component: Component): void {
         Application._throwIfUninitialized();
-        if ((component.element as any).component !== component) {
+        if ((component.element as any)?.component !== component) {
             return;
         }
 
@@ -68,7 +68,7 @@ export class Application {
 
     public static getComponentById<T extends Component>(id: string): T | null {
         Application._throwIfUninitialized();
-        return (document.getElementById(id) as any).component ?? null;
+        return (document.getElementById(id) as any)?.component || null;
     }
 
     public static getComponentByClass<T extends Component>(clazz: (new (...args: any[]) => T)): T | null {
@@ -79,7 +79,7 @@ export class Application {
             return null;
         }
 
-        return (element as any).component ?? null;
+        return (element as any)?.component || null;
     }
 
     public static getComponentsByClass<T extends Component>(clazz: (new (...args: any[]) => T)): T[] {
@@ -88,8 +88,8 @@ export class Application {
         const elements: HTMLElement[] = Array.from(document.querySelectorAll(name));
         const result: T[] = [];
         for (const element of elements) {
-            if ((element as any).component) {
-                result.push((element as any).component);
+            if ((element as any)?.component) {
+                result.push((element as any)?.component);
             }
         }
 
@@ -132,13 +132,13 @@ export class Application {
 
                 const existingElement: HTMLElement = document.getElementById(element.id);
                 let component: Component;
-                if (!existingElement || !(existingElement as any).component) {
+                if (!existingElement || !(existingElement as any)?.component) {
                     component = new componentDefinition.class(element);
                     this._registerEventListeners(component);
                     (element as any).component = component;
                     component.onInit();
                 } else {
-                    component = (existingElement as any).component;
+                    component = (existingElement as any)?.component;
                 }
 
                 const renderedContent: string | null | undefined = component.render();
