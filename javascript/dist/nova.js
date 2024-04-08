@@ -568,34 +568,37 @@ export class Application {
         morphdom(component.element, newElement, this._morphdomOptions);
     }
     _initializeComponents() {
-        const app = this;
-        for (const componentDefinition of app._components) {
-            class ComponentElement extends HTMLElement {
-                connectedCallback() {
-                    this.component = new componentDefinition.class(this);
-                    const observerConfig = { attributes: true, subtree: false };
-                    const observer = new MutationObserver((mutationsList, _) => {
-                        for (const mutation of mutationsList) {
-                            if (mutation.type === 'attributes') {
-                                this.component.onAttributeChanged(mutation.attributeName, mutation.oldValue, this.getAttribute(mutation.attributeName));
-                            }
-                        }
-                    });
-                    observer.observe(this, observerConfig);
-                    this.component.onInit();
-                    app._registerEventListeners(this.component);
-                    const renderedContent = this.component.render();
-                    if (!Validation.isNullOrUndefined(renderedContent)) {
-                        this.innerHTML = renderedContent;
-                    }
-                    this.component.onAppear();
-                }
-                disconnectedCallback() {
-                    this.component.onDestroy();
-                }
-            }
-            customElements.define(componentDefinition.name, ComponentElement);
+        for (const component of this._components) {
+            this._initializeComponent(component);
         }
+    }
+    _initializeComponent(component) {
+        const app = this;
+        class ComponentElement extends HTMLElement {
+            connectedCallback() {
+                this.component = new component.class(this);
+                this._observeAttributes();
+                this.component.onInit();
+                app._registerEventListeners(this.component);
+                app._updateComponent(this.component);
+                this.component.onAppear();
+            }
+            disconnectedCallback() {
+                this.component.onDestroy();
+            }
+            _observeAttributes() {
+                const observerConfig = { attributes: true, subtree: false };
+                const observer = new MutationObserver((mutationsList, _) => {
+                    for (const mutation of mutationsList) {
+                        if (mutation.type === 'attributes') {
+                            this.component.onAttributeChanged(mutation.attributeName, mutation.oldValue, this.getAttribute(mutation.attributeName));
+                        }
+                    }
+                });
+                observer.observe(this, observerConfig);
+            }
+        }
+        customElements.define(component.name, ComponentElement);
     }
 }
 Application._instance = null;

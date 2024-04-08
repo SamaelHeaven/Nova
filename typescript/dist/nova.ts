@@ -598,40 +598,46 @@ export class Application {
 
     /** @internal */
     private _initializeComponents(): void {
+        for (const component of this._components) {
+            this._initializeComponent(component);
+        }
+    }
+
+    /** @internal */
+    private _initializeComponent(component: { name: string, class: (new (...args: any[]) => Component) }): void {
         const app = this;
-        for (const componentDefinition of app._components) {
-            class ComponentElement extends HTMLElement {
-                public component: Component;
 
-                public connectedCallback(): void {
-                    this.component = new componentDefinition.class(this);
-                    const observerConfig: MutationObserverInit = {attributes: true, subtree: false};
-                    const observer: MutationObserver = new MutationObserver((mutationsList: MutationRecord[], _: MutationObserver): void => {
-                        for (const mutation of mutationsList) {
-                            if (mutation.type === 'attributes') {
-                                this.component.onAttributeChanged(mutation.attributeName, mutation.oldValue, this.getAttribute(mutation.attributeName))
-                            }
-                        }
-                    });
+        class ComponentElement extends HTMLElement {
+            public component: Component;
 
-                    observer.observe(this, observerConfig);
-                    this.component.onInit();
-                    app._registerEventListeners(this.component);
-                    const renderedContent: string | undefined = this.component.render();
-                    if (!Validation.isNullOrUndefined(renderedContent)) {
-                        this.innerHTML = renderedContent;
-                    }
-
-                    this.component.onAppear();
-                }
-
-                public disconnectedCallback(): void {
-                    this.component.onDestroy();
-                }
+            public connectedCallback(): void {
+                this.component = new component.class(this);
+                this._observeAttributes();
+                this.component.onInit();
+                app._registerEventListeners(this.component);
+                app._updateComponent(this.component);
+                this.component.onAppear();
             }
 
-            customElements.define(componentDefinition.name, ComponentElement);
+            public disconnectedCallback(): void {
+                this.component.onDestroy();
+            }
+
+            private _observeAttributes(): void {
+                const observerConfig: MutationObserverInit = {attributes: true, subtree: false};
+                const observer: MutationObserver = new MutationObserver((mutationsList: MutationRecord[], _: MutationObserver): void => {
+                    for (const mutation of mutationsList) {
+                        if (mutation.type === 'attributes') {
+                            this.component.onAttributeChanged(mutation.attributeName, mutation.oldValue, this.getAttribute(mutation.attributeName))
+                        }
+                    }
+                });
+
+                observer.observe(this, observerConfig);
+            }
         }
+
+        customElements.define(component.name, ComponentElement);
     }
 }
 
