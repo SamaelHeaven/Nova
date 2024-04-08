@@ -28,11 +28,12 @@ export class Application {
     static updateComponent(component) {
         var _a;
         Application._throwIfUninitialized();
-        if (((_a = component.element) === null || _a === void 0 ? void 0 : _a.component) !== component) {
+        if (((_a = component.element) === null || _a === void 0 ? void 0 : _a.novaComponent) !== component) {
             return;
         }
         const app = Application._getInstance();
-        while (app._updating) { }
+        while (app._updating) {
+        }
         app._updating = true;
         app._updateComponent(component);
         app._updating = false;
@@ -40,7 +41,8 @@ export class Application {
     static updateElement(element) {
         Application._throwIfUninitialized();
         const app = Application._getInstance();
-        while (app._updating) { }
+        while (app._updating) {
+        }
         app._updating = true;
         const newElement = element.cloneNode(true);
         app._updateElement(newElement);
@@ -50,25 +52,21 @@ export class Application {
     static getComponentById(id) {
         var _a;
         Application._throwIfUninitialized();
-        return ((_a = document.getElementById(id)) === null || _a === void 0 ? void 0 : _a.component) || null;
+        return ((_a = document.getElementById(id)) === null || _a === void 0 ? void 0 : _a.novaComponent) || null;
     }
-    static getComponentByClass(clazz) {
+    static getComponentByClass(clazz, element = document.documentElement) {
+        var _a;
         Application._throwIfUninitialized();
         const name = Application._getComponentName(clazz);
-        const element = document.querySelector(name);
-        if (!element) {
-            return null;
-        }
-        return (element === null || element === void 0 ? void 0 : element.component) || null;
+        return ((_a = element.querySelector(name)) === null || _a === void 0 ? void 0 : _a.novaComponent) || null;
     }
-    static getComponentsByClass(clazz) {
+    static getComponentsByClass(clazz, element = document.documentElement) {
         Application._throwIfUninitialized();
         const name = Application._getComponentName(clazz);
-        const elements = Array.from(document.querySelectorAll(name));
         const result = [];
-        for (const element of elements) {
-            if (element === null || element === void 0 ? void 0 : element.component) {
-                result.push(element === null || element === void 0 ? void 0 : element.component);
+        for (const componentElement of Array.from(element.querySelectorAll(name))) {
+            if (componentElement.novaComponent) {
+                result.push(componentElement.novaComponent);
             }
         }
         return result;
@@ -101,14 +99,14 @@ export class Application {
                 }
                 const existingElement = document.getElementById(element.id);
                 let component;
-                if (!existingElement || !(existingElement === null || existingElement === void 0 ? void 0 : existingElement.component)) {
+                if (!existingElement || !existingElement.novaComponent) {
                     component = new componentDefinition.class(element);
                     this._registerEventListeners(component);
-                    element.component = component;
+                    element.novaComponent = component;
                     component.onInit();
                 }
                 else {
-                    component = existingElement === null || existingElement === void 0 ? void 0 : existingElement.component;
+                    component = existingElement.novaComponent;
                 }
                 const renderedContent = component.render();
                 if (!Validation.isNullOrUndefined(renderedContent)) {

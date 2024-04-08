@@ -5,6 +5,6 @@ export declare class Application {
     static updateComponent(component: Component): void;
     static updateElement(element: HTMLElement): void;
     static getComponentById<T extends Component>(id: string): T | null;
-    static getComponentByClass<T extends Component>(clazz: (new (...args: any[]) => T)): T | null;
-    static getComponentsByClass<T extends Component>(clazz: (new (...args: any[]) => T)): T[];
+    static getComponentByClass<T extends Component>(clazz: (new (...args: any[]) => T), element?: HTMLElement): T | null;
+    static getComponentsByClass<T extends Component>(clazz: (new (...args: any[]) => T), element?: HTMLElement): T[];
 }

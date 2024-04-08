@@ -44,12 +44,13 @@ export class Application {
 
     public static updateComponent(component: Component): void {
         Application._throwIfUninitialized();
-        if ((component.element as any)?.component !== component) {
+        if ((component.element as any)?.novaComponent !== component) {
             return;
         }
 
         const app: Application = Application._getInstance();
-        while (app._updating) {}
+        while (app._updating) {
+        }
         app._updating = true;
         app._updateComponent(component);
         app._updating = false;
@@ -58,7 +59,8 @@ export class Application {
     public static updateElement(element: HTMLElement): void {
         Application._throwIfUninitialized();
         const app: Application = Application._getInstance();
-        while (app._updating) {}
+        while (app._updating) {
+        }
         app._updating = true;
         const newElement: HTMLElement = element.cloneNode(true) as HTMLElement;
         app._updateElement(newElement);
@@ -68,28 +70,22 @@ export class Application {
 
     public static getComponentById<T extends Component>(id: string): T | null {
         Application._throwIfUninitialized();
-        return (document.getElementById(id) as any)?.component || null;
+        return (document.getElementById(id) as any)?.novaComponent || null;
     }
 
-    public static getComponentByClass<T extends Component>(clazz: (new (...args: any[]) => T)): T | null {
+    public static getComponentByClass<T extends Component>(clazz: (new (...args: any[]) => T), element: HTMLElement = document.documentElement): T | null {
         Application._throwIfUninitialized();
         const name: string = Application._getComponentName(clazz);
-        const element: HTMLElement = document.querySelector(name);
-        if (!element) {
-            return null;
-        }
-
-        return (element as any)?.component || null;
+        return (element.querySelector(name) as any)?.novaComponent || null;
     }
 
-    public static getComponentsByClass<T extends Component>(clazz: (new (...args: any[]) => T)): T[] {
+    public static getComponentsByClass<T extends Component>(clazz: (new (...args: any[]) => T), element: HTMLElement = document.documentElement): T[] {
         Application._throwIfUninitialized();
         const name: string = Application._getComponentName(clazz);
-        const elements: HTMLElement[] = Array.from(document.querySelectorAll(name));
         const result: T[] = [];
-        for (const element of elements) {
-            if ((element as any)?.component) {
-                result.push((element as any)?.component);
+        for (const componentElement of Array.from(element.querySelectorAll(name))) {
+            if ((componentElement as any).novaComponent) {
+                result.push((componentElement as any).novaComponent);
             }
         }
 
@@ -132,13 +128,13 @@ export class Application {
 
                 const existingElement: HTMLElement = document.getElementById(element.id);
                 let component: Component;
-                if (!existingElement || !(existingElement as any)?.component) {
+                if (!existingElement || !(existingElement as any).novaComponent) {
                     component = new componentDefinition.class(element);
                     this._registerEventListeners(component);
-                    (element as any).component = component;
+                    (element as any).novaComponent = component;
                     component.onInit();
                 } else {
-                    component = (existingElement as any)?.component;
+                    component = (existingElement as any).novaComponent;
                 }
 
                 const renderedContent: string | null | undefined = component.render();
