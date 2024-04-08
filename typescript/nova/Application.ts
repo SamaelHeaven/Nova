@@ -10,7 +10,7 @@ export class Application {
     /** @internal */
     private readonly _eventNames: string[];
     /** @internal */
-    private _components: { name: string, class: (new (...args: any[]) => Component) }[];
+    private _components: { name: string, class: (new (element: HTMLElement) => Component) }[];
 
     private constructor() {
         this._morphdomOptions = {
@@ -25,7 +25,7 @@ export class Application {
         this._components = [];
     }
 
-    public static launch(components: { name: string, class: (new (...args: any[]) => Component) }[]): void {
+    public static launch(components: { name: string, class: (new (element: HTMLElement) => Component) }[]): void {
         if (Application._instance !== null) {
             throw new Error("Application has already been launched");
         }
@@ -40,13 +40,13 @@ export class Application {
         Application._getInstance()._updateComponent(component);
     }
 
-    public static getComponent<T extends Component>(component: (new (...args: any[]) => T), element: HTMLElement = document.documentElement): T | null {
+    public static getComponent<T extends Component>(component: (new (element: HTMLElement) => T), element: HTMLElement = document.documentElement): T | null {
         Application._throwIfUninitialized();
         const name: string = Application._getInstance()._components.find(c => c.class == component).name;
         return (element.getElementsByTagName(name) as any)?.component || null;
     }
 
-    public static getComponents<T extends Component>(component: (new (...args: any[]) => T), element: HTMLElement = document.documentElement): T[] {
+    public static getComponents<T extends Component>(component: (new (element: HTMLElement) => T), element: HTMLElement = document.documentElement): T[] {
         Application._throwIfUninitialized();
         const name: string = Application._getInstance()._components.find(c => c.class == component).name;
         const components: T[] = [];
@@ -117,7 +117,7 @@ export class Application {
     }
 
     /** @internal */
-    private _initializeComponent(component: { name: string, class: (new (...args: any[]) => Component) }): void {
+    private _initializeComponent(component: { name: string, class: (new (element: HTMLElement) => Component) }): void {
         const app = this;
 
         class ComponentElement extends HTMLElement {
