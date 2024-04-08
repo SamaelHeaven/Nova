@@ -17,6 +17,7 @@ export declare abstract class Component {
     getComponents<T extends Component>(component: (new (element: HTMLElement) => T), element?: HTMLElement): T[];
     onInit(): void;
     onAppear(): void;
+    onRender(): void;
     onDestroy(): void;
     onAttributeChanged(attribute: string, oldValue: string, newValue: string): void;
     onClick(event: Events.Mouse): void;

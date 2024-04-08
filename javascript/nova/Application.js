@@ -66,6 +66,7 @@ export class Application {
         }
         newElement.innerHTML = component.render();
         morphdom(component.element, newElement, this._morphdomOptions);
+        component.onRender();
     }
     _initializeComponents() {
         for (const component of this._components) {

@@ -594,6 +594,7 @@ export class Application {
 
         newElement.innerHTML = component.render();
         morphdom(component.element, newElement, this._morphdomOptions);
+        component.onRender();
     }
 
     /** @internal */
@@ -677,6 +678,8 @@ export abstract class Component {
     public onInit(): void {}
 
     public onAppear(): void {}
+
+    public onRender(): void {}
 
     public onDestroy(): void {}
 

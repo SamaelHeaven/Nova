@@ -37,6 +37,8 @@ export abstract class Component {
 
     public onAppear(): void {}
 
+    public onRender(): void {}
+
     public onDestroy(): void {}
 
     public onAttributeChanged(attribute: string, oldValue: string, newValue: string): void {}

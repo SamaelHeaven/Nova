@@ -24,6 +24,7 @@ export class Component {
     }
     onInit() { }
     onAppear() { }
+    onRender() { }
     onDestroy() { }
     onAttributeChanged(attribute, oldValue, newValue) { }
     onClick(event) { }
