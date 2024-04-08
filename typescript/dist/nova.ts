@@ -541,15 +541,15 @@ export class Application {
         Application._getInstance()._updateComponent(component);
     }
 
-    public static getComponent<T extends Component>(componentClass: (new (...args: any[]) => T), element: HTMLElement = document.documentElement): T | null {
+    public static getComponent<T extends Component>(component: (new (...args: any[]) => T), element: HTMLElement = document.documentElement): T | null {
         Application._throwIfUninitialized();
-        const name: string = Application._getInstance()._components.find(component => component.class == componentClass).name;
+        const name: string = Application._getInstance()._components.find(c => c.class == component).name;
         return (element.getElementsByTagName(name) as any)?.component || null;
     }
 
-    public static getComponents<T extends Component>(componentClass: (new (...args: any[]) => T), element: HTMLElement = document.documentElement): T[] {
+    public static getComponents<T extends Component>(component: (new (...args: any[]) => T), element: HTMLElement = document.documentElement): T[] {
         Application._throwIfUninitialized();
-        const name: string = Application._getInstance()._components.find(component => component.class == componentClass).name;
+        const name: string = Application._getInstance()._components.find(c => c.class == component).name;
         const components: T[] = [];
         for (const componentElement of Array.from(element.getElementsByTagName(name))) {
             if ((componentElement as any).component) {
@@ -666,12 +666,12 @@ export abstract class Component {
         }
     }
 
-    public getComponent<T extends Component>(componentClass: (new (...args: any[]) => T), element?: HTMLElement): T | null {
-        return Application.getComponent(componentClass, element);
+    public getComponent<T extends Component>(component: (new (...args: any[]) => T), element?: HTMLElement): T | null {
+        return Application.getComponent(component, element);
     }
 
-    public getComponents<T extends Component>(componentClass: (new (...args: any[]) => T), element?: HTMLElement): T[] {
-        return Application.getComponents(componentClass, element);
+    public getComponents<T extends Component>(component: (new (...args: any[]) => T), element?: HTMLElement): T[] {
+        return Application.getComponents(component, element);
     }
 
     public onInit(): void {}

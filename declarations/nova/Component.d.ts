@@ -4,8 +4,8 @@ export declare abstract class Component {
     render(): string | undefined;
     get element(): HTMLElement;
     update(state: object): void;
-    getComponent<T extends Component>(componentClass: (new (...args: any[]) => T), element?: HTMLElement): T | null;
-    getComponents<T extends Component>(componentClass: (new (...args: any[]) => T), element?: HTMLElement): T[];
+    getComponent<T extends Component>(component: (new (...args: any[]) => T), element?: HTMLElement): T | null;
+    getComponents<T extends Component>(component: (new (...args: any[]) => T), element?: HTMLElement): T[];
     onInit(): void;
     onAppear(): void;
     onDestroy(): void;

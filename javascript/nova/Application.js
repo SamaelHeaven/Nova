@@ -22,15 +22,15 @@ export class Application {
         Application._throwIfUninitialized();
         Application._getInstance()._updateComponent(component);
     }
-    static getComponent(componentClass, element = document.documentElement) {
+    static getComponent(component, element = document.documentElement) {
         var _a;
         Application._throwIfUninitialized();
-        const name = Application._getInstance()._components.find(component => component.class == componentClass).name;
+        const name = Application._getInstance()._components.find(c => c.class == component).name;
         return ((_a = element.getElementsByTagName(name)) === null || _a === void 0 ? void 0 : _a.component) || null;
     }
-    static getComponents(componentClass, element = document.documentElement) {
+    static getComponents(component, element = document.documentElement) {
         Application._throwIfUninitialized();
-        const name = Application._getInstance()._components.find(component => component.class == componentClass).name;
+        const name = Application._getInstance()._components.find(c => c.class == component).name;
         const components = [];
         for (const componentElement of Array.from(element.getElementsByTagName(name))) {
             if (componentElement.component) {
