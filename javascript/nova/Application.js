@@ -72,30 +72,30 @@ export class Application {
             this._initializeComponent(component);
         }
     }
+    _observeAttributes(component) {
+        const observerConfig = { attributes: true, subtree: false };
+        const observer = new MutationObserver((mutationsList, _) => {
+            for (const mutation of mutationsList) {
+                if (mutation.type === 'attributes') {
+                    component.onAttributeChanged(mutation.attributeName, mutation.oldValue, component.element.getAttribute(mutation.attributeName));
+                }
+            }
+        });
+        observer.observe(component.element, observerConfig);
+    }
     _initializeComponent(component) {
         const app = this;
         class ComponentElement extends HTMLElement {
             connectedCallback() {
                 this.component = new component.class(this);
-                this._observeAttributes();
-                this.component.onInit();
+                app._observeAttributes(this.component);
                 app._registerEventListeners(this.component);
+                this.component.onInit();
                 app._updateComponent(this.component);
                 this.component.onAppear();
             }
             disconnectedCallback() {
                 this.component.onDestroy();
-            }
-            _observeAttributes() {
-                const observerConfig = { attributes: true, subtree: false };
-                const observer = new MutationObserver((mutationsList, _) => {
-                    for (const mutation of mutationsList) {
-                        if (mutation.type === 'attributes') {
-                            this.component.onAttributeChanged(mutation.attributeName, mutation.oldValue, this.getAttribute(mutation.attributeName));
-                        }
-                    }
-                });
-                observer.observe(this, observerConfig);
             }
         }
         customElements.define(component.name, ComponentElement);

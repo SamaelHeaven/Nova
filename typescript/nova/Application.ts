@@ -103,6 +103,20 @@ export class Application {
     }
 
     /** @internal */
+    private _observeAttributes(component: Component): void {
+        const observerConfig: MutationObserverInit = {attributes: true, subtree: false};
+        const observer: MutationObserver = new MutationObserver((mutationsList: MutationRecord[], _: MutationObserver): void => {
+            for (const mutation of mutationsList) {
+                if (mutation.type === 'attributes') {
+                    component.onAttributeChanged(mutation.attributeName, mutation.oldValue, component.element.getAttribute(mutation.attributeName))
+                }
+            }
+        });
+
+        observer.observe(component.element, observerConfig);
+    }
+
+    /** @internal */
     private _initializeComponent(component: { name: string, class: (new (...args: any[]) => Component) }): void {
         const app = this;
 
@@ -111,28 +125,15 @@ export class Application {
 
             public connectedCallback(): void {
                 this.component = new component.class(this);
-                this._observeAttributes();
-                this.component.onInit();
+                app._observeAttributes(this.component);
                 app._registerEventListeners(this.component);
+                this.component.onInit();
                 app._updateComponent(this.component);
                 this.component.onAppear();
             }
 
             public disconnectedCallback(): void {
                 this.component.onDestroy();
-            }
-
-            private _observeAttributes(): void {
-                const observerConfig: MutationObserverInit = {attributes: true, subtree: false};
-                const observer: MutationObserver = new MutationObserver((mutationsList: MutationRecord[], _: MutationObserver): void => {
-                    for (const mutation of mutationsList) {
-                        if (mutation.type === 'attributes') {
-                            this.component.onAttributeChanged(mutation.attributeName, mutation.oldValue, this.getAttribute(mutation.attributeName))
-                        }
-                    }
-                });
-
-                observer.observe(this, observerConfig);
             }
         }
 
