@@ -28,7 +28,7 @@ export class Application {
     static updateComponent(component) {
         var _a;
         Application._throwIfUninitialized();
-        if (((_a = component.element) === null || _a === void 0 ? void 0 : _a.novaComponent) !== component) {
+        if (((_a = component.element) === null || _a === void 0 ? void 0 : _a.appComponent) !== component) {
             return;
         }
         const app = Application._getInstance();
@@ -52,21 +52,21 @@ export class Application {
     static getComponentById(id) {
         var _a;
         Application._throwIfUninitialized();
-        return ((_a = document.getElementById(id)) === null || _a === void 0 ? void 0 : _a.novaComponent) || null;
+        return ((_a = document.getElementById(id)) === null || _a === void 0 ? void 0 : _a.appComponent) || null;
     }
     static getComponentByClass(clazz, element = document.documentElement) {
         var _a;
         Application._throwIfUninitialized();
         const name = Application._getComponentName(clazz);
-        return ((_a = element.querySelector(name)) === null || _a === void 0 ? void 0 : _a.novaComponent) || null;
+        return ((_a = element.querySelector(name)) === null || _a === void 0 ? void 0 : _a.appComponent) || null;
     }
     static getComponentsByClass(clazz, element = document.documentElement) {
         Application._throwIfUninitialized();
         const name = Application._getComponentName(clazz);
         const result = [];
         for (const componentElement of Array.from(element.querySelectorAll(name))) {
-            if (componentElement.novaComponent) {
-                result.push(componentElement.novaComponent);
+            if (componentElement.appComponent) {
+                result.push(componentElement.appComponent);
             }
         }
         return result;
@@ -99,14 +99,14 @@ export class Application {
                 }
                 const existingElement = document.getElementById(element.id);
                 let component;
-                if (!existingElement || !existingElement.novaComponent) {
+                if (!existingElement || !existingElement.appComponent) {
                     component = new componentDefinition.class(element);
                     this._registerEventListeners(component);
-                    element.novaComponent = component;
+                    element.appComponent = component;
                     component.onInit();
                 }
                 else {
-                    component = existingElement.novaComponent;
+                    component = existingElement.appComponent;
                 }
                 const renderedContent = component.render();
                 if (!Validation.isNullOrUndefined(renderedContent)) {

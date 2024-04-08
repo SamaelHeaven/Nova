@@ -545,7 +545,7 @@ export class Application {
 
     public static updateComponent(component: Component): void {
         Application._throwIfUninitialized();
-        if ((component.element as any)?.novaComponent !== component) {
+        if ((component.element as any)?.appComponent !== component) {
             return;
         }
 
@@ -571,13 +571,13 @@ export class Application {
 
     public static getComponentById<T extends Component>(id: string): T | null {
         Application._throwIfUninitialized();
-        return (document.getElementById(id) as any)?.novaComponent || null;
+        return (document.getElementById(id) as any)?.appComponent || null;
     }
 
     public static getComponentByClass<T extends Component>(clazz: (new (...args: any[]) => T), element: HTMLElement = document.documentElement): T | null {
         Application._throwIfUninitialized();
         const name: string = Application._getComponentName(clazz);
-        return (element.querySelector(name) as any)?.novaComponent || null;
+        return (element.querySelector(name) as any)?.appComponent || null;
     }
 
     public static getComponentsByClass<T extends Component>(clazz: (new (...args: any[]) => T), element: HTMLElement = document.documentElement): T[] {
@@ -585,8 +585,8 @@ export class Application {
         const name: string = Application._getComponentName(clazz);
         const result: T[] = [];
         for (const componentElement of Array.from(element.querySelectorAll(name))) {
-            if ((componentElement as any).novaComponent) {
-                result.push((componentElement as any).novaComponent);
+            if ((componentElement as any).appComponent) {
+                result.push((componentElement as any).appComponent);
             }
         }
 
@@ -629,13 +629,13 @@ export class Application {
 
                 const existingElement: HTMLElement = document.getElementById(element.id);
                 let component: Component;
-                if (!existingElement || !(existingElement as any).novaComponent) {
+                if (!existingElement || !(existingElement as any).appComponent) {
                     component = new componentDefinition.class(element);
                     this._registerEventListeners(component);
-                    (element as any).novaComponent = component;
+                    (element as any).appComponent = component;
                     component.onInit();
                 } else {
-                    component = (existingElement as any).novaComponent;
+                    component = (existingElement as any).appComponent;
                 }
 
                 const renderedContent: string | null | undefined = component.render();
