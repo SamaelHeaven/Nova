@@ -4,7 +4,7 @@ export class Component {
         this._element = element;
     }
     render() {
-        return null;
+        return undefined;
     }
     get id() {
         return this._element.id;

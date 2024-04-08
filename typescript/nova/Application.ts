@@ -1,5 +1,6 @@
 import {Component} from "./Component.js";
 import {morphdom} from "./morphdom.js";
+import {Validation} from "./Validation.js";
 
 export class Application {
     /** @internal */
@@ -10,6 +11,8 @@ export class Application {
     private readonly _morphdomOptions: object;
     /** @internal */
     private readonly _eventNames: string[];
+    /** @internal */
+    private _updating: boolean;
 
     private constructor() {
         this._componentDefinitions = [];
@@ -22,7 +25,11 @@ export class Application {
     }
 
     public static launch(componentClasses: (new (...args: any[]) => Component)[]): void {
-        const app: Application = this._getInstance();
+        if (Application._instance !== null) {
+            throw new Error("Application has already been launched");
+        }
+
+        const app: Application = Application._getInstance();
         for (const componentClass of componentClasses) {
             app._componentDefinitions.push({
                 name: Application._getComponentName(componentClass),
@@ -30,16 +37,33 @@ export class Application {
             });
         }
 
+        app._updating = true;
         app._updateElement(document.documentElement);
+        app._updating = false;
     }
 
-    public static update(component: Component): void {
+    public static updateComponent(component: Component): void {
         Application._throwIfUninitialized();
         if ((component.element as any).component !== component) {
             return;
         }
 
-        Application._getInstance()._updateComponent(component);
+        const app: Application = Application._getInstance();
+        while (app._updating) {}
+        app._updating = true;
+        app._updateComponent(component);
+        app._updating = false;
+    }
+
+    public static updateElement(element: HTMLElement): void {
+        Application._throwIfUninitialized();
+        const app: Application = Application._getInstance();
+        while (app._updating) {}
+        app._updating = true;
+        const newElement: HTMLElement = element.cloneNode(true) as HTMLElement;
+        app._updateElement(newElement);
+        morphdom(element, newElement, app._morphdomOptions);
+        app._updating = false;
     }
 
     public static getComponentById<T extends Component>(id: string): T | null {
@@ -101,11 +125,7 @@ export class Application {
     /** @internal */
     private _updateElement(root: HTMLElement): void {
         for (const componentDefinition of this._componentDefinitions) {
-            for (const element of Array.from(root.querySelectorAll(componentDefinition.name)) as HTMLElement[]) {
-                if ((element as any).component) {
-                    continue;
-                }
-
+            for (const element of Array.from(root.getElementsByTagName(componentDefinition.name)) as HTMLElement[]) {
                 if (!element.id || document.querySelectorAll(`#${element.id}`).length > 1) {
                     throw new Error("Components must have an unique id");
                 }
@@ -121,8 +141,8 @@ export class Application {
                     component = (existingElement as any).component;
                 }
 
-                const renderedContent: string | null = component.render();
-                if (renderedContent !== null) {
+                const renderedContent: string | null | undefined = component.render();
+                if (!Validation.isNullOrUndefined(renderedContent)) {
                     element.innerHTML = renderedContent;
                 }
 
@@ -135,8 +155,8 @@ export class Application {
     private _registerEventListeners(component: Component): void {
         for (const key of component.getKeys()) {
             const eventType: string = key.substring(2).toLowerCase();
-            if (this._eventNames.indexOf(eventType) !== -1) {
-                component.element.addEventListener(eventType, (event: Event) => {
+            if (this._eventNames.includes(eventType)) {
+                component.element.addEventListener(eventType, (event: Event): void => {
                     (component as any)[key](event);
                 });
             }
@@ -146,8 +166,8 @@ export class Application {
     /** @internal */
     private _updateComponent(component: Component): void {
         const newElement: HTMLElement = component.element.cloneNode(false) as HTMLElement;
-        const renderedContent: string | null = component.render();
-        if (renderedContent === null) {
+        const renderedContent: string | null | undefined = component.render();
+        if (Validation.isNullOrUndefined(renderedContent)) {
             return;
         }
 

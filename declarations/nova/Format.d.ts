@@ -5,5 +5,5 @@ export declare namespace Format {
     function lowerCase(arg: any): string;
     function percentage(arg: any, digits: number): string;
     function decimal(arg: any, digits: number): string;
-    function currency(amount: number, code?: string): string;
+    function currency(amount: number, currency?: string): string;
 }

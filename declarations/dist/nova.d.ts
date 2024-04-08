@@ -1,14 +1,15 @@
 export declare class Application {
     private constructor();
     static launch(componentClasses: (new (...args: any[]) => Component)[]): void;
-    static update(component: Component): void;
+    static updateComponent(component: Component): void;
+    static updateElement(element: HTMLElement): void;
     static getComponentById<T extends Component>(id: string): T | null;
     static getComponentByClass<T extends Component>(clazz: (new (...args: any[]) => T)): T | null;
     static getComponentsByClass<T extends Component>(clazz: (new (...args: any[]) => T)): T[];
 }
 export declare abstract class Component {
     constructor(element: HTMLElement);
-    render(): string | null;
+    render(): string | null | undefined;
     get id(): string;
     get element(): HTMLElement;
     getAttribute(name: string, defaultValue?: string | null): string | null;
@@ -77,65 +78,42 @@ export declare namespace Format {
     function lowerCase(arg: any): string;
     function percentage(arg: any, digits: number): string;
     function decimal(arg: any, digits: number): string;
-    function currency(amount: number, code?: string): string;
+    function currency(amount: number, currency?: string): string;
 }
-export declare class LocalStorage {
-    static getItem<T>(key: string): T | null;
-    static setItem<T>(key: string, value: T, ttl?: number | undefined): void;
+export declare namespace LocalStorage {
+    function getItem<T>(key: string): T | null;
+    function setItem<T>(key: string, value: T, ttl?: number | undefined): void;
 }
 export declare function State(target: any, key: string): void;
 export declare namespace Validation {
-    function equals(value: any, expected: any): boolean;
-    function notEquals(value: any, expected: any): boolean;
-    function email(email: string): boolean;
-    function phoneNumber(phoneNumber: string): boolean;
-    function date(date: Date, expected: Date): boolean;
-    function dateMin(date: Date, minDate: Date): boolean;
-    function dateMax(date: Date, maxDate: Date): boolean;
-    function dateRange(date: Date, minDate: Date, maxDate: Date): boolean;
-    function positiveInteger(value: string): boolean;
-    function negativeInteger(value: string): boolean;
-    function integer(value: string): boolean;
-    function positiveNumeric(value: string): boolean;
-    function negativeNumeric(value: string): boolean;
-    function numeric(value: string): boolean;
-    function numberMin(value: number, min: number): boolean;
-    function numberMax(value: number, max: number): boolean;
-    function numberRange(value: number, min: number, max: number): boolean;
+    function isEmail(email: string): boolean;
+    function isPhoneNumber(phoneNumber: string): boolean;
+    function isDateEquals(date: Date, expected: Date): boolean;
+    function isDateAfter(date: Date, minDate: Date): boolean;
+    function isDateBefore(date: Date, maxDate: Date): boolean;
+    function isDateBetween(date: Date, minDate: Date, maxDate: Date): boolean;
+    function isPositiveInteger(value: string): boolean;
+    function isNegativeInteger(value: string): boolean;
+    function isInteger(value: string): boolean;
+    function isPositiveNumeric(value: string): boolean;
+    function isNegativeNumeric(value: string): boolean;
+    function isNumeric(value: string): boolean;
+    function isInRange(value: number, min: number, max: number): boolean;
     function isString(value: any): boolean;
     function isNumber(value: any): boolean;
-    function notNaN(value: number): boolean;
+    function isBoolean(value: any): boolean;
+    function isArray(value: any): boolean;
+    function isJson(value: string): boolean;
+    function isFiniteNumber(value: any): boolean;
     function isNan(value: number): boolean;
-    function notInfinity(value: number): boolean;
     function isInfinity(value: number): boolean;
-    function regex(value: string, regex: RegExp): boolean;
-    function length(value: {
-        length: number;
-    }, expectedLength: number): boolean;
-    function lengthMin(value: {
-        length: number;
-    }, minLength: number): boolean;
-    function lengthMax(value: {
-        length: number;
-    }, maxLength: number): boolean;
-    function lengthRange(value: {
-        length: number;
-    }, minLength: number, maxLength: number): boolean;
+    function isRegex(value: string, regex: RegExp): boolean;
     function isEmpty(value: {
         length: number;
     }): boolean;
-    function notEmpty(value: {
-        length: number;
-    }): boolean;
     function isNull(value: any): boolean;
-    function notNull(value: any): boolean;
     function isUndefined(value: any): boolean;
-    function notUndefined(value: any): boolean;
-    function notNullOrUndefined(value: any): boolean;
     function isNullOrUndefined(value: any): boolean;
-    function notNullOrUndefinedOrEmpty(value: null | undefined | {
-        length: number;
-    }): boolean;
     function isNullOrUndefinedOrEmpty(value: null | undefined | {
         length: number;
     }): boolean;

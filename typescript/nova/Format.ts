@@ -101,10 +101,10 @@ export namespace Format {
         return value.toFixed(digits);
     }
 
-    export function currency(amount: number, code: string = "USD"): string {
+    export function currency(amount: number, currency: string = "USD"): string {
         return amount.toLocaleString(undefined, {
             style: 'currency',
-            currency: code
+            currency: currency
         });
     }
 }

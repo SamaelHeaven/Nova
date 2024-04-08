@@ -35,7 +35,7 @@ export class EmailInputComponent extends Component {
         `;
     }
     _onDebounceInput(event) {
-        this._valid = Validation.email(event.target.value.trim());
+        this._valid = Validation.isEmail(event.target.value.trim());
     }
 }
 __decorate([

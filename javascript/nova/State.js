@@ -8,7 +8,7 @@ export function State(target, key) {
     const setter = function (newValue) {
         value = newValue;
         if (this instanceof Component) {
-            Application.update(this);
+            Application.updateComponent(this);
         }
     };
     Object.defineProperty(target, key, {

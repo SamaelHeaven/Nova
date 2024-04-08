@@ -103,10 +103,10 @@ export var Format;
         return value.toFixed(digits);
     }
     Format.decimal = decimal;
-    function currency(amount, code = "USD") {
+    function currency(amount, currency = "USD") {
         return amount.toLocaleString(undefined, {
             style: 'currency',
-            currency: code
+            currency: currency
         });
     }
     Format.currency = currency;

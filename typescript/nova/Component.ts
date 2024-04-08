@@ -9,8 +9,8 @@ export abstract class Component {
         this._element = element;
     }
 
-    public render(): string | null {
-        return null;
+    public render(): string | null | undefined {
+        return undefined;
     }
 
     public get id(): string {

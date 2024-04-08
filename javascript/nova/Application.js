@@ -1,4 +1,5 @@
 import { morphdom } from "./morphdom.js";
+import { Validation } from "./Validation.js";
 export class Application {
     constructor() {
         this._componentDefinitions = [];
@@ -10,21 +11,40 @@ export class Application {
         this._eventNames = ["click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseenter", "mouseleave", "mouseover", "mouseout", "keydown", "keypress", "keyup", "focus", "blur", "input", "change", "submit", "scroll", "error", "resize", "select", "touchstart", "touchmove", "touchend", "touchcancel", "animationstart", "animationend", "animationiteration", "transitionstart", "transitionend", "transitioncancel"];
     }
     static launch(componentClasses) {
-        const app = this._getInstance();
+        if (Application._instance !== null) {
+            throw new Error("Application has already been launched");
+        }
+        const app = Application._getInstance();
         for (const componentClass of componentClasses) {
             app._componentDefinitions.push({
                 name: Application._getComponentName(componentClass),
                 class: componentClass
             });
         }
+        app._updating = true;
         app._updateElement(document.documentElement);
+        app._updating = false;
     }
-    static update(component) {
+    static updateComponent(component) {
         Application._throwIfUninitialized();
         if (component.element.component !== component) {
             return;
         }
-        Application._getInstance()._updateComponent(component);
+        const app = Application._getInstance();
+        while (app._updating) { }
+        app._updating = true;
+        app._updateComponent(component);
+        app._updating = false;
+    }
+    static updateElement(element) {
+        Application._throwIfUninitialized();
+        const app = Application._getInstance();
+        while (app._updating) { }
+        app._updating = true;
+        const newElement = element.cloneNode(true);
+        app._updateElement(newElement);
+        morphdom(element, newElement, app._morphdomOptions);
+        app._updating = false;
     }
     static getComponentById(id) {
         var _a;
@@ -75,10 +95,7 @@ export class Application {
     }
     _updateElement(root) {
         for (const componentDefinition of this._componentDefinitions) {
-            for (const element of Array.from(root.querySelectorAll(componentDefinition.name))) {
-                if (element.component) {
-                    continue;
-                }
+            for (const element of Array.from(root.getElementsByTagName(componentDefinition.name))) {
                 if (!element.id || document.querySelectorAll(`#${element.id}`).length > 1) {
                     throw new Error("Components must have an unique id");
                 }
@@ -94,7 +111,7 @@ export class Application {
                     component = existingElement.component;
                 }
                 const renderedContent = component.render();
-                if (renderedContent !== null) {
+                if (!Validation.isNullOrUndefined(renderedContent)) {
                     element.innerHTML = renderedContent;
                 }
                 this._updateElement(element);
@@ -104,7 +121,7 @@ export class Application {
     _registerEventListeners(component) {
         for (const key of component.getKeys()) {
             const eventType = key.substring(2).toLowerCase();
-            if (this._eventNames.indexOf(eventType) !== -1) {
+            if (this._eventNames.includes(eventType)) {
                 component.element.addEventListener(eventType, (event) => {
                     component[key](event);
                 });
@@ -114,7 +131,7 @@ export class Application {
     _updateComponent(component) {
         const newElement = component.element.cloneNode(false);
         const renderedContent = component.render();
-        if (renderedContent === null) {
+        if (Validation.isNullOrUndefined(renderedContent)) {
             return;
         }
         newElement.innerHTML = component.render();

@@ -27,6 +27,6 @@ export class EmailInputComponent extends Component {
     }
 
     private _onDebounceInput(event: Events.Input): void {
-        this._valid = Validation.email((event.target as HTMLInputElement).value.trim());
+        this._valid = Validation.isEmail((event.target as HTMLInputElement).value.trim());
     }
 }

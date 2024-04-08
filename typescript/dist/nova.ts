@@ -512,6 +512,8 @@ export class Application {
     private readonly _morphdomOptions: object;
     /** @internal */
     private readonly _eventNames: string[];
+    /** @internal */
+    private _updating: boolean;
 
     private constructor() {
         this._componentDefinitions = [];
@@ -524,7 +526,11 @@ export class Application {
     }
 
     public static launch(componentClasses: (new (...args: any[]) => Component)[]): void {
-        const app: Application = this._getInstance();
+        if (Application._instance !== null) {
+            throw new Error("Application has already been launched");
+        }
+
+        const app: Application = Application._getInstance();
         for (const componentClass of componentClasses) {
             app._componentDefinitions.push({
                 name: Application._getComponentName(componentClass),
@@ -532,16 +538,33 @@ export class Application {
             });
         }
 
+        app._updating = true;
         app._updateElement(document.documentElement);
+        app._updating = false;
     }
 
-    public static update(component: Component): void {
+    public static updateComponent(component: Component): void {
         Application._throwIfUninitialized();
         if ((component.element as any).component !== component) {
             return;
         }
 
-        Application._getInstance()._updateComponent(component);
+        const app: Application = Application._getInstance();
+        while (app._updating) {}
+        app._updating = true;
+        app._updateComponent(component);
+        app._updating = false;
+    }
+
+    public static updateElement(element: HTMLElement): void {
+        Application._throwIfUninitialized();
+        const app: Application = Application._getInstance();
+        while (app._updating) {}
+        app._updating = true;
+        const newElement: HTMLElement = element.cloneNode(true) as HTMLElement;
+        app._updateElement(newElement);
+        morphdom(element, newElement, app._morphdomOptions);
+        app._updating = false;
     }
 
     public static getComponentById<T extends Component>(id: string): T | null {
@@ -603,11 +626,7 @@ export class Application {
     /** @internal */
     private _updateElement(root: HTMLElement): void {
         for (const componentDefinition of this._componentDefinitions) {
-            for (const element of Array.from(root.querySelectorAll(componentDefinition.name)) as HTMLElement[]) {
-                if ((element as any).component) {
-                    continue;
-                }
-
+            for (const element of Array.from(root.getElementsByTagName(componentDefinition.name)) as HTMLElement[]) {
                 if (!element.id || document.querySelectorAll(`#${element.id}`).length > 1) {
                     throw new Error("Components must have an unique id");
                 }
@@ -623,8 +642,8 @@ export class Application {
                     component = (existingElement as any).component;
                 }
 
-                const renderedContent: string | null = component.render();
-                if (renderedContent !== null) {
+                const renderedContent: string | null | undefined = component.render();
+                if (!Validation.isNullOrUndefined(renderedContent)) {
                     element.innerHTML = renderedContent;
                 }
 
@@ -637,8 +656,8 @@ export class Application {
     private _registerEventListeners(component: Component): void {
         for (const key of component.getKeys()) {
             const eventType: string = key.substring(2).toLowerCase();
-            if (this._eventNames.indexOf(eventType) !== -1) {
-                component.element.addEventListener(eventType, (event: Event) => {
+            if (this._eventNames.includes(eventType)) {
+                component.element.addEventListener(eventType, (event: Event): void => {
                     (component as any)[key](event);
                 });
             }
@@ -648,8 +667,8 @@ export class Application {
     /** @internal */
     private _updateComponent(component: Component): void {
         const newElement: HTMLElement = component.element.cloneNode(false) as HTMLElement;
-        const renderedContent: string | null = component.render();
-        if (renderedContent === null) {
+        const renderedContent: string | null | undefined = component.render();
+        if (Validation.isNullOrUndefined(renderedContent)) {
             return;
         }
 
@@ -667,8 +686,8 @@ export abstract class Component {
         this._element = element;
     }
 
-    public render(): string | null {
-        return null;
+    public render(): string | null | undefined {
+        return undefined;
     }
 
     public get id(): string {
@@ -923,10 +942,10 @@ export namespace Format {
         return value.toFixed(digits);
     }
 
-    export function currency(amount: number, code: string = "USD"): string {
+    export function currency(amount: number, currency: string = "USD"): string {
         return amount.toLocaleString(undefined, {
             style: 'currency',
-            currency: code
+            currency: currency
         });
     }
 }
@@ -936,8 +955,8 @@ type Item<T> = {
     expiry: number | undefined;
 };
 
-export class LocalStorage {
-    public static getItem<T>(key: string): T | null {
+export namespace LocalStorage {
+    export function getItem<T>(key: string): T | null {
         const itemString: string = localStorage.getItem(key);
         if (!itemString) {
             return null;
@@ -952,7 +971,7 @@ export class LocalStorage {
         return item.value;
     }
 
-    public static setItem<T>(key: string, value: T, ttl: number | undefined = undefined): void {
+    export function setItem<T>(key: string, value: T, ttl: number | undefined = undefined): void {
         const item: Item<T> = {
             value,
             expiry: ttl !== undefined ? new Date().getTime() + ttl : undefined
@@ -971,7 +990,7 @@ export function State(target: any, key: string): void {
     const setter = function (newValue: any): void {
         value = newValue;
         if (this instanceof Component) {
-            Application.update(this);
+            Application.updateComponent(this);
         }
     };
 
@@ -984,71 +1003,55 @@ export function State(target: any, key: string): void {
 }
 
 export namespace Validation {
-    export function equals(value: any, expected: any): boolean {
-        return value === expected;
-    }
-
-    export function notEquals(value: any, expected: any): boolean {
-        return value !== expected;
-    }
-
-    export function email(email: string): boolean {
+    export function isEmail(email: string): boolean {
         return !!email.match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
     }
 
-    export function phoneNumber(phoneNumber: string): boolean {
+    export function isPhoneNumber(phoneNumber: string): boolean {
         return !!phoneNumber.match(/^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/im);
     }
 
-    export function date(date: Date, expected: Date): boolean {
+    export function isDateEquals(date: Date, expected: Date): boolean {
         return date.getTime() === expected.getTime();
     }
 
-    export function dateMin(date: Date, minDate: Date): boolean {
-        return date.getTime() >= minDate.getTime();
+    export function isDateAfter(date: Date, minDate: Date): boolean {
+        return date.getTime() > minDate.getTime();
     }
 
-    export function dateMax(date: Date, maxDate: Date): boolean {
-        return date.getTime() <= maxDate.getTime();
+    export function isDateBefore(date: Date, maxDate: Date): boolean {
+        return date.getTime() < maxDate.getTime();
     }
 
-    export function dateRange(date: Date, minDate: Date, maxDate: Date): boolean {
+    export function isDateBetween(date: Date, minDate: Date, maxDate: Date): boolean {
         return date.getTime() >= minDate.getTime() && date.getTime() <= maxDate.getTime();
     }
 
-    export function positiveInteger(value: string): boolean {
+    export function isPositiveInteger(value: string): boolean {
         return !!value.match(/^\d+$/);
     }
 
-    export function negativeInteger(value: string): boolean {
+    export function isNegativeInteger(value: string): boolean {
         return !!value.match(/^-\d+$/);
     }
 
-    export function integer(value: string): boolean {
+    export function isInteger(value: string): boolean {
         return !!value.match(/^(-?\d+)$/);
     }
 
-    export function positiveNumeric(value: string): boolean {
+    export function isPositiveNumeric(value: string): boolean {
         return !!value.match(/^\d+(\.\d+)?$/);
     }
 
-    export function negativeNumeric(value: string): boolean {
+    export function isNegativeNumeric(value: string): boolean {
         return !!value.match(/^-\d+(\.\d+)?$/);
     }
 
-    export function numeric(value: string): boolean {
+    export function isNumeric(value: string): boolean {
         return !!value.match(/^(-?\d+(\.\d+)?)$/);
     }
 
-    export function numberMin(value: number, min: number): boolean {
-        return value >= min;
-    }
-
-    export function numberMax(value: number, max: number): boolean {
-        return value <= max;
-    }
-
-    export function numberRange(value: number, min: number, max: number): boolean {
+    export function isInRange(value: number, min: number, max: number): boolean {
         return value >= min && value <= max;
     }
 
@@ -1060,76 +1063,53 @@ export namespace Validation {
         return typeof value === "number";
     }
 
-    export function notNaN(value: number): boolean {
-        return !isNaN(value);
+    export function isBoolean(value: any): boolean {
+        return typeof value === "boolean";
+    }
+
+    export function isArray(value: any): boolean {
+        return Array.isArray(value);
+    }
+
+    export function isJson(value: string): boolean {
+        try {
+            JSON.parse(value);
+            return true;
+        } catch (_) {
+            return false;
+        }
+    }
+
+    export function isFiniteNumber(value: any): boolean {
+        return typeof value === "number" && isFinite(value);
     }
 
     export function isNan(value: number): boolean {
         return isNaN(value);
     }
 
-    export function notInfinity(value: number): boolean {
-        return value !== Infinity && value !== -Infinity;
-    }
-
     export function isInfinity(value: number): boolean {
         return value === Infinity || value === -Infinity;
     }
 
-    export function regex(value: string, regex: RegExp): boolean {
+    export function isRegex(value: string, regex: RegExp): boolean {
         return regex.test(value);
-    }
-
-    export function length(value: { length: number }, expectedLength: number): boolean {
-        return value.length === expectedLength;
-    }
-
-    export function lengthMin(value: { length: number }, minLength: number): boolean {
-        return value.length >= minLength;
-    }
-
-    export function lengthMax(value: { length: number }, maxLength: number): boolean {
-        return value.length <= maxLength;
-    }
-
-    export function lengthRange(value: { length: number }, minLength: number, maxLength: number): boolean {
-        return value.length >= minLength && value.length <= maxLength;
     }
 
     export function isEmpty(value: { length: number }): boolean {
         return value.length === 0;
     }
 
-    export function notEmpty(value: { length: number }): boolean {
-        return value.length > 0;
-    }
-
     export function isNull(value: any): boolean {
         return value === null;
-    }
-
-    export function notNull(value: any): boolean {
-        return value !== null;
     }
 
     export function isUndefined(value: any): boolean {
         return value === undefined;
     }
 
-    export function notUndefined(value: any): boolean {
-        return value !== undefined;
-    }
-
-    export function notNullOrUndefined(value: any): boolean {
-        return value !== null && value !== undefined;
-    }
-
     export function isNullOrUndefined(value: any): boolean {
         return value === null || value === undefined;
-    }
-
-    export function notNullOrUndefinedOrEmpty(value: null | undefined | { length: number }): boolean {
-        return value !== null && value !== undefined && value.length > 0;
     }
 
     export function isNullOrUndefinedOrEmpty(value: null | undefined | { length: number }): boolean {

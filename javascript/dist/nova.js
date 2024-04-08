@@ -511,21 +511,40 @@ export class Application {
         this._eventNames = ["click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseenter", "mouseleave", "mouseover", "mouseout", "keydown", "keypress", "keyup", "focus", "blur", "input", "change", "submit", "scroll", "error", "resize", "select", "touchstart", "touchmove", "touchend", "touchcancel", "animationstart", "animationend", "animationiteration", "transitionstart", "transitionend", "transitioncancel"];
     }
     static launch(componentClasses) {
-        const app = this._getInstance();
+        if (Application._instance !== null) {
+            throw new Error("Application has already been launched");
+        }
+        const app = Application._getInstance();
         for (const componentClass of componentClasses) {
             app._componentDefinitions.push({
                 name: Application._getComponentName(componentClass),
                 class: componentClass
             });
         }
+        app._updating = true;
         app._updateElement(document.documentElement);
+        app._updating = false;
     }
-    static update(component) {
+    static updateComponent(component) {
         Application._throwIfUninitialized();
         if (component.element.component !== component) {
             return;
         }
-        Application._getInstance()._updateComponent(component);
+        const app = Application._getInstance();
+        while (app._updating) { }
+        app._updating = true;
+        app._updateComponent(component);
+        app._updating = false;
+    }
+    static updateElement(element) {
+        Application._throwIfUninitialized();
+        const app = Application._getInstance();
+        while (app._updating) { }
+        app._updating = true;
+        const newElement = element.cloneNode(true);
+        app._updateElement(newElement);
+        morphdom(element, newElement, app._morphdomOptions);
+        app._updating = false;
     }
     static getComponentById(id) {
         var _a;
@@ -576,10 +595,7 @@ export class Application {
     }
     _updateElement(root) {
         for (const componentDefinition of this._componentDefinitions) {
-            for (const element of Array.from(root.querySelectorAll(componentDefinition.name))) {
-                if (element.component) {
-                    continue;
-                }
+            for (const element of Array.from(root.getElementsByTagName(componentDefinition.name))) {
                 if (!element.id || document.querySelectorAll(`#${element.id}`).length > 1) {
                     throw new Error("Components must have an unique id");
                 }
@@ -595,7 +611,7 @@ export class Application {
                     component = existingElement.component;
                 }
                 const renderedContent = component.render();
-                if (renderedContent !== null) {
+                if (!Validation.isNullOrUndefined(renderedContent)) {
                     element.innerHTML = renderedContent;
                 }
                 this._updateElement(element);
@@ -605,7 +621,7 @@ export class Application {
     _registerEventListeners(component) {
         for (const key of component.getKeys()) {
             const eventType = key.substring(2).toLowerCase();
-            if (this._eventNames.indexOf(eventType) !== -1) {
+            if (this._eventNames.includes(eventType)) {
                 component.element.addEventListener(eventType, (event) => {
                     component[key](event);
                 });
@@ -615,7 +631,7 @@ export class Application {
     _updateComponent(component) {
         const newElement = component.element.cloneNode(false);
         const renderedContent = component.render();
-        if (renderedContent === null) {
+        if (Validation.isNullOrUndefined(renderedContent)) {
             return;
         }
         newElement.innerHTML = component.render();
@@ -629,7 +645,7 @@ export class Component {
         this._element = element;
     }
     render() {
-        return null;
+        return undefined;
     }
     get id() {
         return this._element.id;
@@ -823,16 +839,17 @@ export var Format;
         return value.toFixed(digits);
     }
     Format.decimal = decimal;
-    function currency(amount, code = "USD") {
+    function currency(amount, currency = "USD") {
         return amount.toLocaleString(undefined, {
             style: 'currency',
-            currency: code
+            currency: currency
         });
     }
     Format.currency = currency;
 })(Format || (Format = {}));
-export class LocalStorage {
-    static getItem(key) {
+export var LocalStorage;
+(function (LocalStorage) {
+    function getItem(key) {
         const itemString = localStorage.getItem(key);
         if (!itemString) {
             return null;
@@ -844,14 +861,16 @@ export class LocalStorage {
         }
         return item.value;
     }
-    static setItem(key, value, ttl = undefined) {
+    LocalStorage.getItem = getItem;
+    function setItem(key, value, ttl = undefined) {
         const item = {
             value,
             expiry: ttl !== undefined ? new Date().getTime() + ttl : undefined
         };
         localStorage.setItem(key, JSON.stringify(item));
     }
-}
+    LocalStorage.setItem = setItem;
+})(LocalStorage || (LocalStorage = {}));
 export function State(target, key) {
     let value = target[key];
     const getter = function () {
@@ -860,7 +879,7 @@ export function State(target, key) {
     const setter = function (newValue) {
         value = newValue;
         if (this instanceof Component) {
-            Application.update(this);
+            Application.updateComponent(this);
         }
     };
     Object.defineProperty(target, key, {
@@ -872,74 +891,58 @@ export function State(target, key) {
 }
 export var Validation;
 (function (Validation) {
-    function equals(value, expected) {
-        return value === expected;
-    }
-    Validation.equals = equals;
-    function notEquals(value, expected) {
-        return value !== expected;
-    }
-    Validation.notEquals = notEquals;
-    function email(email) {
+    function isEmail(email) {
         return !!email.match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
     }
-    Validation.email = email;
-    function phoneNumber(phoneNumber) {
+    Validation.isEmail = isEmail;
+    function isPhoneNumber(phoneNumber) {
         return !!phoneNumber.match(/^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/im);
     }
-    Validation.phoneNumber = phoneNumber;
-    function date(date, expected) {
+    Validation.isPhoneNumber = isPhoneNumber;
+    function isDateEquals(date, expected) {
         return date.getTime() === expected.getTime();
     }
-    Validation.date = date;
-    function dateMin(date, minDate) {
-        return date.getTime() >= minDate.getTime();
+    Validation.isDateEquals = isDateEquals;
+    function isDateAfter(date, minDate) {
+        return date.getTime() > minDate.getTime();
     }
-    Validation.dateMin = dateMin;
-    function dateMax(date, maxDate) {
-        return date.getTime() <= maxDate.getTime();
+    Validation.isDateAfter = isDateAfter;
+    function isDateBefore(date, maxDate) {
+        return date.getTime() < maxDate.getTime();
     }
-    Validation.dateMax = dateMax;
-    function dateRange(date, minDate, maxDate) {
+    Validation.isDateBefore = isDateBefore;
+    function isDateBetween(date, minDate, maxDate) {
         return date.getTime() >= minDate.getTime() && date.getTime() <= maxDate.getTime();
     }
-    Validation.dateRange = dateRange;
-    function positiveInteger(value) {
+    Validation.isDateBetween = isDateBetween;
+    function isPositiveInteger(value) {
         return !!value.match(/^\d+$/);
     }
-    Validation.positiveInteger = positiveInteger;
-    function negativeInteger(value) {
+    Validation.isPositiveInteger = isPositiveInteger;
+    function isNegativeInteger(value) {
         return !!value.match(/^-\d+$/);
     }
-    Validation.negativeInteger = negativeInteger;
-    function integer(value) {
+    Validation.isNegativeInteger = isNegativeInteger;
+    function isInteger(value) {
         return !!value.match(/^(-?\d+)$/);
     }
-    Validation.integer = integer;
-    function positiveNumeric(value) {
+    Validation.isInteger = isInteger;
+    function isPositiveNumeric(value) {
         return !!value.match(/^\d+(\.\d+)?$/);
     }
-    Validation.positiveNumeric = positiveNumeric;
-    function negativeNumeric(value) {
+    Validation.isPositiveNumeric = isPositiveNumeric;
+    function isNegativeNumeric(value) {
         return !!value.match(/^-\d+(\.\d+)?$/);
     }
-    Validation.negativeNumeric = negativeNumeric;
-    function numeric(value) {
+    Validation.isNegativeNumeric = isNegativeNumeric;
+    function isNumeric(value) {
         return !!value.match(/^(-?\d+(\.\d+)?)$/);
     }
-    Validation.numeric = numeric;
-    function numberMin(value, min) {
-        return value >= min;
-    }
-    Validation.numberMin = numberMin;
-    function numberMax(value, max) {
-        return value <= max;
-    }
-    Validation.numberMax = numberMax;
-    function numberRange(value, min, max) {
+    Validation.isNumeric = isNumeric;
+    function isInRange(value, min, max) {
         return value >= min && value <= max;
     }
-    Validation.numberRange = numberRange;
+    Validation.isInRange = isInRange;
     function isString(value) {
         return typeof value === "string";
     }
@@ -948,78 +951,56 @@ export var Validation;
         return typeof value === "number";
     }
     Validation.isNumber = isNumber;
-    function notNaN(value) {
-        return !isNaN(value);
+    function isBoolean(value) {
+        return typeof value === "boolean";
     }
-    Validation.notNaN = notNaN;
+    Validation.isBoolean = isBoolean;
+    function isArray(value) {
+        return Array.isArray(value);
+    }
+    Validation.isArray = isArray;
+    function isJson(value) {
+        try {
+            JSON.parse(value);
+            return true;
+        }
+        catch (_) {
+            return false;
+        }
+    }
+    Validation.isJson = isJson;
+    function isFiniteNumber(value) {
+        return typeof value === "number" && isFinite(value);
+    }
+    Validation.isFiniteNumber = isFiniteNumber;
     function isNan(value) {
         return isNaN(value);
     }
     Validation.isNan = isNan;
-    function notInfinity(value) {
-        return value !== Infinity && value !== -Infinity;
-    }
-    Validation.notInfinity = notInfinity;
     function isInfinity(value) {
         return value === Infinity || value === -Infinity;
     }
     Validation.isInfinity = isInfinity;
-    function regex(value, regex) {
+    function isRegex(value, regex) {
         return regex.test(value);
     }
-    Validation.regex = regex;
-    function length(value, expectedLength) {
-        return value.length === expectedLength;
-    }
-    Validation.length = length;
-    function lengthMin(value, minLength) {
-        return value.length >= minLength;
-    }
-    Validation.lengthMin = lengthMin;
-    function lengthMax(value, maxLength) {
-        return value.length <= maxLength;
-    }
-    Validation.lengthMax = lengthMax;
-    function lengthRange(value, minLength, maxLength) {
-        return value.length >= minLength && value.length <= maxLength;
-    }
-    Validation.lengthRange = lengthRange;
+    Validation.isRegex = isRegex;
     function isEmpty(value) {
         return value.length === 0;
     }
     Validation.isEmpty = isEmpty;
-    function notEmpty(value) {
-        return value.length > 0;
-    }
-    Validation.notEmpty = notEmpty;
     function isNull(value) {
         return value === null;
     }
     Validation.isNull = isNull;
-    function notNull(value) {
-        return value !== null;
-    }
-    Validation.notNull = notNull;
     function isUndefined(value) {
         return value === undefined;
     }
     Validation.isUndefined = isUndefined;
-    function notUndefined(value) {
-        return value !== undefined;
-    }
-    Validation.notUndefined = notUndefined;
-    function notNullOrUndefined(value) {
-        return value !== null && value !== undefined;
-    }
-    Validation.notNullOrUndefined = notNullOrUndefined;
     function isNullOrUndefined(value) {
         return value === null || value === undefined;
     }
     Validation.isNullOrUndefined = isNullOrUndefined;
-    function notNullOrUndefinedOrEmpty(value) {
-        return value !== null && value !== undefined && value.length > 0;
-    }
-    Validation.notNullOrUndefinedOrEmpty = notNullOrUndefinedOrEmpty;
     function isNullOrUndefinedOrEmpty(value) {
         return value === null || value === undefined || value.length <= 0;
     }

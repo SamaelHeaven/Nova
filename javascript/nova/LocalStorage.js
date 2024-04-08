@@ -1,5 +1,6 @@
-export class LocalStorage {
-    static getItem(key) {
+export var LocalStorage;
+(function (LocalStorage) {
+    function getItem(key) {
         const itemString = localStorage.getItem(key);
         if (!itemString) {
             return null;
@@ -11,11 +12,13 @@ export class LocalStorage {
         }
         return item.value;
     }
-    static setItem(key, value, ttl = undefined) {
+    LocalStorage.getItem = getItem;
+    function setItem(key, value, ttl = undefined) {
         const item = {
             value,
             expiry: ttl !== undefined ? new Date().getTime() + ttl : undefined
         };
         localStorage.setItem(key, JSON.stringify(item));
     }
-}
+    LocalStorage.setItem = setItem;
+})(LocalStorage || (LocalStorage = {}));

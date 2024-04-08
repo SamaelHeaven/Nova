@@ -11,7 +11,7 @@ export function State(target: any, key: string): void {
     const setter = function (newValue: any): void {
         value = newValue;
         if (this instanceof Component) {
-            Application.update(this);
+            Application.updateComponent(this);
         }
     };
 

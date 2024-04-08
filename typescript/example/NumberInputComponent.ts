@@ -12,17 +12,17 @@ export class NumberInputComponent extends Component {
             numericValue = numericValue.substring(1);
         }
 
-        if (Validation.notEmpty(numericValue) && Validation.numberRange(Number(numericValue), this._min, this._max)) {
+        if (!Validation.isEmpty(numericValue) && Validation.isInRange(Number(numericValue), this._min, this._max)) {
             inputElement.value = numericValue;
             return;
         }
 
-        if (!Validation.numberMin(Number(numericValue), this._min)) {
+        if (Number(numericValue) <= this._min) {
             inputElement.value = this._min.toString();
             return;
         }
 
-        if (!Validation.numberMax(Number(numericValue), this._max)) {
+        if (Number(numericValue) >= this._max) {
             inputElement.value = this._max.toString();
             return;
         }

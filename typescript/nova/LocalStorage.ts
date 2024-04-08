@@ -3,8 +3,8 @@ type Item<T> = {
     expiry: number | undefined;
 };
 
-export class LocalStorage {
-    public static getItem<T>(key: string): T | null {
+export namespace LocalStorage {
+    export function getItem<T>(key: string): T | null {
         const itemString: string = localStorage.getItem(key);
         if (!itemString) {
             return null;
@@ -19,7 +19,7 @@ export class LocalStorage {
         return item.value;
     }
 
-    public static setItem<T>(key: string, value: T, ttl: number | undefined = undefined): void {
+    export function setItem<T>(key: string, value: T, ttl: number | undefined = undefined): void {
         const item: Item<T> = {
             value,
             expiry: ttl !== undefined ? new Date().getTime() + ttl : undefined
