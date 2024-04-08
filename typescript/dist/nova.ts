@@ -730,12 +730,12 @@ export abstract class Component {
         return Application.getComponentById(id);
     }
 
-    public getComponentByClass<T extends Component>(clazz: (new (...args: any[]) => T)): T | null {
-        return Application.getComponentByClass(clazz);
+    public getComponentByClass<T extends Component>(clazz: (new (...args: any[]) => T), element?: HTMLElement): T | null {
+        return Application.getComponentByClass(clazz, element);
     }
 
-    public getComponentsByClass<T extends Component>(clazz: (new (...args: any[]) => T)): T[] {
-        return Application.getComponentsByClass(clazz);
+    public getComponentsByClass<T extends Component>(clazz: (new (...args: any[]) => T), element?: HTMLElement): T[] {
+        return Application.getComponentsByClass(clazz, element);
     }
 
     public onInit(): void {}

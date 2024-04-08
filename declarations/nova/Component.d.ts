@@ -8,8 +8,8 @@ export declare abstract class Component {
     update(state: object): void;
     getKeys(): string[];
     getComponentById<T extends Component>(id: string): T | null;
-    getComponentByClass<T extends Component>(clazz: (new (...args: any[]) => T)): T | null;
-    getComponentsByClass<T extends Component>(clazz: (new (...args: any[]) => T)): T[];
+    getComponentByClass<T extends Component>(clazz: (new (...args: any[]) => T), element?: HTMLElement): T | null;
+    getComponentsByClass<T extends Component>(clazz: (new (...args: any[]) => T), element?: HTMLElement): T[];
     onInit(): void;
     onClick(event: Events.Mouse): void;
     onDblClick(event: Events.Mouse): void;

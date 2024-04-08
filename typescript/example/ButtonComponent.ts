@@ -5,7 +5,7 @@ export class ButtonComponent extends Component {
     @State private _count: number = 0;
 
     public override onInit(): void {
-        console.log("Initializing Button Component")
+        console.log("Initializing Button Component");
     }
 
     public override onClick(_: Events.Mouse): void {

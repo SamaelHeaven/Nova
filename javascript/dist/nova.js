@@ -680,11 +680,11 @@ export class Component {
     getComponentById(id) {
         return Application.getComponentById(id);
     }
-    getComponentByClass(clazz) {
-        return Application.getComponentByClass(clazz);
+    getComponentByClass(clazz, element) {
+        return Application.getComponentByClass(clazz, element);
     }
-    getComponentsByClass(clazz) {
-        return Application.getComponentsByClass(clazz);
+    getComponentsByClass(clazz, element) {
+        return Application.getComponentsByClass(clazz, element);
     }
     onInit() { }
     onClick(event) { }
