@@ -82,7 +82,6 @@ export class Application {
                 if (!element.id || document.querySelectorAll(`#${element.id}`).length > 1) {
                     throw new Error("Components must have an unique id");
                 }
-                element.style.display = "contents";
                 const existingElement = document.getElementById(element.id);
                 let component;
                 if (!existingElement || !existingElement.component) {
@@ -94,7 +93,10 @@ export class Application {
                 else {
                     component = existingElement.component;
                 }
-                element.innerHTML = component.render();
+                const renderedContent = component.render();
+                if (renderedContent !== null) {
+                    element.innerHTML = renderedContent;
+                }
                 this._updateElement(element);
             }
         }
@@ -111,6 +113,10 @@ export class Application {
     }
     _updateComponent(component) {
         const newElement = component.element.cloneNode(false);
+        const renderedContent = component.render();
+        if (renderedContent === null) {
+            return;
+        }
         newElement.innerHTML = component.render();
         this._updateElement(newElement);
         morphdom(component.element, newElement, this._morphdomOptions);

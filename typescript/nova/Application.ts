@@ -110,7 +110,6 @@ export class Application {
                     throw new Error("Components must have an unique id");
                 }
 
-                element.style.display = "contents";
                 const existingElement: HTMLElement = document.getElementById(element.id);
                 let component: Component;
                 if (!existingElement || !(existingElement as any).component) {
@@ -122,7 +121,11 @@ export class Application {
                     component = (existingElement as any).component;
                 }
 
-                element.innerHTML = component.render();
+                const renderedContent: string | null = component.render();
+                if (renderedContent !== null) {
+                    element.innerHTML = renderedContent;
+                }
+
                 this._updateElement(element);
             }
         }
@@ -143,6 +146,11 @@ export class Application {
     /** @internal */
     private _updateComponent(component: Component): void {
         const newElement: HTMLElement = component.element.cloneNode(false) as HTMLElement;
+        const renderedContent: string | null = component.render();
+        if (renderedContent === null) {
+            return;
+        }
+
         newElement.innerHTML = component.render();
         this._updateElement(newElement);
         morphdom(component.element, newElement, this._morphdomOptions);

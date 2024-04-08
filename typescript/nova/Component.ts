@@ -9,7 +9,9 @@ export abstract class Component {
         this._element = element;
     }
 
-    public abstract render(): string;
+    public render(): string | null {
+        return null;
+    }
 
     public get id(): string {
         return this._element.id;

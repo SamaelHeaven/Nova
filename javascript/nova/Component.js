@@ -3,6 +3,9 @@ export class Component {
     constructor(element) {
         this._element = element;
     }
+    render() {
+        return null;
+    }
     get id() {
         return this._element.id;
     }

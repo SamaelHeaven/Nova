@@ -1,7 +1,7 @@
 import { Events } from "./Events.js";
 export declare abstract class Component {
     constructor(element: HTMLElement);
-    abstract render(): string;
+    render(): string | null;
     get id(): string;
     get element(): HTMLElement;
     getAttribute(name: string, defaultValue?: string | null): string | null;
