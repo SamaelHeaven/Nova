@@ -686,7 +686,7 @@ export abstract class Component {
         this._element = element;
     }
 
-    public render(): string | null | undefined {
+    public render(): string | undefined {
         return undefined;
     }
 

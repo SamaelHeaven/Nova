@@ -9,7 +9,7 @@ export declare class Application {
 }
 export declare abstract class Component {
     constructor(element: HTMLElement);
-    render(): string | null | undefined;
+    render(): string | undefined;
     get id(): string;
     get element(): HTMLElement;
     getAttribute(name: string, defaultValue?: string | null): string | null;
