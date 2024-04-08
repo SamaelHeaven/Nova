@@ -13,21 +13,8 @@ export abstract class Component {
         return undefined;
     }
 
-    public get id(): string {
-        return this._element.id;
-    }
-
     public get element(): HTMLElement {
         return this._element;
-    }
-
-    public getAttribute(name: string, defaultValue: string | null = null): string | null {
-        const attribute: Attr = this._element.attributes.getNamedItem(name);
-        if (attribute) {
-            return attribute.value;
-        }
-
-        return defaultValue;
     }
 
     public update(state: object): void {
@@ -38,34 +25,21 @@ export abstract class Component {
         }
     }
 
-    public getKeys(): string[] {
-        let keys: string[] = [];
-        let currentPrototype = this;
-        while (currentPrototype) {
-            const parentPrototype = Object.getPrototypeOf(currentPrototype);
-            if (parentPrototype && Object.getPrototypeOf(parentPrototype)) {
-                keys = keys.concat(Object.getOwnPropertyNames(currentPrototype));
-            }
-
-            currentPrototype = parentPrototype;
-        }
-
-        return [...new Set(keys)];
+    public getComponent<T extends Component>(clazz: (new (...args: any[]) => T), element?: HTMLElement): T | null {
+        return Application.getComponent(clazz, element);
     }
 
-    public getComponentById<T extends Component>(id: string): T | null {
-        return Application.getComponentById(id);
-    }
-
-    public getComponentByClass<T extends Component>(clazz: (new (...args: any[]) => T), element?: HTMLElement): T | null {
-        return Application.getComponentByClass(clazz, element);
-    }
-
-    public getComponentsByClass<T extends Component>(clazz: (new (...args: any[]) => T), element?: HTMLElement): T[] {
-        return Application.getComponentsByClass(clazz, element);
+    public getComponents<T extends Component>(clazz: (new (...args: any[]) => T), element?: HTMLElement): T[] {
+        return Application.getComponents(clazz, element);
     }
 
     public onInit(): void {}
+
+    public onAppear(): void {}
+
+    public onDestroy(): void {}
+
+    public onAttributeChanged(attribute: string, oldValue: string, newValue: string): void {}
 
     public onClick(event: Events.Mouse): void {}
 
@@ -128,4 +102,20 @@ export abstract class Component {
     public onTransitionEnd(event: Events.Transition): void {}
 
     public onTransitionCancel(event: Events.Transition): void {}
+
+    /** @internal */
+    public getKeys(): string[] {
+        let keys: string[] = [];
+        let currentPrototype = this;
+        while (currentPrototype) {
+            const parentPrototype = Object.getPrototypeOf(currentPrototype);
+            if (parentPrototype && Object.getPrototypeOf(parentPrototype)) {
+                keys = keys.concat(Object.getOwnPropertyNames(currentPrototype));
+            }
+
+            currentPrototype = parentPrototype;
+        }
+
+        return [...new Set(keys)];
+    }
 }

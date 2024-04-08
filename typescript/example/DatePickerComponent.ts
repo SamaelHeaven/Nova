@@ -6,13 +6,13 @@ export class DatePickerComponent extends Component {
     @State private _endDate: string | null = null;
 
     public override onInput(event: Events.Input): void {
-        const startDateElement: HTMLInputElement = event.target.closest(`#start-date-${this.id}`);
+        const startDateElement: HTMLInputElement = event.target.closest(`#start-date`);
         if (startDateElement) {
             this._startDate = Format.date(startDateElement.value.replace(/-/g, "/"), "yyyy-mm-dd");
             return;
         }
 
-        const endDateElement: HTMLInputElement = event.target.closest(`#end-date-${this.id}`);
+        const endDateElement: HTMLInputElement = event.target.closest(`#end-date`);
         if (endDateElement) {
             this._endDate = Format.date(endDateElement.value.replace(/-/g, "/"), "yyyy-mm-dd");
         }
@@ -21,16 +21,16 @@ export class DatePickerComponent extends Component {
     public override render(): string {
         return `
             <form>
-                <label for="start-date-${this.id}">Start Date</label>
-                <input id="start-date-${this.id}"
+                <label for="start-date">Start Date</label>
+                <input id="start-date"
                        class="mt-2 form-control"
                        type="date"
                        value="${this._startDate}" 
                        min="${this._today}"
                        max="${this._endDate || ""}">
 
-                <label class="mt-4" for="end-date-${this.id}">End Date</label>
-                <input id="end-date-${this.id}" 
+                <label class="mt-4" for="end-date">End Date</label>
+                <input id="end-date" 
                        class="mt-2 form-control"
                        type="date" 
                        value="${this._endDate || ""}" 

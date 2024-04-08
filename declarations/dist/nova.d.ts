@@ -1,24 +1,24 @@
 export declare class Application {
     private constructor();
-    static launch(componentClasses: (new (...args: any[]) => Component)[]): void;
+    static launch(components: {
+        name: string;
+        class: (new (...args: any[]) => Component);
+    }[]): void;
     static updateComponent(component: Component): void;
-    static updateElement(element: HTMLElement): void;
-    static getComponentById<T extends Component>(id: string): T | null;
-    static getComponentByClass<T extends Component>(clazz: (new (...args: any[]) => T), element?: HTMLElement): T | null;
-    static getComponentsByClass<T extends Component>(clazz: (new (...args: any[]) => T), element?: HTMLElement): T[];
+    static getComponent<T extends Component>(clazz: (new (...args: any[]) => T), element?: HTMLElement): T | null;
+    static getComponents<T extends Component>(clazz: (new (...args: any[]) => T), element?: HTMLElement): T[];
 }
 export declare abstract class Component {
     constructor(element: HTMLElement);
     render(): string | undefined;
-    get id(): string;
     get element(): HTMLElement;
-    getAttribute(name: string, defaultValue?: string | null): string | null;
     update(state: object): void;
-    getKeys(): string[];
-    getComponentById<T extends Component>(id: string): T | null;
-    getComponentByClass<T extends Component>(clazz: (new (...args: any[]) => T), element?: HTMLElement): T | null;
-    getComponentsByClass<T extends Component>(clazz: (new (...args: any[]) => T), element?: HTMLElement): T[];
+    getComponent<T extends Component>(clazz: (new (...args: any[]) => T), element?: HTMLElement): T | null;
+    getComponents<T extends Component>(clazz: (new (...args: any[]) => T), element?: HTMLElement): T[];
     onInit(): void;
+    onAppear(): void;
+    onDestroy(): void;
+    onAttributeChanged(attribute: string, oldValue: string, newValue: string): void;
     onClick(event: Events.Mouse): void;
     onDblClick(event: Events.Mouse): void;
     onMouseDown(event: Events.Mouse): void;

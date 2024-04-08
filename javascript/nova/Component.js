@@ -6,18 +6,8 @@ export class Component {
     render() {
         return undefined;
     }
-    get id() {
-        return this._element.id;
-    }
     get element() {
         return this._element;
-    }
-    getAttribute(name, defaultValue = null) {
-        const attribute = this._element.attributes.getNamedItem(name);
-        if (attribute) {
-            return attribute.value;
-        }
-        return defaultValue;
     }
     update(state) {
         for (const key of this.getKeys()) {
@@ -26,28 +16,16 @@ export class Component {
             }
         }
     }
-    getKeys() {
-        let keys = [];
-        let currentPrototype = this;
-        while (currentPrototype) {
-            const parentPrototype = Object.getPrototypeOf(currentPrototype);
-            if (parentPrototype && Object.getPrototypeOf(parentPrototype)) {
-                keys = keys.concat(Object.getOwnPropertyNames(currentPrototype));
-            }
-            currentPrototype = parentPrototype;
-        }
-        return [...new Set(keys)];
+    getComponent(clazz, element) {
+        return Application.getComponent(clazz, element);
     }
-    getComponentById(id) {
-        return Application.getComponentById(id);
-    }
-    getComponentByClass(clazz, element) {
-        return Application.getComponentByClass(clazz, element);
-    }
-    getComponentsByClass(clazz, element) {
-        return Application.getComponentsByClass(clazz, element);
+    getComponents(clazz, element) {
+        return Application.getComponents(clazz, element);
     }
     onInit() { }
+    onAppear() { }
+    onDestroy() { }
+    onAttributeChanged(attribute, oldValue, newValue) { }
     onClick(event) { }
     onDblClick(event) { }
     onMouseDown(event) { }
@@ -79,4 +57,16 @@ export class Component {
     onTransitionStart(event) { }
     onTransitionEnd(event) { }
     onTransitionCancel(event) { }
+    getKeys() {
+        let keys = [];
+        let currentPrototype = this;
+        while (currentPrototype) {
+            const parentPrototype = Object.getPrototypeOf(currentPrototype);
+            if (parentPrototype && Object.getPrototypeOf(parentPrototype)) {
+                keys = keys.concat(Object.getOwnPropertyNames(currentPrototype));
+            }
+            currentPrototype = parentPrototype;
+        }
+        return [...new Set(keys)];
+    }
 }

@@ -2,8 +2,8 @@ import { Component, Validation } from "../nova/lib.js";
 export class NumberInputComponent extends Component {
     constructor() {
         super(...arguments);
-        this._min = Number(this.getAttribute("data-min", "0"));
-        this._max = Number(this.getAttribute("data-max", `${Infinity}`));
+        this._min = Number(this.element.getAttribute("data-min" || "0"));
+        this._max = Number(this.element.getAttribute("data-max") || Infinity.toString());
     }
     onInput(event) {
         const inputElement = event.target;
@@ -28,7 +28,7 @@ export class NumberInputComponent extends Component {
     }
     render() {
         return `
-            <input id="number-input-${this.id}" 
+            <input id="number-input"
                    class="form-control"
                    type="text"
                    value="${this._min}"

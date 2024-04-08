@@ -11,15 +11,30 @@ import { Component, State } from "../nova/lib.js";
 export class ButtonComponent extends Component {
     constructor() {
         super(...arguments);
-        this._content = this.getAttribute("data-content");
+        this._content = this.element.getAttribute("data-content");
         this._count = 0;
     }
     onInit() {
         console.log("Initializing Button Component");
     }
+    onAppear() {
+        console.log("Button Component Appeared");
+    }
+    onAttributeChanged(attribute, _, newValue) {
+        if (attribute === "data-count") {
+            this._count = parseInt(newValue);
+            console.log("Attribute changed!");
+            if (this._count >= 10) {
+                this.element.remove();
+            }
+        }
+    }
     onClick(_) {
-        this._count++;
+        this.element.setAttribute("data-count", String(this._count + 1));
         console.log("Clicked!");
+    }
+    onDestroy() {
+        console.log("Component Destroyed!");
     }
     render() {
         return `

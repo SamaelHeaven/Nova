@@ -502,118 +502,50 @@ function morphdomFactory(morphAttrs) {
 var morphdom = morphdomFactory(morphAttrs);
 export class Application {
     constructor() {
-        this._componentDefinitions = [];
         this._morphdomOptions = {
             onBeforeElUpdated: function (fromElement, toElement) {
                 return !fromElement.isEqualNode(toElement);
             }
         };
         this._eventNames = ["click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseenter", "mouseleave", "mouseover", "mouseout", "keydown", "keypress", "keyup", "focus", "blur", "input", "change", "submit", "scroll", "error", "resize", "select", "touchstart", "touchmove", "touchend", "touchcancel", "animationstart", "animationend", "animationiteration", "transitionstart", "transitionend", "transitioncancel"];
+        this._components = [];
     }
-    static launch(componentClasses) {
+    static launch(components) {
         if (Application._instance !== null) {
             throw new Error("Application has already been launched");
         }
         const app = Application._getInstance();
-        for (const componentClass of componentClasses) {
-            app._componentDefinitions.push({
-                name: Application._getComponentName(componentClass),
-                class: componentClass
-            });
-        }
-        app._updating = true;
-        app._updateElement(document.documentElement);
-        app._updating = false;
+        app._components = [...components];
+        app._initializeComponents();
     }
     static updateComponent(component) {
+        Application._throwIfUninitialized();
+        Application._getInstance()._updateComponent(component);
+    }
+    static getComponent(clazz, element = document.documentElement) {
         var _a;
         Application._throwIfUninitialized();
-        if (((_a = component.element) === null || _a === void 0 ? void 0 : _a.appComponent) !== component) {
-            return;
-        }
-        const app = Application._getInstance();
-        while (app._updating) {
-        }
-        app._updating = true;
-        app._updateComponent(component);
-        app._updating = false;
+        const name = Application._getInstance()._components.find(component => component.class == clazz).name;
+        return ((_a = element.getElementsByTagName(name)) === null || _a === void 0 ? void 0 : _a.component) || null;
     }
-    static updateElement(element) {
+    static getComponents(clazz, element = document.documentElement) {
         Application._throwIfUninitialized();
-        const app = Application._getInstance();
-        while (app._updating) {
-        }
-        app._updating = true;
-        const newElement = element.cloneNode(true);
-        app._updateElement(newElement);
-        morphdom(element, newElement, app._morphdomOptions);
-        app._updating = false;
-    }
-    static getComponentById(id) {
-        var _a;
-        Application._throwIfUninitialized();
-        return ((_a = document.getElementById(id)) === null || _a === void 0 ? void 0 : _a.appComponent) || null;
-    }
-    static getComponentByClass(clazz, element = document.documentElement) {
-        var _a;
-        Application._throwIfUninitialized();
-        const name = Application._getComponentName(clazz);
-        return ((_a = element.querySelector(name)) === null || _a === void 0 ? void 0 : _a.appComponent) || null;
-    }
-    static getComponentsByClass(clazz, element = document.documentElement) {
-        Application._throwIfUninitialized();
-        const name = Application._getComponentName(clazz);
-        const result = [];
-        for (const componentElement of Array.from(element.querySelectorAll(name))) {
-            if (componentElement.appComponent) {
-                result.push(componentElement.appComponent);
+        const name = Application._getInstance()._components.find(component => component.class == clazz).name;
+        const components = [];
+        for (const componentElement of Array.from(element.getElementsByTagName(name))) {
+            if (componentElement.component) {
+                components.push(componentElement.component);
             }
         }
-        return result;
+        return components;
     }
     static _getInstance() {
         var _a;
         return (_a = Application._instance) !== null && _a !== void 0 ? _a : (Application._instance = new Application());
     }
-    static _getComponentName(clazz) {
-        const className = clazz.name;
-        let result = '';
-        for (let i = 0; i < className.length; i++) {
-            if (i > 0 && className[i] === className[i].toUpperCase()) {
-                result += '-';
-            }
-            result += className[i].toLowerCase();
-        }
-        return result;
-    }
     static _throwIfUninitialized() {
         if (Application._instance === null) {
             throw new Error("Application has not been launched");
-        }
-    }
-    _updateElement(root) {
-        for (const componentDefinition of this._componentDefinitions) {
-            for (const element of Array.from(root.getElementsByTagName(componentDefinition.name))) {
-                if (!element.id || document.querySelectorAll(`#${element.id}`).length > 1) {
-                    throw new Error("Components must have an unique id");
-                }
-                const existingElement = document.getElementById(element.id);
-                let component;
-                if (!existingElement || !existingElement.appComponent) {
-                    component = new componentDefinition.class(element);
-                    this._registerEventListeners(component);
-                    element.appComponent = component;
-                    component.onInit();
-                }
-                else {
-                    component = existingElement.appComponent;
-                }
-                const renderedContent = component.render();
-                if (!Validation.isNullOrUndefined(renderedContent)) {
-                    element.innerHTML = renderedContent;
-                }
-                this._updateElement(element);
-            }
         }
     }
     _registerEventListeners(component) {
@@ -633,8 +565,37 @@ export class Application {
             return;
         }
         newElement.innerHTML = component.render();
-        this._updateElement(newElement);
         morphdom(component.element, newElement, this._morphdomOptions);
+    }
+    _initializeComponents() {
+        const app = this;
+        for (const componentDefinition of app._components) {
+            class ComponentElement extends HTMLElement {
+                connectedCallback() {
+                    this.component = new componentDefinition.class(this);
+                    const observerConfig = { attributes: true, subtree: false };
+                    const observer = new MutationObserver((mutationsList, _) => {
+                        for (const mutation of mutationsList) {
+                            if (mutation.type === 'attributes') {
+                                this.component.onAttributeChanged(mutation.attributeName, mutation.oldValue, this.getAttribute(mutation.attributeName));
+                            }
+                        }
+                    });
+                    observer.observe(this, observerConfig);
+                    this.component.onInit();
+                    app._registerEventListeners(this.component);
+                    const renderedContent = this.component.render();
+                    if (!Validation.isNullOrUndefined(renderedContent)) {
+                        this.innerHTML = renderedContent;
+                    }
+                    this.component.onAppear();
+                }
+                disconnectedCallback() {
+                    this.component.onDestroy();
+                }
+            }
+            customElements.define(componentDefinition.name, ComponentElement);
+        }
     }
 }
 Application._instance = null;
@@ -645,18 +606,8 @@ export class Component {
     render() {
         return undefined;
     }
-    get id() {
-        return this._element.id;
-    }
     get element() {
         return this._element;
-    }
-    getAttribute(name, defaultValue = null) {
-        const attribute = this._element.attributes.getNamedItem(name);
-        if (attribute) {
-            return attribute.value;
-        }
-        return defaultValue;
     }
     update(state) {
         for (const key of this.getKeys()) {
@@ -665,28 +616,16 @@ export class Component {
             }
         }
     }
-    getKeys() {
-        let keys = [];
-        let currentPrototype = this;
-        while (currentPrototype) {
-            const parentPrototype = Object.getPrototypeOf(currentPrototype);
-            if (parentPrototype && Object.getPrototypeOf(parentPrototype)) {
-                keys = keys.concat(Object.getOwnPropertyNames(currentPrototype));
-            }
-            currentPrototype = parentPrototype;
-        }
-        return [...new Set(keys)];
+    getComponent(clazz, element) {
+        return Application.getComponent(clazz, element);
     }
-    getComponentById(id) {
-        return Application.getComponentById(id);
-    }
-    getComponentByClass(clazz, element) {
-        return Application.getComponentByClass(clazz, element);
-    }
-    getComponentsByClass(clazz, element) {
-        return Application.getComponentsByClass(clazz, element);
+    getComponents(clazz, element) {
+        return Application.getComponents(clazz, element);
     }
     onInit() { }
+    onAppear() { }
+    onDestroy() { }
+    onAttributeChanged(attribute, oldValue, newValue) { }
     onClick(event) { }
     onDblClick(event) { }
     onMouseDown(event) { }
@@ -718,6 +657,18 @@ export class Component {
     onTransitionStart(event) { }
     onTransitionEnd(event) { }
     onTransitionCancel(event) { }
+    getKeys() {
+        let keys = [];
+        let currentPrototype = this;
+        while (currentPrototype) {
+            const parentPrototype = Object.getPrototypeOf(currentPrototype);
+            if (parentPrototype && Object.getPrototypeOf(parentPrototype)) {
+                keys = keys.concat(Object.getOwnPropertyNames(currentPrototype));
+            }
+            currentPrototype = parentPrototype;
+        }
+        return [...new Set(keys)];
+    }
 }
 export class Debounce {
     constructor(callback, wait) {
