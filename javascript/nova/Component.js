@@ -1,14 +1,14 @@
 import { Application } from "./Application.js";
 export class Component {
     constructor(element) {
-        this.hasUpdated = false;
+        this._isDirty = false;
         this.element = element;
     }
     render() {
         return undefined;
     }
     update(state) {
-        for (const key of this.getKeys()) {
+        for (const key of this._getKeys()) {
             if (this[key] === state) {
                 this[key] = state;
             }
@@ -56,7 +56,7 @@ export class Component {
     onTransitionStart(event) { }
     onTransitionEnd(event) { }
     onTransitionCancel(event) { }
-    getKeys() {
+    _getKeys() {
         let keys = [];
         let currentPrototype = this;
         while (currentPrototype) {

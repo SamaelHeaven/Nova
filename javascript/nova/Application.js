@@ -45,7 +45,7 @@ export class Application {
         }
     }
     _registerEventListeners(component) {
-        for (const key of component.getKeys()) {
+        for (const key of component._getKeys()) {
             const eventType = key.substring(2).toLowerCase();
             if (this._eventNames.includes(eventType)) {
                 component.element.addEventListener(eventType, (event) => {
@@ -62,9 +62,9 @@ export class Application {
         }
         morphdom(component.element, newElement, this._morphdomOptions);
         for (const foundComponent of Application.queryComponents("*", component.element.parentElement)) {
-            if (foundComponent.hasUpdated) {
+            if (foundComponent._isDirty) {
+                foundComponent._isDirty = false;
                 foundComponent.onUpdate();
-                foundComponent.hasUpdated = false;
             }
         }
     }
@@ -75,7 +75,7 @@ export class Application {
             if (!Validation.isNullOrUndefined(renderedContent)) {
                 toElement.innerHTML = renderedContent;
                 if (!fromElement.isEqualNode(toElement)) {
-                    component.hasUpdated = true;
+                    component._isDirty = true;
                 }
             }
         }
@@ -107,7 +107,7 @@ export class Application {
         customElements.define(component.tagName, ComponentElement);
     }
     _observeAttributes(component) {
-        if (!component.getKeys().includes("onAttributeChanged")) {
+        if (!component._getKeys().includes("onAttributeChanged")) {
             return;
         }
         const observerConfig = { attributes: true, attributeOldValue: true, subtree: false };

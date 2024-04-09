@@ -3,11 +3,11 @@ import {Application} from "./Application.js";
 
 export abstract class Component {
     /** @internal */
-    public hasUpdated: boolean;
+    public _isDirty: boolean;
     public readonly element: HTMLElement;
 
     constructor(element: HTMLElement) {
-        this.hasUpdated = false;
+        this._isDirty = false;
         this.element = element;
     }
 
@@ -16,7 +16,7 @@ export abstract class Component {
     }
 
     public update(state: object): void {
-        for (const key of this.getKeys()) {
+        for (const key of this._getKeys()) {
             if (this[key] === state) {
                 this[key] = state;
             }
@@ -104,7 +104,7 @@ export abstract class Component {
     public onTransitionCancel(event: Events.Transition): void {}
 
     /** @internal */
-    public getKeys(): string[] {
+    public _getKeys(): string[] {
         let keys: string[] = [];
         let currentPrototype = this;
         while (currentPrototype) {

@@ -65,7 +65,7 @@ export class Application {
 
     /** @internal */
     private _registerEventListeners(component: Component): void {
-        for (const key of component.getKeys()) {
+        for (const key of component._getKeys()) {
             const eventType: string = key.substring(2).toLowerCase();
             if (this._eventNames.includes(eventType)) {
                 component.element.addEventListener(eventType, (event: Event): void => {
@@ -85,9 +85,9 @@ export class Application {
 
         morphdom(component.element, newElement, this._morphdomOptions);
         for (const foundComponent of Application.queryComponents("*", component.element.parentElement)) {
-            if (foundComponent.hasUpdated) {
+            if (foundComponent._isDirty) {
+                foundComponent._isDirty = false;
                 foundComponent.onUpdate();
-                foundComponent.hasUpdated = false;
             }
         }
     }
@@ -100,7 +100,7 @@ export class Application {
             if (!Validation.isNullOrUndefined(renderedContent)) {
                 toElement.innerHTML = renderedContent;
                 if (!fromElement.isEqualNode(toElement)) {
-                    component.hasUpdated = true;
+                    component._isDirty = true;
                 }
             }
         }
@@ -145,7 +145,7 @@ export class Application {
 
     /** @internal */
     private _observeAttributes(component: Component): void {
-        if (!component.getKeys().includes("onAttributeChanged")) {
+        if (!component._getKeys().includes("onAttributeChanged")) {
             return;
         }
 

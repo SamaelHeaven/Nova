@@ -565,7 +565,7 @@ export class Application {
 
     /** @internal */
     private _registerEventListeners(component: Component): void {
-        for (const key of component.getKeys()) {
+        for (const key of component._getKeys()) {
             const eventType: string = key.substring(2).toLowerCase();
             if (this._eventNames.includes(eventType)) {
                 component.element.addEventListener(eventType, (event: Event): void => {
@@ -585,9 +585,9 @@ export class Application {
 
         morphdom(component.element, newElement, this._morphdomOptions);
         for (const foundComponent of Application.queryComponents("*", component.element.parentElement)) {
-            if (foundComponent.hasUpdated) {
+            if (foundComponent._isDirty) {
+                foundComponent._isDirty = false;
                 foundComponent.onUpdate();
-                foundComponent.hasUpdated = false;
             }
         }
     }
@@ -600,7 +600,7 @@ export class Application {
             if (!Validation.isNullOrUndefined(renderedContent)) {
                 toElement.innerHTML = renderedContent;
                 if (!fromElement.isEqualNode(toElement)) {
-                    component.hasUpdated = true;
+                    component._isDirty = true;
                 }
             }
         }
@@ -645,7 +645,7 @@ export class Application {
 
     /** @internal */
     private _observeAttributes(component: Component): void {
-        if (!component.getKeys().includes("onAttributeChanged")) {
+        if (!component._getKeys().includes("onAttributeChanged")) {
             return;
         }
 
@@ -664,11 +664,11 @@ export class Application {
 
 export abstract class Component {
     /** @internal */
-    public hasUpdated: boolean;
+    public _isDirty: boolean;
     public readonly element: HTMLElement;
 
     constructor(element: HTMLElement) {
-        this.hasUpdated = false;
+        this._isDirty = false;
         this.element = element;
     }
 
@@ -677,7 +677,7 @@ export abstract class Component {
     }
 
     public update(state: object): void {
-        for (const key of this.getKeys()) {
+        for (const key of this._getKeys()) {
             if (this[key] === state) {
                 this[key] = state;
             }
@@ -765,7 +765,7 @@ export abstract class Component {
     public onTransitionCancel(event: Events.Transition): void {}
 
     /** @internal */
-    public getKeys(): string[] {
+    public _getKeys(): string[] {
         let keys: string[] = [];
         let currentPrototype = this;
         while (currentPrototype) {
