@@ -599,7 +599,7 @@ export class Application {
             const renderedContent: string = component.render();
             if (!Validation.isNullOrUndefined(renderedContent)) {
                 toElement.innerHTML = renderedContent;
-                toElement.style.display = fromElement.style.display;
+                toElement.style.display = "contents";
                 if (!fromElement.isEqualNode(toElement)) {
                     component._isDirty = true;
                 }
