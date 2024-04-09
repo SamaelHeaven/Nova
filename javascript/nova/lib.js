@@ -4,4 +4,3 @@ export { Debounce } from "./Debounce.js";
 export { Format } from "./Format.js";
 export { LocalStorage } from "./LocalStorage.js";
 export { State } from "./State.js";
-export { Validation } from "./Validation.js";

@@ -1,8 +1,8 @@
 export declare namespace Format {
     function date(value: Date | number | string | undefined, format: string): string;
-    function titleCase(value: string): string;
-    function upperCase(value: string): string;
-    function lowerCase(value: string): string;
+    function capitalize(value: string, lower?: boolean, trim?: boolean, type?: "string" | "words"): string;
+    function upperCase(value: string, trim?: boolean): string;
+    function lowerCase(value: string, trim?: boolean): string;
     function json(value: object): string;
     function percentage(value: number, digits?: number): string;
     function decimal(value: number, digits?: number): string;

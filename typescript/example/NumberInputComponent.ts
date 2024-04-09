@@ -1,4 +1,4 @@
-import {Component, ComponentDefinition, Events, Validation} from "../nova/lib.js";
+import {Component, ComponentDefinition, Events} from "../nova/lib.js";
 
 export class NumberInputComponent extends Component {
     public static readonly definition: ComponentDefinition = {tagName: "number-input-component", constructor: this}
@@ -13,7 +13,7 @@ export class NumberInputComponent extends Component {
             numericValue = numericValue.substring(1);
         }
 
-        if (!Validation.isEmpty(numericValue) && Validation.isInRange(Number(numericValue), this._min, this._max)) {
+        if (numericValue.length > 0 && Number(numericValue) >= this._min && Number(numericValue) <= this._max) {
             inputElement.value = numericValue;
             return;
         }

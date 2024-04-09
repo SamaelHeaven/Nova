@@ -78,9 +78,9 @@ export declare namespace Events {
 }
 export declare namespace Format {
     function date(value: Date | number | string | undefined, format: string): string;
-    function titleCase(value: string): string;
-    function upperCase(value: string): string;
-    function lowerCase(value: string): string;
+    function capitalize(value: string, lower?: boolean, trim?: boolean, type?: "string" | "words"): string;
+    function upperCase(value: string, trim?: boolean): string;
+    function lowerCase(value: string, trim?: boolean): string;
     function json(value: object): string;
     function percentage(value: number, digits?: number): string;
     function decimal(value: number, digits?: number): string;
@@ -91,36 +91,3 @@ export declare namespace LocalStorage {
     function setItem<T>(key: string, value: T, ttl?: number | undefined): void;
 }
 export declare function State(target: any, key: string): void;
-export declare namespace Validation {
-    function isEmail(email: string): boolean;
-    function isPhoneNumber(phoneNumber: string): boolean;
-    function isDateEquals(date: Date, expected: Date): boolean;
-    function isDateAfter(date: Date, minDate: Date): boolean;
-    function isDateBefore(date: Date, maxDate: Date): boolean;
-    function isDateBetween(date: Date, minDate: Date, maxDate: Date): boolean;
-    function isPositiveInteger(value: string): boolean;
-    function isNegativeInteger(value: string): boolean;
-    function isInteger(value: string): boolean;
-    function isPositiveNumeric(value: string): boolean;
-    function isNegativeNumeric(value: string): boolean;
-    function isNumeric(value: string): boolean;
-    function isInRange(value: number, min: number, max: number): boolean;
-    function isString(value: any): boolean;
-    function isNumber(value: any): boolean;
-    function isFiniteNumber(value: any): boolean;
-    function isBoolean(value: any): boolean;
-    function isArray(value: any): boolean;
-    function isNull(value: any): boolean;
-    function isUndefined(value: any): boolean;
-    function isNullOrUndefined(value: any): boolean;
-    function isNullOrUndefinedOrEmpty(value: null | undefined | {
-        length: number;
-    }): boolean;
-    function isJson(value: string): boolean;
-    function isNan(value: number): boolean;
-    function isInfinity(value: number): boolean;
-    function isRegex(value: string, regex: RegExp): boolean;
-    function isEmpty(value: {
-        length: number;
-    }): boolean;
-}

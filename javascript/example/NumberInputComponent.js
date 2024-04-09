@@ -1,5 +1,5 @@
 var _a;
-import { Component, Validation } from "../nova/lib.js";
+import { Component } from "../nova/lib.js";
 export class NumberInputComponent extends Component {
     constructor() {
         super(...arguments);
@@ -13,7 +13,7 @@ export class NumberInputComponent extends Component {
         while (numericValue.charAt(0) === "0") {
             numericValue = numericValue.substring(1);
         }
-        if (!Validation.isEmpty(numericValue) && Validation.isInRange(Number(numericValue), this._min, this._max)) {
+        if (numericValue.length > 0 && Number(numericValue) >= this._min && Number(numericValue) <= this._max) {
             inputElement.value = numericValue;
             return;
         }

@@ -1,4 +1,4 @@
-import {Component, ComponentDefinition, Debounce, Events, State, Validation} from "../nova/lib.js";
+import {Component, ComponentDefinition, Debounce, Events, State} from "../nova/lib.js";
 
 export class EmailInputComponent extends Component {
     public static readonly definition: ComponentDefinition = {tagName: "email-input-component", constructor: this}
@@ -28,6 +28,8 @@ export class EmailInputComponent extends Component {
     }
 
     private _onDebounceInput(event: Events.Input): void {
-        this._valid = Validation.isEmail((event.target as HTMLInputElement).value.trim());
+        this._valid = !!(event.target as HTMLInputElement).value.trim().match(
+            /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+        );
     }
 }

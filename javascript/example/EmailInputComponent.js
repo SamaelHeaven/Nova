@@ -8,7 +8,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var _a;
-import { Component, Debounce, State, Validation } from "../nova/lib.js";
+import { Component, Debounce, State } from "../nova/lib.js";
 export class EmailInputComponent extends Component {
     constructor() {
         super(...arguments);
@@ -36,7 +36,7 @@ export class EmailInputComponent extends Component {
         `;
     }
     _onDebounceInput(event) {
-        this._valid = Validation.isEmail(event.target.value.trim());
+        this._valid = !!event.target.value.trim().match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
     }
 }
 _a = EmailInputComponent;

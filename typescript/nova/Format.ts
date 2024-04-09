@@ -68,18 +68,22 @@ export namespace Format {
         });
     }
 
-    export function titleCase(value: string): string {
-        const str: string = value.trim();
-        return str.charAt(0).toUpperCase() + str.slice(1);
+    export function capitalize(value: string, lower: boolean = true, trim: boolean = true, type: "string" | "words" = "string"): string {
+        const str: string = trim ? value.trim() : value;
+        if (type === "string") {
+            return str.replace(/(?:^|\s|["'([{])+\S/, match => (lower ? match.toLowerCase() : match.toUpperCase()));
+        }
+
+        return (lower ? str.toLowerCase() : str).replace(/(?:^|\s|["'([{])+\S/g, match => match.toUpperCase());
     }
 
-    export function upperCase(value: string): string {
-        const str: string = value.trim();
+    export function upperCase(value: string, trim: boolean = true): string {
+        const str: string = trim ? value.trim() : value;
         return str.toUpperCase();
     }
 
-    export function lowerCase(value: string): string {
-        const str: string = value.trim();
+    export function lowerCase(value: string, trim: boolean = true): string {
+        const str: string = trim ? value.trim() : value;
         return str.toLowerCase();
     }
 
