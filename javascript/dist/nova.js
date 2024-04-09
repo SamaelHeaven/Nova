@@ -577,7 +577,9 @@ export class Application {
                 toElement.style.display = "contents";
                 if (!fromElement.isEqualNode(toElement)) {
                     component._isDirty = true;
+                    return true;
                 }
+                return false;
             }
         }
         return !fromElement.isEqualNode(toElement);
