@@ -6,15 +6,15 @@ export declare class Application {
     static queryComponents<T extends Component>(selector: string, element?: HTMLElement): T[];
 }
 export declare abstract class Component {
+    readonly element: HTMLElement;
     constructor(element: HTMLElement);
     render(): string | undefined;
-    get element(): HTMLElement;
     update(state: object): void;
     queryComponent<T extends Component>(selector: string, element?: HTMLElement): T | null;
     queryComponents<T extends Component>(selector: string, element?: HTMLElement): T[];
     onInit(): void;
     onAppear(): void;
-    onRender(): void;
+    onUpdate(): void;
     onDestroy(): void;
     onAttributeChanged(attribute: string, oldValue: string, newValue: string): void;
     onClick(event: Events.Mouse): void;

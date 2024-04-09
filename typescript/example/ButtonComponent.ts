@@ -9,19 +9,12 @@ export class ButtonComponent extends Component {
         console.log("Initializing Button Component");
     }
 
-    public onAppear(): void {
+    public override onAppear(): void {
         console.log("Button Component Appeared");
     }
 
-    public onAttributeChanged(attribute: string, _: string, newValue: string): void {
-        if (attribute === "data-count") {
-            this._count = parseInt(newValue);
-            console.log("Attribute changed!");
-
-            if (this._count >= 10) {
-                this.element.remove();
-            }
-        }
+    public override onUpdate(): void {
+        console.log("Button Component Updated");
     }
 
     public override onClick(_: Events.Mouse): void {
@@ -29,8 +22,19 @@ export class ButtonComponent extends Component {
         console.log("Clicked!");
     }
 
-    public onDestroy(): void {
-        console.log("Component Destroyed!");
+    public override onDestroy(): void {
+        console.log("Button Component Destroyed");
+    }
+
+    public override onAttributeChanged(attribute: string, oldValue: string, newValue: string): void {
+        console.log(`${attribute} attribute changed from ${oldValue} to ${newValue}`);
+        if (attribute === "data-count") {
+            this._count = parseInt(newValue);
+
+            if (this._count >= 10) {
+                this.element.remove();
+            }
+        }
     }
 
     public override render(): string {

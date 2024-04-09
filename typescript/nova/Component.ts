@@ -3,18 +3,16 @@ import {Application} from "./Application.js";
 
 export abstract class Component {
     /** @internal */
-    private readonly _element: HTMLElement;
+    public hasUpdated: boolean;
+    public readonly element: HTMLElement;
 
     constructor(element: HTMLElement) {
-        this._element = element;
+        this.hasUpdated = false;
+        this.element = element;
     }
 
     public render(): string | undefined {
         return undefined;
-    }
-
-    public get element(): HTMLElement {
-        return this._element;
     }
 
     public update(state: object): void {
@@ -37,7 +35,7 @@ export abstract class Component {
 
     public onAppear(): void {}
 
-    public onRender(): void {}
+    public onUpdate(): void {}
 
     public onDestroy(): void {}
 

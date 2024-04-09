@@ -1,13 +1,11 @@
 import { Application } from "./Application.js";
 export class Component {
     constructor(element) {
-        this._element = element;
+        this.hasUpdated = false;
+        this.element = element;
     }
     render() {
         return undefined;
-    }
-    get element() {
-        return this._element;
     }
     update(state) {
         for (const key of this.getKeys()) {
@@ -24,7 +22,7 @@ export class Component {
     }
     onInit() { }
     onAppear() { }
-    onRender() { }
+    onUpdate() { }
     onDestroy() { }
     onAttributeChanged(attribute, oldValue, newValue) { }
     onClick(event) { }

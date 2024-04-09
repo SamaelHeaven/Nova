@@ -515,7 +515,7 @@ export class Application {
             throw new Error("Application has already been launched");
         }
         const app = Application._getInstance();
-        app._initializeComponents([...components]);
+        app._initializeComponents([...new Set(components)]);
     }
     static updateComponent(component) {
         Application._throwIfUninitialized();
@@ -561,6 +561,12 @@ export class Application {
             return;
         }
         morphdom(component.element, newElement, this._morphdomOptions);
+        for (const foundComponent of Application.queryComponents("*", component.element.parentElement)) {
+            if (foundComponent.hasUpdated) {
+                foundComponent.onUpdate();
+                foundComponent.hasUpdated = false;
+            }
+        }
     }
     _onBeforeElementUpdated(fromElement, toElement) {
         const component = fromElement.component;
@@ -568,7 +574,9 @@ export class Application {
             const renderedContent = component.render();
             if (!Validation.isNullOrUndefined(renderedContent)) {
                 toElement.innerHTML = renderedContent;
-                component.onRender();
+                if (!fromElement.isEqualNode(toElement)) {
+                    component.hasUpdated = true;
+                }
             }
         }
         return !fromElement.isEqualNode(toElement);
@@ -586,7 +594,10 @@ export class Application {
                 app._observeAttributes(this.component);
                 app._registerEventListeners(this.component);
                 this.component.onInit();
-                app._updateComponent(this.component);
+                const renderedContent = this.component.render();
+                if (!Validation.isNullOrUndefined(renderedContent)) {
+                    this.innerHTML = renderedContent;
+                }
                 this.component.onAppear();
             }
             disconnectedCallback() {
@@ -596,7 +607,7 @@ export class Application {
         customElements.define(component.tagName, ComponentElement);
     }
     _observeAttributes(component) {
-        const observerConfig = { attributes: true, subtree: false };
+        const observerConfig = { attributes: true, attributeOldValue: true, subtree: false };
         const observer = new MutationObserver((mutationsList, _) => {
             for (const mutation of mutationsList) {
                 if (mutation.type === 'attributes') {
@@ -610,13 +621,11 @@ export class Application {
 Application._instance = null;
 export class Component {
     constructor(element) {
-        this._element = element;
+        this.hasUpdated = false;
+        this.element = element;
     }
     render() {
         return undefined;
-    }
-    get element() {
-        return this._element;
     }
     update(state) {
         for (const key of this.getKeys()) {
@@ -633,7 +642,7 @@ export class Component {
     }
     onInit() { }
     onAppear() { }
-    onRender() { }
+    onUpdate() { }
     onDestroy() { }
     onAttributeChanged(attribute, oldValue, newValue) { }
     onClick(event) { }

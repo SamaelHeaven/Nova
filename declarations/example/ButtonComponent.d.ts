@@ -5,8 +5,9 @@ export declare class ButtonComponent extends Component {
     private _count;
     onInit(): void;
     onAppear(): void;
-    onAttributeChanged(attribute: string, _: string, newValue: string): void;
+    onUpdate(): void;
     onClick(_: Events.Mouse): void;
     onDestroy(): void;
+    onAttributeChanged(attribute: string, oldValue: string, newValue: string): void;
     render(): string;
 }

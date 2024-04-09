@@ -21,21 +21,24 @@ export class ButtonComponent extends Component {
     onAppear() {
         console.log("Button Component Appeared");
     }
-    onAttributeChanged(attribute, _, newValue) {
-        if (attribute === "data-count") {
-            this._count = parseInt(newValue);
-            console.log("Attribute changed!");
-            if (this._count >= 10) {
-                this.element.remove();
-            }
-        }
+    onUpdate() {
+        console.log("Button Component Updated");
     }
     onClick(_) {
         this.element.setAttribute("data-count", String(this._count + 1));
         console.log("Clicked!");
     }
     onDestroy() {
-        console.log("Component Destroyed!");
+        console.log("Button Component Destroyed");
+    }
+    onAttributeChanged(attribute, oldValue, newValue) {
+        console.log(`${attribute} attribute changed from ${oldValue} to ${newValue}`);
+        if (attribute === "data-count") {
+            this._count = parseInt(newValue);
+            if (this._count >= 10) {
+                this.element.remove();
+            }
+        }
     }
     render() {
         return `

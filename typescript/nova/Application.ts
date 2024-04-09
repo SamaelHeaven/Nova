@@ -27,7 +27,7 @@ export class Application {
         }
 
         const app: Application = Application._getInstance();
-        app._initializeComponents([...components]);
+        app._initializeComponents([...new Set(components)]);
     }
 
     public static updateComponent(component: Component): void {
@@ -84,16 +84,24 @@ export class Application {
         }
 
         morphdom(component.element, newElement, this._morphdomOptions);
+        for (const foundComponent of Application.queryComponents("*", component.element.parentElement)) {
+            if (foundComponent.hasUpdated) {
+                foundComponent.onUpdate();
+                foundComponent.hasUpdated = false;
+            }
+        }
     }
 
     /** @internal */
     private _onBeforeElementUpdated(fromElement: HTMLElement, toElement: HTMLElement): boolean {
-        const component = (fromElement as any).component;
+        const component: Component = (fromElement as any).component;
         if (component) {
-            const renderedContent = component.render();
+            const renderedContent: string = component.render();
             if (!Validation.isNullOrUndefined(renderedContent)) {
                 toElement.innerHTML = renderedContent;
-                component.onRender();
+                if (!fromElement.isEqualNode(toElement)) {
+                    component.hasUpdated = true;
+                }
             }
         }
 
@@ -119,7 +127,11 @@ export class Application {
                 app._observeAttributes(this.component);
                 app._registerEventListeners(this.component);
                 this.component.onInit();
-                app._updateComponent(this.component);
+                const renderedContent: string = this.component.render();
+                if (!Validation.isNullOrUndefined(renderedContent)) {
+                    this.innerHTML = renderedContent;
+                }
+
                 this.component.onAppear();
             }
 
@@ -133,7 +145,7 @@ export class Application {
 
     /** @internal */
     private _observeAttributes(component: Component): void {
-        const observerConfig: MutationObserverInit = {attributes: true, subtree: false};
+        const observerConfig: MutationObserverInit = {attributes: true, attributeOldValue: true, subtree: false};
         const observer: MutationObserver = new MutationObserver((mutationsList: MutationRecord[], _: MutationObserver): void => {
             for (const mutation of mutationsList) {
                 if (mutation.type === 'attributes') {
