@@ -623,6 +623,7 @@ export class Application {
             public component: Component;
 
             public connectedCallback(): void {
+                this.style.display = "contents";
                 this.component = new component.constructor(this);
                 app._observeAttributes(this.component);
                 app._registerEventListeners(this.component);

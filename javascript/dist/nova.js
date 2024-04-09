@@ -590,6 +590,7 @@ export class Application {
         const app = this;
         class ComponentElement extends HTMLElement {
             connectedCallback() {
+                this.style.display = "contents";
                 this.component = new component.constructor(this);
                 app._observeAttributes(this.component);
                 app._registerEventListeners(this.component);
