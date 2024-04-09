@@ -2,13 +2,12 @@ import {Events} from "./Events.js";
 import {Application} from "./Application.js";
 
 export abstract class Component {
-    /** @internal */
-    public _isDirty: boolean;
     public readonly element: HTMLElement;
+    public readonly isDirty: boolean;
 
     constructor(element: HTMLElement) {
-        this._isDirty = false;
         this.element = element;
+        this.isDirty = false;
     }
 
     public render(): string | undefined {
@@ -16,7 +15,7 @@ export abstract class Component {
     }
 
     public update(state: object): void {
-        for (const key of this._getKeys()) {
+        for (const key of this.getKeys()) {
             if (this[key] === state) {
                 this[key] = state;
             }
@@ -29,6 +28,21 @@ export abstract class Component {
 
     public queryComponents<T extends Component>(selector: string, element?: HTMLElement): T[] {
         return Application.queryComponents<T>(selector, element);
+    }
+
+    public getKeys(): string[] {
+        let keys: string[] = [];
+        let currentPrototype = this;
+        while (currentPrototype) {
+            const parentPrototype = Object.getPrototypeOf(currentPrototype);
+            if (parentPrototype && Object.getPrototypeOf(parentPrototype)) {
+                keys = keys.concat(Object.getOwnPropertyNames(currentPrototype));
+            }
+
+            currentPrototype = parentPrototype;
+        }
+
+        return [...new Set(keys)];
     }
 
     public onInit(): void {}
@@ -102,20 +116,4 @@ export abstract class Component {
     public onTransitionEnd(event: Events.Transition): void {}
 
     public onTransitionCancel(event: Events.Transition): void {}
-
-    /** @internal */
-    public _getKeys(): string[] {
-        let keys: string[] = [];
-        let currentPrototype = this;
-        while (currentPrototype) {
-            const parentPrototype = Object.getPrototypeOf(currentPrototype);
-            if (parentPrototype && Object.getPrototypeOf(parentPrototype)) {
-                keys = keys.concat(Object.getOwnPropertyNames(currentPrototype));
-            }
-
-            currentPrototype = parentPrototype;
-        }
-
-        return [...new Set(keys)];
-    }
 }

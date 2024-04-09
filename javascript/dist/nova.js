@@ -547,7 +547,7 @@ export class Application {
         }
     }
     _registerEventListeners(component) {
-        for (const key of component._getKeys()) {
+        for (const key of component.getKeys()) {
             const eventType = key.substring(2).toLowerCase();
             if (this._eventNames.includes(eventType)) {
                 component.element.addEventListener(eventType, (event) => {
@@ -564,8 +564,8 @@ export class Application {
         }
         morphdom(component.element, newElement, this._morphdomOptions);
         for (const foundComponent of Application.queryComponents("*", component.element.parentElement)) {
-            if (foundComponent._isDirty) {
-                foundComponent._isDirty = false;
+            if (foundComponent.isDirty) {
+                foundComponent.isDirty = false;
                 foundComponent.onUpdate();
             }
         }
@@ -578,7 +578,7 @@ export class Application {
                 toElement.innerHTML = renderedContent;
                 toElement.style.display = "contents";
                 if (!fromElement.isEqualNode(toElement)) {
-                    component._isDirty = true;
+                    component.isDirty = true;
                     return true;
                 }
                 return false;
@@ -613,7 +613,7 @@ export class Application {
         customElements.define(component.tagName, ComponentElement);
     }
     _observeAttributes(component) {
-        if (!component._getKeys().includes("onAttributeChanged")) {
+        if (!component.getKeys().includes("onAttributeChanged")) {
             return;
         }
         const observerConfig = { attributes: true, attributeOldValue: true, subtree: false };
@@ -630,14 +630,14 @@ export class Application {
 Application._instance = null;
 export class Component {
     constructor(element) {
-        this._isDirty = false;
         this.element = element;
+        this.isDirty = false;
     }
     render() {
         return undefined;
     }
     update(state) {
-        for (const key of this._getKeys()) {
+        for (const key of this.getKeys()) {
             if (this[key] === state) {
                 this[key] = state;
             }
@@ -648,6 +648,18 @@ export class Component {
     }
     queryComponents(selector, element) {
         return Application.queryComponents(selector, element);
+    }
+    getKeys() {
+        let keys = [];
+        let currentPrototype = this;
+        while (currentPrototype) {
+            const parentPrototype = Object.getPrototypeOf(currentPrototype);
+            if (parentPrototype && Object.getPrototypeOf(parentPrototype)) {
+                keys = keys.concat(Object.getOwnPropertyNames(currentPrototype));
+            }
+            currentPrototype = parentPrototype;
+        }
+        return [...new Set(keys)];
     }
     onInit() { }
     onAppear() { }
@@ -685,18 +697,6 @@ export class Component {
     onTransitionStart(event) { }
     onTransitionEnd(event) { }
     onTransitionCancel(event) { }
-    _getKeys() {
-        let keys = [];
-        let currentPrototype = this;
-        while (currentPrototype) {
-            const parentPrototype = Object.getPrototypeOf(currentPrototype);
-            if (parentPrototype && Object.getPrototypeOf(parentPrototype)) {
-                keys = keys.concat(Object.getOwnPropertyNames(currentPrototype));
-            }
-            currentPrototype = parentPrototype;
-        }
-        return [...new Set(keys)];
-    }
 }
 export class Debounce {
     constructor(callback, wait) {

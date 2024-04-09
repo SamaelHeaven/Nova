@@ -7,11 +7,13 @@ export declare class Application {
 }
 export declare abstract class Component {
     readonly element: HTMLElement;
+    readonly isDirty: boolean;
     constructor(element: HTMLElement);
     render(): string | undefined;
     update(state: object): void;
     queryComponent<T extends Component>(selector: string, element?: HTMLElement): T | null;
     queryComponents<T extends Component>(selector: string, element?: HTMLElement): T[];
+    getKeys(): string[];
     onInit(): void;
     onAppear(): void;
     onUpdate(): void;

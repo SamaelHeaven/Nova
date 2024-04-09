@@ -567,7 +567,7 @@ export class Application {
 
     /** @internal */
     private _registerEventListeners(component: Component): void {
-        for (const key of component._getKeys()) {
+        for (const key of component.getKeys()) {
             const eventType: string = key.substring(2).toLowerCase();
             if (this._eventNames.includes(eventType)) {
                 component.element.addEventListener(eventType, (event: Event): void => {
@@ -587,8 +587,8 @@ export class Application {
 
         morphdom(component.element, newElement, this._morphdomOptions);
         for (const foundComponent of Application.queryComponents("*", component.element.parentElement)) {
-            if (foundComponent._isDirty) {
-                foundComponent._isDirty = false;
+            if (foundComponent.isDirty) {
+                (foundComponent as any).isDirty = false;
                 foundComponent.onUpdate();
             }
         }
@@ -603,7 +603,7 @@ export class Application {
                 toElement.innerHTML = renderedContent;
                 toElement.style.display = "contents";
                 if (!fromElement.isEqualNode(toElement)) {
-                    component._isDirty = true;
+                    (component as any).isDirty = true;
                     return true;
                 }
 
@@ -652,7 +652,7 @@ export class Application {
 
     /** @internal */
     private _observeAttributes(component: Component): void {
-        if (!component._getKeys().includes("onAttributeChanged")) {
+        if (!component.getKeys().includes("onAttributeChanged")) {
             return;
         }
 
@@ -670,13 +670,12 @@ export class Application {
 }
 
 export abstract class Component {
-    /** @internal */
-    public _isDirty: boolean;
     public readonly element: HTMLElement;
+    public readonly isDirty: boolean;
 
     constructor(element: HTMLElement) {
-        this._isDirty = false;
         this.element = element;
+        this.isDirty = false;
     }
 
     public render(): string | undefined {
@@ -684,7 +683,7 @@ export abstract class Component {
     }
 
     public update(state: object): void {
-        for (const key of this._getKeys()) {
+        for (const key of this.getKeys()) {
             if (this[key] === state) {
                 this[key] = state;
             }
@@ -697,6 +696,21 @@ export abstract class Component {
 
     public queryComponents<T extends Component>(selector: string, element?: HTMLElement): T[] {
         return Application.queryComponents<T>(selector, element);
+    }
+
+    public getKeys(): string[] {
+        let keys: string[] = [];
+        let currentPrototype = this;
+        while (currentPrototype) {
+            const parentPrototype = Object.getPrototypeOf(currentPrototype);
+            if (parentPrototype && Object.getPrototypeOf(parentPrototype)) {
+                keys = keys.concat(Object.getOwnPropertyNames(currentPrototype));
+            }
+
+            currentPrototype = parentPrototype;
+        }
+
+        return [...new Set(keys)];
     }
 
     public onInit(): void {}
@@ -770,22 +784,6 @@ export abstract class Component {
     public onTransitionEnd(event: Events.Transition): void {}
 
     public onTransitionCancel(event: Events.Transition): void {}
-
-    /** @internal */
-    public _getKeys(): string[] {
-        let keys: string[] = [];
-        let currentPrototype = this;
-        while (currentPrototype) {
-            const parentPrototype = Object.getPrototypeOf(currentPrototype);
-            if (parentPrototype && Object.getPrototypeOf(parentPrototype)) {
-                keys = keys.concat(Object.getOwnPropertyNames(currentPrototype));
-            }
-
-            currentPrototype = parentPrototype;
-        }
-
-        return [...new Set(keys)];
-    }
 }
 
 export type ComponentConstructor = (new (element: HTMLElement) => Component);

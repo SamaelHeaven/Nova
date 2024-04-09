@@ -1,14 +1,14 @@
 import { Application } from "./Application.js";
 export class Component {
     constructor(element) {
-        this._isDirty = false;
         this.element = element;
+        this.isDirty = false;
     }
     render() {
         return undefined;
     }
     update(state) {
-        for (const key of this._getKeys()) {
+        for (const key of this.getKeys()) {
             if (this[key] === state) {
                 this[key] = state;
             }
@@ -19,6 +19,18 @@ export class Component {
     }
     queryComponents(selector, element) {
         return Application.queryComponents(selector, element);
+    }
+    getKeys() {
+        let keys = [];
+        let currentPrototype = this;
+        while (currentPrototype) {
+            const parentPrototype = Object.getPrototypeOf(currentPrototype);
+            if (parentPrototype && Object.getPrototypeOf(parentPrototype)) {
+                keys = keys.concat(Object.getOwnPropertyNames(currentPrototype));
+            }
+            currentPrototype = parentPrototype;
+        }
+        return [...new Set(keys)];
     }
     onInit() { }
     onAppear() { }
@@ -56,16 +68,4 @@ export class Component {
     onTransitionStart(event) { }
     onTransitionEnd(event) { }
     onTransitionCancel(event) { }
-    _getKeys() {
-        let keys = [];
-        let currentPrototype = this;
-        while (currentPrototype) {
-            const parentPrototype = Object.getPrototypeOf(currentPrototype);
-            if (parentPrototype && Object.getPrototypeOf(parentPrototype)) {
-                keys = keys.concat(Object.getOwnPropertyNames(currentPrototype));
-            }
-            currentPrototype = parentPrototype;
-        }
-        return [...new Set(keys)];
-    }
 }
