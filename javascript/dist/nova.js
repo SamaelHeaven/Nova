@@ -920,6 +920,10 @@ export var Validation;
         return typeof value === "number";
     }
     Validation.isNumber = isNumber;
+    function isFiniteNumber(value) {
+        return typeof value === "number" && isFinite(value);
+    }
+    Validation.isFiniteNumber = isFiniteNumber;
     function isBoolean(value) {
         return typeof value === "boolean";
     }
@@ -928,36 +932,6 @@ export var Validation;
         return Array.isArray(value);
     }
     Validation.isArray = isArray;
-    function isJson(value) {
-        try {
-            JSON.parse(value);
-            return true;
-        }
-        catch (_) {
-            return false;
-        }
-    }
-    Validation.isJson = isJson;
-    function isFiniteNumber(value) {
-        return typeof value === "number" && isFinite(value);
-    }
-    Validation.isFiniteNumber = isFiniteNumber;
-    function isNan(value) {
-        return isNaN(value);
-    }
-    Validation.isNan = isNan;
-    function isInfinity(value) {
-        return value === Infinity || value === -Infinity;
-    }
-    Validation.isInfinity = isInfinity;
-    function isRegex(value, regex) {
-        return regex.test(value);
-    }
-    Validation.isRegex = isRegex;
-    function isEmpty(value) {
-        return value.length === 0;
-    }
-    Validation.isEmpty = isEmpty;
     function isNull(value) {
         return value === null;
     }
@@ -974,4 +948,30 @@ export var Validation;
         return value === null || value === undefined || value.length <= 0;
     }
     Validation.isNullOrUndefinedOrEmpty = isNullOrUndefinedOrEmpty;
+    function isJson(value) {
+        try {
+            JSON.parse(value);
+            return true;
+        }
+        catch (_) {
+            return false;
+        }
+    }
+    Validation.isJson = isJson;
+    function isNan(value) {
+        return isNaN(value);
+    }
+    Validation.isNan = isNan;
+    function isInfinity(value) {
+        return value === Infinity || value === -Infinity;
+    }
+    Validation.isInfinity = isInfinity;
+    function isRegex(value, regex) {
+        return regex.test(value);
+    }
+    Validation.isRegex = isRegex;
+    function isEmpty(value) {
+        return value.length === 0;
+    }
+    Validation.isEmpty = isEmpty;
 })(Validation || (Validation = {}));

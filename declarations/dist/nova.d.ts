@@ -105,20 +105,20 @@ export declare namespace Validation {
     function isInRange(value: number, min: number, max: number): boolean;
     function isString(value: any): boolean;
     function isNumber(value: any): boolean;
+    function isFiniteNumber(value: any): boolean;
     function isBoolean(value: any): boolean;
     function isArray(value: any): boolean;
-    function isJson(value: string): boolean;
-    function isFiniteNumber(value: any): boolean;
-    function isNan(value: number): boolean;
-    function isInfinity(value: number): boolean;
-    function isRegex(value: string, regex: RegExp): boolean;
-    function isEmpty(value: {
-        length: number;
-    }): boolean;
     function isNull(value: any): boolean;
     function isUndefined(value: any): boolean;
     function isNullOrUndefined(value: any): boolean;
     function isNullOrUndefinedOrEmpty(value: null | undefined | {
+        length: number;
+    }): boolean;
+    function isJson(value: string): boolean;
+    function isNan(value: number): boolean;
+    function isInfinity(value: number): boolean;
+    function isRegex(value: string, regex: RegExp): boolean;
+    function isEmpty(value: {
         length: number;
     }): boolean;
 }

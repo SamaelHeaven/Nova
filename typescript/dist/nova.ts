@@ -1043,41 +1043,16 @@ export namespace Validation {
         return typeof value === "number";
     }
 
+    export function isFiniteNumber(value: any): boolean {
+        return typeof value === "number" && isFinite(value);
+    }
+
     export function isBoolean(value: any): boolean {
         return typeof value === "boolean";
     }
 
     export function isArray(value: any): boolean {
         return Array.isArray(value);
-    }
-
-    export function isJson(value: string): boolean {
-        try {
-            JSON.parse(value);
-            return true;
-        } catch (_) {
-            return false;
-        }
-    }
-
-    export function isFiniteNumber(value: any): boolean {
-        return typeof value === "number" && isFinite(value);
-    }
-
-    export function isNan(value: number): boolean {
-        return isNaN(value);
-    }
-
-    export function isInfinity(value: number): boolean {
-        return value === Infinity || value === -Infinity;
-    }
-
-    export function isRegex(value: string, regex: RegExp): boolean {
-        return regex.test(value);
-    }
-
-    export function isEmpty(value: { length: number }): boolean {
-        return value.length === 0;
     }
 
     export function isNull(value: any): boolean {
@@ -1094,5 +1069,30 @@ export namespace Validation {
 
     export function isNullOrUndefinedOrEmpty(value: null | undefined | { length: number }): boolean {
         return value === null || value === undefined || value.length <= 0;
+    }
+
+    export function isJson(value: string): boolean {
+        try {
+            JSON.parse(value);
+            return true;
+        } catch (_) {
+            return false;
+        }
+    }
+
+    export function isNan(value: number): boolean {
+        return isNaN(value);
+    }
+
+    export function isInfinity(value: number): boolean {
+        return value === Infinity || value === -Infinity;
+    }
+
+    export function isRegex(value: string, regex: RegExp): boolean {
+        return regex.test(value);
+    }
+
+    export function isEmpty(value: { length: number }): boolean {
+        return value.length === 0;
     }
 }
