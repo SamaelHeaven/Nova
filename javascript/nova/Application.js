@@ -10,21 +10,23 @@ export class Application {
         };
     }
     static launch(components) {
-        if (Application._instance !== null) {
+        if (this._instance !== null) {
             throw new Error("Application has already been launched");
         }
-        const app = Application._getInstance();
+        const app = this._getInstance();
         app._initializeComponents([...new Set(components)]);
     }
     static updateComponent(component) {
-        Application._throwIfUninitialized();
-        Application._getInstance()._updateComponent(component);
+        this._throwIfUninitialized();
+        this._getInstance()._updateComponent(component);
     }
     static queryComponent(selector, element = document.documentElement) {
         var _a;
+        this._throwIfUninitialized();
         return ((_a = element.querySelector(selector)) === null || _a === void 0 ? void 0 : _a.component) || null;
     }
     static queryComponents(selector, element = document.documentElement) {
+        this._throwIfUninitialized();
         const components = [];
         for (const foundElement of Array.from(element.querySelectorAll(selector))) {
             const component = foundElement.component;
@@ -36,10 +38,10 @@ export class Application {
     }
     static _getInstance() {
         var _a;
-        return (_a = Application._instance) !== null && _a !== void 0 ? _a : (Application._instance = new Application());
+        return (_a = this._instance) !== null && _a !== void 0 ? _a : (this._instance = new Application());
     }
     static _throwIfUninitialized() {
-        if (Application._instance === null) {
+        if (this._instance === null) {
             throw new Error("Application has not been launched");
         }
     }
@@ -56,7 +58,7 @@ export class Application {
     _updateComponent(component) {
         const newElement = component.element.cloneNode(false);
         const renderedContent = component.render();
-        if (renderedContent === undefined) {
+        if (typeof renderedContent !== "string") {
             return;
         }
         morphdom(component.element, newElement, this._morphdomOptions);
@@ -71,7 +73,7 @@ export class Application {
         const component = fromElement.component;
         if (component) {
             const renderedContent = component.render();
-            if (renderedContent !== undefined) {
+            if (typeof renderedContent === "string") {
                 toElement.innerHTML = renderedContent;
                 toElement.style.display = "contents";
                 if (!fromElement.isEqualNode(toElement)) {
@@ -98,7 +100,7 @@ export class Application {
                 app._registerEventListeners(this.component);
                 this.component.onInit();
                 const renderedContent = this.component.render();
-                if (renderedContent !== undefined) {
+                if (typeof renderedContent === "string") {
                     this.innerHTML = renderedContent;
                 }
                 this.component.onAppear();

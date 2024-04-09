@@ -49,10 +49,10 @@ export declare abstract class Component {
     onTransitionEnd(event: Events.Transition): void;
     onTransitionCancel(event: Events.Transition): void;
 }
-export type ComponentConstructor<T extends Component> = (new (element: HTMLElement) => T);
+export type ComponentConstructor = (new (element: HTMLElement) => Component);
 export type ComponentDefinition = {
     tagName: string;
-    constructor: ComponentConstructor<Component>;
+    constructor: ComponentConstructor;
 };
 export declare class Debounce {
     constructor(callback: Function, wait: number);

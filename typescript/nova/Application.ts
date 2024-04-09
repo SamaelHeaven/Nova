@@ -21,24 +21,26 @@ export class Application {
     }
 
     public static launch(components: ComponentDefinition[]): void {
-        if (Application._instance !== null) {
+        if (this._instance !== null) {
             throw new Error("Application has already been launched");
         }
 
-        const app: Application = Application._getInstance();
+        const app: Application = this._getInstance();
         app._initializeComponents([...new Set(components)]);
     }
 
     public static updateComponent(component: Component): void {
-        Application._throwIfUninitialized();
-        Application._getInstance()._updateComponent(component);
+        this._throwIfUninitialized();
+        this._getInstance()._updateComponent(component);
     }
 
     public static queryComponent<T extends Component>(selector: string, element: HTMLElement = document.documentElement): T | null {
+        this._throwIfUninitialized();
         return (element.querySelector(selector) as any)?.component || null;
     }
 
     public static queryComponents<T extends Component>(selector: string, element: HTMLElement = document.documentElement): T[] {
+        this._throwIfUninitialized();
         const components: T[] = [];
         for (const foundElement of Array.from(element.querySelectorAll(selector))) {
             const component = (foundElement as any).component;
@@ -52,12 +54,12 @@ export class Application {
 
     /** @internal */
     private static _getInstance(): Application {
-        return Application._instance ??= new Application();
+        return this._instance ??= new Application();
     }
 
     /** @internal */
     private static _throwIfUninitialized(): void {
-        if (Application._instance === null) {
+        if (this._instance === null) {
             throw new Error("Application has not been launched");
         }
     }
@@ -68,7 +70,7 @@ export class Application {
             const eventType: string = key.substring(2).toLowerCase();
             if (this._eventNames.includes(eventType)) {
                 component.element.addEventListener(eventType, (event: Event): void => {
-                    (component as any)[key](event);
+                    component[key](event);
                 });
             }
         }
@@ -78,7 +80,7 @@ export class Application {
     private _updateComponent(component: Component): void {
         const newElement: HTMLElement = component.element.cloneNode(false) as HTMLElement;
         const renderedContent: string | undefined = component.render();
-        if (renderedContent === undefined) {
+        if (typeof renderedContent !== "string") {
             return;
         }
 
@@ -95,8 +97,8 @@ export class Application {
     private _onBeforeElementUpdated(fromElement: HTMLElement, toElement: HTMLElement): boolean {
         const component: Component = (fromElement as any).component;
         if (component) {
-            const renderedContent: string = component.render();
-            if (renderedContent !== undefined) {
+            const renderedContent: string | undefined = component.render();
+            if (typeof renderedContent === "string") {
                 toElement.innerHTML = renderedContent;
                 toElement.style.display = "contents";
                 if (!fromElement.isEqualNode(toElement)) {
@@ -131,8 +133,8 @@ export class Application {
                 app._observeAttributes(this.component);
                 app._registerEventListeners(this.component);
                 this.component.onInit();
-                const renderedContent: string = this.component.render();
-                if (renderedContent !== undefined) {
+                const renderedContent: string | undefined = this.component.render();
+                if (typeof renderedContent === "string") {
                     this.innerHTML = renderedContent;
                 }
 
