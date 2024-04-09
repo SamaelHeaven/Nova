@@ -607,6 +607,9 @@ export class Application {
         customElements.define(component.tagName, ComponentElement);
     }
     _observeAttributes(component) {
+        if (!component.getKeys().includes("onAttributeChanged")) {
+            return;
+        }
         const observerConfig = { attributes: true, attributeOldValue: true, subtree: false };
         const observer = new MutationObserver((mutationsList, _) => {
             for (const mutation of mutationsList) {

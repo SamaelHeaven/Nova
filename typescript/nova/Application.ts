@@ -145,6 +145,10 @@ export class Application {
 
     /** @internal */
     private _observeAttributes(component: Component): void {
+        if (!component.getKeys().includes("onAttributeChanged")) {
+            return;
+        }
+
         const observerConfig: MutationObserverInit = {attributes: true, attributeOldValue: true, subtree: false};
         const observer: MutationObserver = new MutationObserver((mutationsList: MutationRecord[], _: MutationObserver): void => {
             for (const mutation of mutationsList) {
