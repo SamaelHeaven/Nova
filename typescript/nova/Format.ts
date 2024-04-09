@@ -1,11 +1,9 @@
-import {Validation} from "./Validation.js";
-
 export namespace Format {
     export function date(value: Date | number | string | undefined, format: string): string {
         let date: Date;
         if (value instanceof Date) {
             date = value;
-        } else if (Validation.isNullOrUndefined(value)) {
+        } else if (!value) {
             date = new Date();
         } else {
             date = new Date(value);

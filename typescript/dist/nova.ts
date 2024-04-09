@@ -579,7 +579,7 @@ export class Application {
     private _updateComponent(component: Component): void {
         const newElement: HTMLElement = component.element.cloneNode(false) as HTMLElement;
         const renderedContent: string | undefined = component.render();
-        if (Validation.isNullOrUndefined(renderedContent)) {
+        if (renderedContent === undefined) {
             return;
         }
 
@@ -597,7 +597,7 @@ export class Application {
         const component: Component = (fromElement as any).component;
         if (component) {
             const renderedContent: string = component.render();
-            if (!Validation.isNullOrUndefined(renderedContent)) {
+            if (renderedContent === undefined) {
                 toElement.innerHTML = renderedContent;
                 toElement.style.display = "contents";
                 if (!fromElement.isEqualNode(toElement)) {
@@ -633,7 +633,7 @@ export class Application {
                 app._registerEventListeners(this.component);
                 this.component.onInit();
                 const renderedContent: string = this.component.render();
-                if (!Validation.isNullOrUndefined(renderedContent)) {
+                if (renderedContent === undefined) {
                     this.innerHTML = renderedContent;
                 }
 
@@ -829,7 +829,7 @@ export namespace Format {
         let date: Date;
         if (value instanceof Date) {
             date = value;
-        } else if (Validation.isNullOrUndefined(value)) {
+        } else if (!value) {
             date = new Date();
         } else {
             date = new Date(value);

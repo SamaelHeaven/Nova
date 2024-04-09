@@ -1,4 +1,3 @@
-import { Validation } from "./Validation.js";
 export var Format;
 (function (Format) {
     function date(value, format) {
@@ -6,7 +5,7 @@ export var Format;
         if (value instanceof Date) {
             date = value;
         }
-        else if (Validation.isNullOrUndefined(value)) {
+        else if (!value) {
             date = new Date();
         }
         else {

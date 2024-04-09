@@ -1,5 +1,4 @@
 import { morphdom } from "./morphdom.js";
-import { Validation } from "./Validation.js";
 export class Application {
     constructor() {
         const app = this;
@@ -57,7 +56,7 @@ export class Application {
     _updateComponent(component) {
         const newElement = component.element.cloneNode(false);
         const renderedContent = component.render();
-        if (Validation.isNullOrUndefined(renderedContent)) {
+        if (renderedContent === undefined) {
             return;
         }
         morphdom(component.element, newElement, this._morphdomOptions);
@@ -72,7 +71,7 @@ export class Application {
         const component = fromElement.component;
         if (component) {
             const renderedContent = component.render();
-            if (!Validation.isNullOrUndefined(renderedContent)) {
+            if (renderedContent === undefined) {
                 toElement.innerHTML = renderedContent;
                 toElement.style.display = "contents";
                 if (!fromElement.isEqualNode(toElement)) {
@@ -99,7 +98,7 @@ export class Application {
                 app._registerEventListeners(this.component);
                 this.component.onInit();
                 const renderedContent = this.component.render();
-                if (!Validation.isNullOrUndefined(renderedContent)) {
+                if (renderedContent === undefined) {
                     this.innerHTML = renderedContent;
                 }
                 this.component.onAppear();
