@@ -74,6 +74,7 @@ export class Application {
             const renderedContent = component.render();
             if (!Validation.isNullOrUndefined(renderedContent)) {
                 toElement.innerHTML = renderedContent;
+                toElement.style.display = fromElement.style.display;
                 if (!fromElement.isEqualNode(toElement)) {
                     component._isDirty = true;
                 }
