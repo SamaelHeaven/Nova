@@ -1,38 +1,33 @@
 import {Component} from "./Component.js";
 import {morphdom} from "./morphdom.js";
 import {Validation} from "./Validation.js";
+import {ComponentDefinition} from "./ComponentDefinition.js";
 
 export class Application {
     /** @internal */
     private static _instance: Application | null = null;
     /** @internal */
-    private readonly _morphdomOptions: object;
-    /** @internal */
     private readonly _eventNames: string[];
     /** @internal */
-    private _components: { name: string, class: (new (element: HTMLElement) => Component) }[];
+    private readonly _morphdomOptions: object;
 
     private constructor() {
+        const app = this;
+        this._eventNames = ["click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseenter", "mouseleave", "mouseover", "mouseout", "keydown", "keypress", "keyup", "focus", "blur", "input", "change", "submit", "scroll", "error", "resize", "select", "touchstart", "touchmove", "touchend", "touchcancel", "animationstart", "animationend", "animationiteration", "transitionstart", "transitionend", "transitioncancel"];
         this._morphdomOptions = {
-            onBeforeElUpdated: function (fromElement: {
-                isEqualNode: (arg: any) => any;
-            }, toElement: any) {
-                return !fromElement.isEqualNode(toElement);
+            onBeforeElUpdated: function (fromEl: HTMLElement, toEl: HTMLElement): boolean {
+                return app._onBeforeElementUpdated(fromEl, toEl)
             }
         };
-
-        this._eventNames = ["click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseenter", "mouseleave", "mouseover", "mouseout", "keydown", "keypress", "keyup", "focus", "blur", "input", "change", "submit", "scroll", "error", "resize", "select", "touchstart", "touchmove", "touchend", "touchcancel", "animationstart", "animationend", "animationiteration", "transitionstart", "transitionend", "transitioncancel"];
-        this._components = [];
     }
 
-    public static launch(components: { name: string, class: (new (element: HTMLElement) => Component) }[]): void {
+    public static launch(components: ComponentDefinition[]): void {
         if (Application._instance !== null) {
             throw new Error("Application has already been launched");
         }
 
         const app: Application = Application._getInstance();
-        app._components = [...components];
-        app._initializeComponents();
+        app._initializeComponents([...components]);
     }
 
     public static updateComponent(component: Component): void {
@@ -40,19 +35,16 @@ export class Application {
         Application._getInstance()._updateComponent(component);
     }
 
-    public static getComponent<T extends Component>(component: (new (element: HTMLElement) => T), element: HTMLElement = document.documentElement): T | null {
-        Application._throwIfUninitialized();
-        const name: string = Application._getInstance()._components.find(c => c.class == component).name;
-        return (element.getElementsByTagName(name) as any)?.component || null;
+    public static queryComponent<T extends Component>(selector: string, element: HTMLElement = document.documentElement): T | null {
+        return (element.querySelector(selector) as any)?.component || null;
     }
 
-    public static getComponents<T extends Component>(component: (new (element: HTMLElement) => T), element: HTMLElement = document.documentElement): T[] {
-        Application._throwIfUninitialized();
-        const name: string = Application._getInstance()._components.find(c => c.class == component).name;
+    public static queryComponents<T extends Component>(selector: string, element: HTMLElement = document.documentElement): T[] {
         const components: T[] = [];
-        for (const componentElement of Array.from(element.getElementsByTagName(name))) {
-            if ((componentElement as any).component) {
-                components.push((componentElement as any).component);
+        for (const foundElement of Array.from(element.querySelectorAll(selector))) {
+            const component = (foundElement as any).component;
+            if (component) {
+                components.push(component);
             }
         }
 
@@ -91,16 +83,52 @@ export class Application {
             return;
         }
 
-        newElement.innerHTML = component.render();
         morphdom(component.element, newElement, this._morphdomOptions);
-        component.onRender();
     }
 
     /** @internal */
-    private _initializeComponents(): void {
-        for (const component of this._components) {
+    private _onBeforeElementUpdated(fromElement: HTMLElement, toElement: HTMLElement): boolean {
+        const component = (fromElement as any).component;
+        if (component) {
+            const renderedContent = component.render();
+            if (!Validation.isNullOrUndefined(renderedContent)) {
+                toElement.innerHTML = renderedContent;
+                component.onRender();
+            }
+        }
+
+        return !fromElement.isEqualNode(toElement);
+    }
+
+    /** @internal */
+    private _initializeComponents(components: ComponentDefinition[]): void {
+        for (const component of components) {
             this._initializeComponent(component);
         }
+    }
+
+    /** @internal */
+    private _initializeComponent(component: ComponentDefinition): void {
+        const app = this;
+
+        class ComponentElement extends HTMLElement {
+            public component: Component;
+
+            public connectedCallback(): void {
+                this.component = new component.constructor(this);
+                app._observeAttributes(this.component);
+                app._registerEventListeners(this.component);
+                this.component.onInit();
+                app._updateComponent(this.component);
+                this.component.onAppear();
+            }
+
+            public disconnectedCallback(): void {
+                this.component.onDestroy();
+            }
+        }
+
+        customElements.define(component.tagName, ComponentElement);
     }
 
     /** @internal */
@@ -115,29 +143,5 @@ export class Application {
         });
 
         observer.observe(component.element, observerConfig);
-    }
-
-    /** @internal */
-    private _initializeComponent(component: { name: string, class: (new (element: HTMLElement) => Component) }): void {
-        const app = this;
-
-        class ComponentElement extends HTMLElement {
-            public component: Component;
-
-            public connectedCallback(): void {
-                this.component = new component.class(this);
-                app._observeAttributes(this.component);
-                app._registerEventListeners(this.component);
-                this.component.onInit();
-                app._updateComponent(this.component);
-                this.component.onAppear();
-            }
-
-            public disconnectedCallback(): void {
-                this.component.onDestroy();
-            }
-        }
-
-        customElements.define(component.name, ComponentElement);
     }
 }

@@ -1,24 +1,16 @@
 import { Validation } from "./Validation.js";
 export var Format;
 (function (Format) {
-    function date(arg, format) {
+    function date(value, format) {
         let date;
-        if (arg instanceof Date) {
-            date = arg;
+        if (value instanceof Date) {
+            date = value;
         }
-        else if (arg === "today" || Validation.isNumber(arg) || Validation.isNullOrUndefinedOrEmpty(arg)) {
+        else if (Validation.isNullOrUndefined(value)) {
             date = new Date();
-        }
-        else if (arg === "tomorrow") {
-            date = new Date();
-            date.setDate(date.getDate() + 1);
-        }
-        else if (arg === "yesterday") {
-            date = new Date();
-            date.setDate(date.getDate() - 1);
         }
         else {
-            date = new Date(arg);
+            date = new Date(value);
         }
         const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
         const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -78,33 +70,35 @@ export var Format;
         });
     }
     Format.date = date;
-    function titleCase(arg) {
-        const str = String(arg).trim();
+    function titleCase(value) {
+        const str = value.trim();
         return str.charAt(0).toUpperCase() + str.slice(1);
     }
     Format.titleCase = titleCase;
-    function upperCase(arg) {
-        const str = String(arg).trim();
+    function upperCase(value) {
+        const str = value.trim();
         return str.toUpperCase();
     }
     Format.upperCase = upperCase;
-    function lowerCase(arg) {
-        const str = String(arg).trim();
+    function lowerCase(value) {
+        const str = value.trim();
         return str.toLowerCase();
     }
     Format.lowerCase = lowerCase;
-    function percentage(arg, digits) {
-        const value = Number(arg);
+    function json(value) {
+        return JSON.stringify(value);
+    }
+    Format.json = json;
+    function percentage(value, digits = 2) {
         return value.toFixed(digits) + "%";
     }
     Format.percentage = percentage;
-    function decimal(arg, digits) {
-        const value = Number(arg);
+    function decimal(value, digits = 2) {
         return value.toFixed(digits);
     }
     Format.decimal = decimal;
-    function currency(amount, currency = "USD") {
-        return amount.toLocaleString(undefined, {
+    function currency(value, currency = "USD") {
+        return value.toLocaleString(undefined, {
             style: 'currency',
             currency: currency
         });

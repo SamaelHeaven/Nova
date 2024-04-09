@@ -7,11 +7,12 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var _a;
 import { Component, Format, State } from "../nova/lib.js";
 export class DatePickerComponent extends Component {
     constructor() {
         super(...arguments);
-        this._today = Format.date("today", "yyyy-mm-dd");
+        this._today = Format.date(undefined, "yyyy-mm-dd");
         this._startDate = this._today;
         this._endDate = null;
     }
@@ -47,6 +48,8 @@ export class DatePickerComponent extends Component {
         `;
     }
 }
+_a = DatePickerComponent;
+DatePickerComponent.definition = { tagName: "date-picker-component", constructor: _a };
 __decorate([
     State,
     __metadata("design:type", String)

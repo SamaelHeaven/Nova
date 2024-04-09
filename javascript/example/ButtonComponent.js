@@ -7,6 +7,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var _a;
 import { Component, State } from "../nova/lib.js";
 export class ButtonComponent extends Component {
     constructor() {
@@ -44,6 +45,8 @@ export class ButtonComponent extends Component {
         `;
     }
 }
+_a = ButtonComponent;
+ButtonComponent.definition = { tagName: "button-component", constructor: _a };
 __decorate([
     State,
     __metadata("design:type", Number)

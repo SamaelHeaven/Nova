@@ -1,6 +1,7 @@
-import {Component, Debounce, Events, State, Validation} from "../nova/lib.js";
+import {Component, ComponentDefinition, Debounce, Events, State, Validation} from "../nova/lib.js";
 
 export class EmailInputComponent extends Component {
+    public static readonly definition: ComponentDefinition = {tagName: "email-input-component", constructor: this}
     @State private _valid: boolean = false;
     private readonly _inputDebounce: Debounce = new Debounce(this._onDebounceInput.bind(this), 300);
 

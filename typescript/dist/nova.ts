@@ -507,33 +507,27 @@ export class Application {
     /** @internal */
     private static _instance: Application | null = null;
     /** @internal */
-    private readonly _morphdomOptions: object;
-    /** @internal */
     private readonly _eventNames: string[];
     /** @internal */
-    private _components: { name: string, class: (new (element: HTMLElement) => Component) }[];
+    private readonly _morphdomOptions: object;
 
     private constructor() {
+        const app = this;
+        this._eventNames = ["click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseenter", "mouseleave", "mouseover", "mouseout", "keydown", "keypress", "keyup", "focus", "blur", "input", "change", "submit", "scroll", "error", "resize", "select", "touchstart", "touchmove", "touchend", "touchcancel", "animationstart", "animationend", "animationiteration", "transitionstart", "transitionend", "transitioncancel"];
         this._morphdomOptions = {
-            onBeforeElUpdated: function (fromElement: {
-                isEqualNode: (arg: any) => any;
-            }, toElement: any) {
-                return !fromElement.isEqualNode(toElement);
+            onBeforeElUpdated: function (fromEl: HTMLElement, toEl: HTMLElement): boolean {
+                return app._onBeforeElementUpdated(fromEl, toEl)
             }
         };
-
-        this._eventNames = ["click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseenter", "mouseleave", "mouseover", "mouseout", "keydown", "keypress", "keyup", "focus", "blur", "input", "change", "submit", "scroll", "error", "resize", "select", "touchstart", "touchmove", "touchend", "touchcancel", "animationstart", "animationend", "animationiteration", "transitionstart", "transitionend", "transitioncancel"];
-        this._components = [];
     }
 
-    public static launch(components: { name: string, class: (new (element: HTMLElement) => Component) }[]): void {
+    public static launch(components: ComponentDefinition[]): void {
         if (Application._instance !== null) {
             throw new Error("Application has already been launched");
         }
 
         const app: Application = Application._getInstance();
-        app._components = [...components];
-        app._initializeComponents();
+        app._initializeComponents([...components]);
     }
 
     public static updateComponent(component: Component): void {
@@ -541,19 +535,16 @@ export class Application {
         Application._getInstance()._updateComponent(component);
     }
 
-    public static getComponent<T extends Component>(component: (new (element: HTMLElement) => T), element: HTMLElement = document.documentElement): T | null {
-        Application._throwIfUninitialized();
-        const name: string = Application._getInstance()._components.find(c => c.class == component).name;
-        return (element.getElementsByTagName(name) as any)?.component || null;
+    public static queryComponent<T extends Component>(selector: string, element: HTMLElement = document.documentElement): T | null {
+        return (element.querySelector(selector) as any)?.component || null;
     }
 
-    public static getComponents<T extends Component>(component: (new (element: HTMLElement) => T), element: HTMLElement = document.documentElement): T[] {
-        Application._throwIfUninitialized();
-        const name: string = Application._getInstance()._components.find(c => c.class == component).name;
+    public static queryComponents<T extends Component>(selector: string, element: HTMLElement = document.documentElement): T[] {
         const components: T[] = [];
-        for (const componentElement of Array.from(element.getElementsByTagName(name))) {
-            if ((componentElement as any).component) {
-                components.push((componentElement as any).component);
+        for (const foundElement of Array.from(element.querySelectorAll(selector))) {
+            const component = (foundElement as any).component;
+            if (component) {
+                components.push(component);
             }
         }
 
@@ -592,16 +583,52 @@ export class Application {
             return;
         }
 
-        newElement.innerHTML = component.render();
         morphdom(component.element, newElement, this._morphdomOptions);
-        component.onRender();
     }
 
     /** @internal */
-    private _initializeComponents(): void {
-        for (const component of this._components) {
+    private _onBeforeElementUpdated(fromElement: HTMLElement, toElement: HTMLElement): boolean {
+        const component = (fromElement as any).component;
+        if (component) {
+            const renderedContent = component.render();
+            if (!Validation.isNullOrUndefined(renderedContent)) {
+                toElement.innerHTML = renderedContent;
+                component.onRender();
+            }
+        }
+
+        return !fromElement.isEqualNode(toElement);
+    }
+
+    /** @internal */
+    private _initializeComponents(components: ComponentDefinition[]): void {
+        for (const component of components) {
             this._initializeComponent(component);
         }
+    }
+
+    /** @internal */
+    private _initializeComponent(component: ComponentDefinition): void {
+        const app = this;
+
+        class ComponentElement extends HTMLElement {
+            public component: Component;
+
+            public connectedCallback(): void {
+                this.component = new component.constructor(this);
+                app._observeAttributes(this.component);
+                app._registerEventListeners(this.component);
+                this.component.onInit();
+                app._updateComponent(this.component);
+                this.component.onAppear();
+            }
+
+            public disconnectedCallback(): void {
+                this.component.onDestroy();
+            }
+        }
+
+        customElements.define(component.tagName, ComponentElement);
     }
 
     /** @internal */
@@ -616,30 +643,6 @@ export class Application {
         });
 
         observer.observe(component.element, observerConfig);
-    }
-
-    /** @internal */
-    private _initializeComponent(component: { name: string, class: (new (element: HTMLElement) => Component) }): void {
-        const app = this;
-
-        class ComponentElement extends HTMLElement {
-            public component: Component;
-
-            public connectedCallback(): void {
-                this.component = new component.class(this);
-                app._observeAttributes(this.component);
-                app._registerEventListeners(this.component);
-                this.component.onInit();
-                app._updateComponent(this.component);
-                this.component.onAppear();
-            }
-
-            public disconnectedCallback(): void {
-                this.component.onDestroy();
-            }
-        }
-
-        customElements.define(component.name, ComponentElement);
     }
 }
 
@@ -667,12 +670,12 @@ export abstract class Component {
         }
     }
 
-    public getComponent<T extends Component>(component: (new (element: HTMLElement) => T), element?: HTMLElement): T | null {
-        return Application.getComponent(component, element);
+    public queryComponent<T extends Component>(selector: string, element?: HTMLElement): T | null {
+        return Application.queryComponent<T>(selector, element);
     }
 
-    public getComponents<T extends Component>(component: (new (element: HTMLElement) => T), element?: HTMLElement): T[] {
-        return Application.getComponents(component, element);
+    public queryComponents<T extends Component>(selector: string, element?: HTMLElement): T[] {
+        return Application.queryComponents<T>(selector, element);
     }
 
     public onInit(): void {}
@@ -764,6 +767,10 @@ export abstract class Component {
     }
 }
 
+export type ComponentConstructor<T extends Component> = (new (element: HTMLElement) => T);
+
+export type ComponentDefinition = { tagName: string, constructor: ComponentConstructor<Component> };
+
 export class Debounce {
     /** @internal */
     private readonly _callback: (...args: any[]) => void;
@@ -774,7 +781,7 @@ export class Debounce {
         this._timeoutId = null;
         this._callback = (...args: any[]): void => {
             window.clearTimeout(this._timeoutId);
-            this._timeoutId = window.setTimeout(() => {
+            this._timeoutId = window.setTimeout((): void => {
                 callback.apply(null, args);
             }, wait);
         };
@@ -799,20 +806,14 @@ export namespace Events {
 }
 
 export namespace Format {
-    export function date(arg: Date | undefined | null | number | string | "today" | "tomorrow" | "yesterday", format: string): string {
+    export function date(value: Date | number | string | undefined, format: string): string {
         let date: Date;
-        if (arg instanceof Date) {
-            date = arg;
-        } else if (arg === "today" || Validation.isNumber(arg) || Validation.isNullOrUndefinedOrEmpty(arg as string)) {
+        if (value instanceof Date) {
+            date = value;
+        } else if (Validation.isNullOrUndefined(value)) {
             date = new Date();
-        } else if (arg === "tomorrow") {
-            date = new Date();
-            date.setDate(date.getDate() + 1);
-        } else if (arg === "yesterday") {
-            date = new Date();
-            date.setDate(date.getDate() - 1);
         } else {
-            date = new Date(arg);
+            date = new Date(value);
         }
 
         const monthNames: string[] = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -874,33 +875,35 @@ export namespace Format {
         });
     }
 
-    export function titleCase(arg: any): string {
-        const str: string = String(arg).trim();
+    export function titleCase(value: string): string {
+        const str: string = value.trim();
         return str.charAt(0).toUpperCase() + str.slice(1);
     }
 
-    export function upperCase(arg: any): string {
-        const str: string = String(arg).trim();
+    export function upperCase(value: string): string {
+        const str: string = value.trim();
         return str.toUpperCase();
     }
 
-    export function lowerCase(arg: any): string {
-        const str: string = String(arg).trim();
+    export function lowerCase(value: string): string {
+        const str: string = value.trim();
         return str.toLowerCase();
     }
 
-    export function percentage(arg: any, digits: number): string {
-        const value: number = Number(arg);
+    export function json(value: object): string {
+        return JSON.stringify(value);
+    }
+
+    export function percentage(value: number, digits: number = 2): string {
         return value.toFixed(digits) + "%";
     }
 
-    export function decimal(arg: any, digits: number): string {
-        const value: number = Number(arg);
+    export function decimal(value: number, digits: number = 2): string {
         return value.toFixed(digits);
     }
 
-    export function currency(amount: number, currency: string = "USD"): string {
-        return amount.toLocaleString(undefined, {
+    export function currency(value: number, currency: string = "USD"): string {
+        return value.toLocaleString(undefined, {
             style: 'currency',
             currency: currency
         });
@@ -933,6 +936,7 @@ export namespace LocalStorage {
             value,
             expiry: ttl !== undefined ? new Date().getTime() + ttl : undefined
         };
+
         localStorage.setItem(key, JSON.stringify(item));
     }
 }

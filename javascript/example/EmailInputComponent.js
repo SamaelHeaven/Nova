@@ -7,6 +7,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var _a;
 import { Component, Debounce, State, Validation } from "../nova/lib.js";
 export class EmailInputComponent extends Component {
     constructor() {
@@ -38,6 +39,8 @@ export class EmailInputComponent extends Component {
         this._valid = Validation.isEmail(event.target.value.trim());
     }
 }
+_a = EmailInputComponent;
+EmailInputComponent.definition = { tagName: "email-input-component", constructor: _a };
 __decorate([
     State,
     __metadata("design:type", Boolean)

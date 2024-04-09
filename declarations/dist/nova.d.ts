@@ -1,20 +1,17 @@
 export declare class Application {
     private constructor();
-    static launch(components: {
-        name: string;
-        class: (new (element: HTMLElement) => Component);
-    }[]): void;
+    static launch(components: ComponentDefinition[]): void;
     static updateComponent(component: Component): void;
-    static getComponent<T extends Component>(component: (new (element: HTMLElement) => T), element?: HTMLElement): T | null;
-    static getComponents<T extends Component>(component: (new (element: HTMLElement) => T), element?: HTMLElement): T[];
+    static queryComponent<T extends Component>(selector: string, element?: HTMLElement): T | null;
+    static queryComponents<T extends Component>(selector: string, element?: HTMLElement): T[];
 }
 export declare abstract class Component {
     constructor(element: HTMLElement);
     render(): string | undefined;
     get element(): HTMLElement;
     update(state: object): void;
-    getComponent<T extends Component>(component: (new (element: HTMLElement) => T), element?: HTMLElement): T | null;
-    getComponents<T extends Component>(component: (new (element: HTMLElement) => T), element?: HTMLElement): T[];
+    queryComponent<T extends Component>(selector: string, element?: HTMLElement): T | null;
+    queryComponents<T extends Component>(selector: string, element?: HTMLElement): T[];
     onInit(): void;
     onAppear(): void;
     onRender(): void;
@@ -52,6 +49,11 @@ export declare abstract class Component {
     onTransitionEnd(event: Events.Transition): void;
     onTransitionCancel(event: Events.Transition): void;
 }
+export type ComponentConstructor<T extends Component> = (new (element: HTMLElement) => T);
+export type ComponentDefinition = {
+    tagName: string;
+    constructor: ComponentConstructor<Component>;
+};
 export declare class Debounce {
     constructor(callback: Function, wait: number);
     call(...args: any[]): void;
@@ -73,13 +75,14 @@ export declare namespace Events {
     type Transition = TransitionEvent & BaseEvent;
 }
 export declare namespace Format {
-    function date(arg: Date | undefined | null | number | string | "today" | "tomorrow" | "yesterday", format: string): string;
-    function titleCase(arg: any): string;
-    function upperCase(arg: any): string;
-    function lowerCase(arg: any): string;
-    function percentage(arg: any, digits: number): string;
-    function decimal(arg: any, digits: number): string;
-    function currency(amount: number, currency?: string): string;
+    function date(value: Date | number | string | undefined, format: string): string;
+    function titleCase(value: string): string;
+    function upperCase(value: string): string;
+    function lowerCase(value: string): string;
+    function json(value: object): string;
+    function percentage(value: number, digits?: number): string;
+    function decimal(value: number, digits?: number): string;
+    function currency(value: number, currency?: string): string;
 }
 export declare namespace LocalStorage {
     function getItem<T>(key: string): T | null;

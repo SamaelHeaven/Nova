@@ -8,7 +8,7 @@ export class Debounce {
         this._timeoutId = null;
         this._callback = (...args: any[]): void => {
             window.clearTimeout(this._timeoutId);
-            this._timeoutId = window.setTimeout(() => {
+            this._timeoutId = window.setTimeout((): void => {
                 callback.apply(null, args);
             }, wait);
         };

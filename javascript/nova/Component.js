@@ -16,11 +16,11 @@ export class Component {
             }
         }
     }
-    getComponent(component, element) {
-        return Application.getComponent(component, element);
+    queryComponent(selector, element) {
+        return Application.queryComponent(selector, element);
     }
-    getComponents(component, element) {
-        return Application.getComponents(component, element);
+    queryComponents(selector, element) {
+        return Application.queryComponents(selector, element);
     }
     onInit() { }
     onAppear() { }

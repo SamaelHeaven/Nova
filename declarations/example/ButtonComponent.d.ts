@@ -1,5 +1,6 @@
-import { Component, Events } from "../nova/lib.js";
+import { Component, ComponentDefinition, Events } from "../nova/lib.js";
 export declare class ButtonComponent extends Component {
+    static readonly definition: ComponentDefinition;
     private _content;
     private _count;
     onInit(): void;

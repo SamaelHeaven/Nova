@@ -1,20 +1,14 @@
 import {Validation} from "./Validation.js";
 
 export namespace Format {
-    export function date(arg: Date | undefined | null | number | string | "today" | "tomorrow" | "yesterday", format: string): string {
+    export function date(value: Date | number | string | undefined, format: string): string {
         let date: Date;
-        if (arg instanceof Date) {
-            date = arg;
-        } else if (arg === "today" || Validation.isNumber(arg) || Validation.isNullOrUndefinedOrEmpty(arg as string)) {
+        if (value instanceof Date) {
+            date = value;
+        } else if (Validation.isNullOrUndefined(value)) {
             date = new Date();
-        } else if (arg === "tomorrow") {
-            date = new Date();
-            date.setDate(date.getDate() + 1);
-        } else if (arg === "yesterday") {
-            date = new Date();
-            date.setDate(date.getDate() - 1);
         } else {
-            date = new Date(arg);
+            date = new Date(value);
         }
 
         const monthNames: string[] = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -76,33 +70,35 @@ export namespace Format {
         });
     }
 
-    export function titleCase(arg: any): string {
-        const str: string = String(arg).trim();
+    export function titleCase(value: string): string {
+        const str: string = value.trim();
         return str.charAt(0).toUpperCase() + str.slice(1);
     }
 
-    export function upperCase(arg: any): string {
-        const str: string = String(arg).trim();
+    export function upperCase(value: string): string {
+        const str: string = value.trim();
         return str.toUpperCase();
     }
 
-    export function lowerCase(arg: any): string {
-        const str: string = String(arg).trim();
+    export function lowerCase(value: string): string {
+        const str: string = value.trim();
         return str.toLowerCase();
     }
 
-    export function percentage(arg: any, digits: number): string {
-        const value: number = Number(arg);
+    export function json(value: object): string {
+        return JSON.stringify(value);
+    }
+
+    export function percentage(value: number, digits: number = 2): string {
         return value.toFixed(digits) + "%";
     }
 
-    export function decimal(arg: any, digits: number): string {
-        const value: number = Number(arg);
+    export function decimal(value: number, digits: number = 2): string {
         return value.toFixed(digits);
     }
 
-    export function currency(amount: number, currency: string = "USD"): string {
-        return amount.toLocaleString(undefined, {
+    export function currency(value: number, currency: string = "USD"): string {
+        return value.toLocaleString(undefined, {
             style: 'currency',
             currency: currency
         });

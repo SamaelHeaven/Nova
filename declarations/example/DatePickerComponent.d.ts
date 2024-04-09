@@ -1,5 +1,6 @@
-import { Component, Events } from "../nova/lib.js";
+import { Component, ComponentDefinition, Events } from "../nova/lib.js";
 export declare class DatePickerComponent extends Component {
+    static readonly definition: ComponentDefinition;
     private readonly _today;
     private _startDate;
     private _endDate;

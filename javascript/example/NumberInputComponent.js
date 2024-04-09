@@ -1,3 +1,4 @@
+var _a;
 import { Component, Validation } from "../nova/lib.js";
 export class NumberInputComponent extends Component {
     constructor() {
@@ -37,3 +38,5 @@ export class NumberInputComponent extends Component {
         `;
     }
 }
+_a = NumberInputComponent;
+NumberInputComponent.definition = { tagName: "number-input-component", constructor: _a };

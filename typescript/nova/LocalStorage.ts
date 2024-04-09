@@ -24,6 +24,7 @@ export namespace LocalStorage {
             value,
             expiry: ttl !== undefined ? new Date().getTime() + ttl : undefined
         };
+
         localStorage.setItem(key, JSON.stringify(item));
     }
 }

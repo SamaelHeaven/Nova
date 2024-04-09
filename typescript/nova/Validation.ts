@@ -83,7 +83,7 @@ export namespace Validation {
     export function isNan(value: number): boolean {
         return isNaN(value);
     }
-    
+
     export function isInfinity(value: number): boolean {
         return value === Infinity || value === -Infinity;
     }
