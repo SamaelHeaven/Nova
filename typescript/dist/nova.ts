@@ -597,7 +597,7 @@ export class Application {
         const component: Component = (fromElement as any).component;
         if (component) {
             const renderedContent: string = component.render();
-            if (renderedContent === undefined) {
+            if (renderedContent !== undefined) {
                 toElement.innerHTML = renderedContent;
                 toElement.style.display = "contents";
                 if (!fromElement.isEqualNode(toElement)) {
@@ -633,7 +633,7 @@ export class Application {
                 app._registerEventListeners(this.component);
                 this.component.onInit();
                 const renderedContent: string = this.component.render();
-                if (renderedContent === undefined) {
+                if (renderedContent !== undefined) {
                     this.innerHTML = renderedContent;
                 }
 
