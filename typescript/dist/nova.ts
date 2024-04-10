@@ -602,6 +602,7 @@ export class Application {
             if (typeof renderedContent === "string") {
                 toElement.innerHTML = renderedContent;
                 toElement.style.display = "contents";
+                component.onMorph(toElement);
                 if (!fromElement.isEqualNode(toElement)) {
                     (component as any).isDirty = true;
                     return true;
@@ -720,6 +721,8 @@ export abstract class Component {
     public onUpdate(): void {}
 
     public onDestroy(): void {}
+
+    public onMorph(toElement: HTMLElement): void {}
 
     public onAttributeChanged(attribute: string, oldValue: string, newValue: string): void {}
 
@@ -894,13 +897,9 @@ export namespace Format {
         });
     }
 
-    export function capitalize(value: string, lower: boolean = true, trim: boolean = true, type: "string" | "words" = "string"): string {
+    export function capitalize(value: string, lower: boolean = true, trim: boolean = true, words: boolean = false): string {
         const str: string = trim ? value.trim() : value;
-        if (type === "string") {
-            return str.replace(/(?:^|\s|["'([{])+\S/, match => (lower ? match.toLowerCase() : match.toUpperCase()));
-        }
-
-        return (lower ? str.toLowerCase() : str).replace(/(?:^|\s|["'([{])+\S/g, match => match.toUpperCase());
+        return (lower ? str.toLowerCase() : str).replace(words ? /(?:^|\s|["'([{])+\S/g : /(?:^|\s|["'([{])+\S/, match => match.toUpperCase());
     }
 
     export function upperCase(value: string, trim: boolean = true): string {

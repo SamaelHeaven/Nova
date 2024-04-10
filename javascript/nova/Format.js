@@ -69,12 +69,9 @@ export var Format;
         });
     }
     Format.date = date;
-    function capitalize(value, lower = true, trim = true, type = "string") {
+    function capitalize(value, lower = true, trim = true, words = false) {
         const str = trim ? value.trim() : value;
-        if (type === "string") {
-            return str.replace(/(?:^|\s|["'([{])+\S/, match => (lower ? match.toLowerCase() : match.toUpperCase()));
-        }
-        return (lower ? str.toLowerCase() : str).replace(/(?:^|\s|["'([{])+\S/g, match => match.toUpperCase());
+        return (lower ? str.toLowerCase() : str).replace(words ? /(?:^|\s|["'([{])+\S/g : /(?:^|\s|["'([{])+\S/, match => match.toUpperCase());
     }
     Format.capitalize = capitalize;
     function upperCase(value, trim = true) {

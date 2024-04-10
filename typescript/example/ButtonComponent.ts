@@ -26,6 +26,10 @@ export class ButtonComponent extends Component {
         console.log("Button Component Destroyed");
     }
 
+    public override onMorph(toElement: HTMLElement): void {
+        console.log("Morphing to: ", toElement);
+    }
+
     public override onAttributeChanged(attribute: string, oldValue: string, newValue: string): void {
         console.log(`${attribute} attribute changed from ${oldValue} to ${newValue}`);
         if (attribute === "data-count") {

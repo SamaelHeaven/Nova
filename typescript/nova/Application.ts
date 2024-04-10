@@ -101,6 +101,7 @@ export class Application {
             if (typeof renderedContent === "string") {
                 toElement.innerHTML = renderedContent;
                 toElement.style.display = "contents";
+                component.onMorph(toElement);
                 if (!fromElement.isEqualNode(toElement)) {
                     (component as any).isDirty = true;
                     return true;

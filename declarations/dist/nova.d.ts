@@ -18,6 +18,7 @@ export declare abstract class Component {
     onAppear(): void;
     onUpdate(): void;
     onDestroy(): void;
+    onMorph(toElement: HTMLElement): void;
     onAttributeChanged(attribute: string, oldValue: string, newValue: string): void;
     onClick(event: Events.Mouse): void;
     onDblClick(event: Events.Mouse): void;
@@ -78,7 +79,7 @@ export declare namespace Events {
 }
 export declare namespace Format {
     function date(value: Date | number | string | undefined, format: string): string;
-    function capitalize(value: string, lower?: boolean, trim?: boolean, type?: "string" | "words"): string;
+    function capitalize(value: string, lower?: boolean, trim?: boolean, words?: boolean): string;
     function upperCase(value: string, trim?: boolean): string;
     function lowerCase(value: string, trim?: boolean): string;
     function json(value: object): string;

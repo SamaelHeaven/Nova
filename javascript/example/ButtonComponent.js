@@ -31,6 +31,9 @@ export class ButtonComponent extends Component {
     onDestroy() {
         console.log("Button Component Destroyed");
     }
+    onMorph(toElement) {
+        console.log("Morphing to: ", toElement);
+    }
     onAttributeChanged(attribute, oldValue, newValue) {
         console.log(`${attribute} attribute changed from ${oldValue} to ${newValue}`);
         if (attribute === "data-count") {

@@ -36,6 +36,7 @@ export class Component {
     onAppear() { }
     onUpdate() { }
     onDestroy() { }
+    onMorph(toElement) { }
     onAttributeChanged(attribute, oldValue, newValue) { }
     onClick(event) { }
     onDblClick(event) { }

@@ -68,13 +68,9 @@ export namespace Format {
         });
     }
 
-    export function capitalize(value: string, lower: boolean = true, trim: boolean = true, type: "string" | "words" = "string"): string {
+    export function capitalize(value: string, lower: boolean = true, trim: boolean = true, words: boolean = false): string {
         const str: string = trim ? value.trim() : value;
-        if (type === "string") {
-            return str.replace(/(?:^|\s|["'([{])+\S/, match => (lower ? match.toLowerCase() : match.toUpperCase()));
-        }
-
-        return (lower ? str.toLowerCase() : str).replace(/(?:^|\s|["'([{])+\S/g, match => match.toUpperCase());
+        return (lower ? str.toLowerCase() : str).replace(words ? /(?:^|\s|["'([{])+\S/g : /(?:^|\s|["'([{])+\S/, match => match.toUpperCase());
     }
 
     export function upperCase(value: string, trim: boolean = true): string {

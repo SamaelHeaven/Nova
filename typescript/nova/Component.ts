@@ -53,6 +53,8 @@ export abstract class Component {
 
     public onDestroy(): void {}
 
+    public onMorph(toElement: HTMLElement): void {}
+
     public onAttributeChanged(attribute: string, oldValue: string, newValue: string): void {}
 
     public onClick(event: Events.Mouse): void {}
