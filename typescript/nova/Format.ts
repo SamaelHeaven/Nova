@@ -83,7 +83,7 @@ export namespace Format {
         return str.toLowerCase();
     }
 
-    export function json(value: object): string {
+    export function json(value: any): string {
         return JSON.stringify(value);
     }
 

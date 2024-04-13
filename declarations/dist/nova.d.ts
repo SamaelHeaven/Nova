@@ -7,7 +7,6 @@ export declare class Application {
 }
 export declare abstract class Component {
     readonly element: HTMLElement;
-    readonly isDirty: boolean;
     constructor(element: HTMLElement);
     render(): string | undefined;
     update(state: object): void;
@@ -82,7 +81,7 @@ export declare namespace Format {
     function capitalize(value: string, lower?: boolean, trim?: boolean, words?: boolean): string;
     function upperCase(value: string, trim?: boolean): string;
     function lowerCase(value: string, trim?: boolean): string;
-    function json(value: object): string;
+    function json(value: any): string;
     function percentage(value: number, digits?: number): string;
     function decimal(value: number, digits?: number): string;
     function currency(value: number, currency?: string): string;

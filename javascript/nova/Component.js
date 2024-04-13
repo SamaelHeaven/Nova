@@ -2,7 +2,6 @@ import { Application } from "./Application.js";
 export class Component {
     constructor(element) {
         this.element = element;
-        this.isDirty = false;
     }
     render() {
         return undefined;

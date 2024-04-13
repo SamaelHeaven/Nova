@@ -3,11 +3,9 @@ import {Application} from "./Application.js";
 
 export abstract class Component {
     public readonly element: HTMLElement;
-    public readonly isDirty: boolean;
 
     constructor(element: HTMLElement) {
         this.element = element;
-        this.isDirty = false;
     }
 
     public render(): string | undefined {

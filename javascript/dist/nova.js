@@ -564,8 +564,8 @@ export class Application {
         }
         morphdom(component.element, newElement, this._morphdomOptions);
         for (const foundComponent of Application.queryComponents("*", component.element.parentElement)) {
-            if (foundComponent.isDirty) {
-                foundComponent.isDirty = false;
+            if (foundComponent.element.isDirty) {
+                foundComponent.element.isDirty = false;
                 foundComponent.onUpdate();
             }
         }
@@ -579,7 +579,7 @@ export class Application {
                 toElement.style.display = "contents";
                 component.onMorph(toElement);
                 if (!fromElement.isEqualNode(toElement)) {
-                    component.isDirty = true;
+                    fromElement.isDirty = true;
                     return true;
                 }
                 return false;
@@ -595,6 +595,10 @@ export class Application {
     _initializeComponent(component) {
         const app = this;
         class ComponentElement extends HTMLElement {
+            constructor() {
+                super(...arguments);
+                this.isDirty = false;
+            }
             connectedCallback() {
                 this.style.display = "contents";
                 this.component = new component.constructor(this);
@@ -632,7 +636,6 @@ Application._instance = null;
 export class Component {
     constructor(element) {
         this.element = element;
-        this.isDirty = false;
     }
     render() {
         return undefined;
@@ -662,43 +665,80 @@ export class Component {
         }
         return [...new Set(keys)];
     }
-    onInit() { }
-    onAppear() { }
-    onUpdate() { }
-    onDestroy() { }
-    onMorph(toElement) { }
-    onAttributeChanged(attribute, oldValue, newValue) { }
-    onClick(event) { }
-    onDblClick(event) { }
-    onMouseDown(event) { }
-    onMouseUp(event) { }
-    onMouseMove(event) { }
-    onMouseEnter(event) { }
-    onMouseLeave(event) { }
-    onMouseOver(event) { }
-    onMouseOut(event) { }
-    onKeyDown(event) { }
-    onKeyPress(event) { }
-    onKeyUp(event) { }
-    onFocus(event) { }
-    onBlur(event) { }
-    onInput(event) { }
-    onChange(event) { }
-    onSubmit(event) { }
-    onScroll(event) { }
-    onError(event) { }
-    onResize(event) { }
-    onSelect(event) { }
-    onTouchStart(event) { }
-    onTouchMove(event) { }
-    onTouchEnd(event) { }
-    onTouchCancel(event) { }
-    onAnimationStart(event) { }
-    onAnimationEnd(event) { }
-    onAnimationIteration(event) { }
-    onTransitionStart(event) { }
-    onTransitionEnd(event) { }
-    onTransitionCancel(event) { }
+    onInit() {
+    }
+    onAppear() {
+    }
+    onUpdate() {
+    }
+    onDestroy() {
+    }
+    onMorph(toElement) {
+    }
+    onAttributeChanged(attribute, oldValue, newValue) {
+    }
+    onClick(event) {
+    }
+    onDblClick(event) {
+    }
+    onMouseDown(event) {
+    }
+    onMouseUp(event) {
+    }
+    onMouseMove(event) {
+    }
+    onMouseEnter(event) {
+    }
+    onMouseLeave(event) {
+    }
+    onMouseOver(event) {
+    }
+    onMouseOut(event) {
+    }
+    onKeyDown(event) {
+    }
+    onKeyPress(event) {
+    }
+    onKeyUp(event) {
+    }
+    onFocus(event) {
+    }
+    onBlur(event) {
+    }
+    onInput(event) {
+    }
+    onChange(event) {
+    }
+    onSubmit(event) {
+    }
+    onScroll(event) {
+    }
+    onError(event) {
+    }
+    onResize(event) {
+    }
+    onSelect(event) {
+    }
+    onTouchStart(event) {
+    }
+    onTouchMove(event) {
+    }
+    onTouchEnd(event) {
+    }
+    onTouchCancel(event) {
+    }
+    onAnimationStart(event) {
+    }
+    onAnimationEnd(event) {
+    }
+    onAnimationIteration(event) {
+    }
+    onTransitionStart(event) {
+    }
+    onTransitionEnd(event) {
+    }
+    onTransitionCancel(event) {
+    }
 }
 export class Debounce {
     constructor(callback, wait) {

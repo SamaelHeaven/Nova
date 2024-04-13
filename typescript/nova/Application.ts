@@ -86,8 +86,8 @@ export class Application {
 
         morphdom(component.element, newElement, this._morphdomOptions);
         for (const foundComponent of Application.queryComponents("*", component.element.parentElement)) {
-            if (foundComponent.isDirty) {
-                (foundComponent as any).isDirty = false;
+            if ((foundComponent.element as any).isDirty) {
+                (foundComponent.element as any).isDirty = false;
                 foundComponent.onUpdate();
             }
         }
@@ -103,7 +103,7 @@ export class Application {
                 toElement.style.display = "contents";
                 component.onMorph(toElement);
                 if (!fromElement.isEqualNode(toElement)) {
-                    (component as any).isDirty = true;
+                    (fromElement as any).isDirty = true;
                     return true;
                 }
 
@@ -126,6 +126,7 @@ export class Application {
         const app = this;
 
         class ComponentElement extends HTMLElement {
+            public isDirty: boolean = false;
             public component: Component;
 
             public connectedCallback(): void {

@@ -1,7 +1,6 @@
 import { Events } from "./Events.js";
 export declare abstract class Component {
     readonly element: HTMLElement;
-    readonly isDirty: boolean;
     constructor(element: HTMLElement);
     render(): string | undefined;
     update(state: object): void;
