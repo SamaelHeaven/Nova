@@ -45,7 +45,7 @@ export declare class Html {
     id(value: string): Html;
     style(value: string): Html;
     text(text: string): Html;
-    on(event: keyof GlobalEventHandlersEventMap, callback: (event: Event) => void): Html;
+    on(event: keyof GlobalEventHandlersEventMap | string, callback: (event: Event) => any): Html;
     if(condition: boolean, callback: (html: Html) => void): Html;
     ifElse(condition: boolean, onTrue: (html: Html) => void, onFalse: (html: Html) => void): Html;
     append(child: Html): Html;

@@ -2,8 +2,7 @@ import {Component} from "./Component.js";
 import {Application} from "./Application.js";
 
 export function State(target: Component, key: string): void {
-    const field = `@State_${key}`;
-
+    const field: symbol = Symbol(key);
     Object.defineProperty(target, field, {
         writable: true,
         enumerable: false,

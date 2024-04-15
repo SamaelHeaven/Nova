@@ -28,13 +28,13 @@ export class Application {
     static queryComponent(selector, element = document.documentElement) {
         var _a;
         this._throwIfUninitialized();
-        return ((_a = element.querySelector(selector)) === null || _a === void 0 ? void 0 : _a.component) || null;
+        return ((_a = element.querySelector(selector)) === null || _a === void 0 ? void 0 : _a.appComponent) || null;
     }
     static queryComponents(selector, element = document.documentElement) {
         this._throwIfUninitialized();
         const components = [];
         for (const foundElement of Array.from(element.querySelectorAll(selector))) {
-            const component = foundElement.component;
+            const component = foundElement.appComponent;
             if (component) {
                 components.push(component);
             }
@@ -57,14 +57,14 @@ export class Application {
         }
         morphdom(component.element, newElement, this._morphdomOptions);
         for (const foundComponent of Application.queryComponents("*", component.element.parentElement)) {
-            if (foundComponent.element.isDirty) {
-                foundComponent.element.isDirty = false;
+            if (foundComponent.element.appComponentDirty) {
+                foundComponent.element.appComponentDirty = false;
                 foundComponent.onUpdate();
             }
         }
     }
     _onBeforeElementUpdated(fromElement, toElement) {
-        const component = fromElement.component;
+        const component = fromElement.appComponent;
         if (!component) {
             return !fromElement.isEqualNode(toElement);
         }
@@ -72,15 +72,16 @@ export class Application {
         if (html instanceof Html) {
             toElement.innerHTML = "";
             toElement.style.display = "contents";
-            for (const key of Object.keys(HTMLElement.prototype)) {
-                if (key.startsWith("on")) {
-                    fromElement[key] = null;
+            if (fromElement.appComponentEvents) {
+                for (const [type, callback] of fromElement.appComponentEvents) {
+                    fromElement.removeEventListener(type, callback);
                 }
+                fromElement.appComponentEvents = [];
             }
             toElement.appendChild(html.build(fromElement));
             component.onMorph(toElement);
             if (!fromElement.isEqualNode(toElement)) {
-                fromElement.isDirty = true;
+                fromElement.appComponentDirty = true;
                 return true;
             }
             return false;
@@ -95,16 +96,16 @@ export class Application {
         const app = this;
         class ComponentElement extends HTMLElement {
             connectedCallback() {
-                this.component = new component.ctor(this);
-                app._observeAttributes(this.component);
+                this.appComponent = new component.ctor(this);
+                app._observeAttributes(this.appComponent);
                 (async () => {
-                    await this.component.onInit();
-                    app._updateComponent(this.component);
-                    this.component.onAppear();
+                    await this.appComponent.onInit();
+                    app._updateComponent(this.appComponent);
+                    this.appComponent.onAppear();
                 })();
             }
             disconnectedCallback() {
-                this.component.onDestroy();
+                this.appComponent.onDestroy();
             }
         }
         customElements.define(component.tag, ComponentElement);

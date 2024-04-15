@@ -6,7 +6,7 @@ export class Html {
     /** @internal */
     private readonly _children: Html[] = [];
     /** @internal */
-    private readonly _events: [keyof GlobalEventHandlersEventMap, (event: Event) => void][] = [];
+    private readonly _events: [keyof GlobalEventHandlersEventMap | string, (event: Event) => any][] = [];
     /** @internal */
     private _text: string = "";
 
@@ -52,7 +52,7 @@ export class Html {
         return this;
     }
 
-    public on(event: keyof GlobalEventHandlersEventMap, callback: (event: Event) => void): Html {
+    public on(event: keyof GlobalEventHandlersEventMap | string, callback: (event: Event) => any): Html {
         this._events.push([event, callback]);
         return this;
     }
@@ -135,6 +135,7 @@ export class Html {
     /** @internal */
     public build(fromElement: HTMLElement): HTMLElement {
         const element: HTMLElement = document.createElement(this._tag);
+        const eventAttributeName: string = "app-component-event";
 
         for (const [key, value] of this._attributes) {
             element.setAttribute(key, value);
@@ -149,40 +150,25 @@ export class Html {
         }
 
         if (this._events.length > 0) {
-            element.setAttribute("event", "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
+            element.setAttribute(eventAttributeName, "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
                 (+c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +c / 4).toString(16)
             ));
         }
 
-        for (const key of Object.keys(HTMLElement.prototype)) {
-            if (!key.startsWith("on")) {
-                continue;
-            }
-
-            const event = fromElement[key];
-            const events = this._events.filter(e => "on" + e[0] === key);
-            if (events.length === 0) {
-                continue;
-            }
-
-            fromElement[key] = (e: Event) => {
-                if (event) {
-                    event(e);
+        for (const [type, callback] of this._events) {
+            const listener = (event: Event): any => {
+                const target: HTMLElement = (event.target as HTMLElement);
+                if (target.closest(`[${eventAttributeName}="${element.getAttribute(eventAttributeName)}"]`)) {
+                    return callback(event);
                 }
+            };
 
-                let currentElement = (e.target as HTMLElement);
-                while (currentElement && currentElement !== fromElement) {
-                    if (currentElement.getAttribute("event") === element.getAttribute("event")) {
-                        for (const event of events) {
-                            event[1](e);
-                        }
-
-                        break;
-                    }
-
-                    currentElement = currentElement.parentElement;
-                }
+            fromElement.addEventListener(type, listener);
+            if (!fromElement.appComponentEvents) {
+                fromElement.appComponentEvents = [];
             }
+
+            fromElement.appComponentEvents.push([type, listener]);
         }
 
         return element;

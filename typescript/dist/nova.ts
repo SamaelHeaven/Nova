@@ -11,8 +11,9 @@ declare global {
 
     /** @internal */
     interface Element {
-        component?: Component;
-        isDirty?: boolean;
+        appComponent?: Component;
+        appComponentDirty?: boolean;
+        appComponentEvents?: [string, ((event: Event) => any)][];
     }
 }
 
@@ -554,14 +555,14 @@ export class Application {
 
     public static queryComponent<T extends Component>(selector: string, element: HTMLElement = document.documentElement): T | null {
         this._throwIfUninitialized();
-        return element.querySelector(selector)?.component as T || null;
+        return element.querySelector(selector)?.appComponent as T || null;
     }
 
     public static queryComponents<T extends Component>(selector: string, element: HTMLElement = document.documentElement): T[] {
         this._throwIfUninitialized();
         const components: T[] = [];
         for (const foundElement of Array.from(element.querySelectorAll(selector))) {
-            const component = foundElement.component;
+            const component = foundElement.appComponent;
             if (component) {
                 components.push(component as T);
             }
@@ -591,8 +592,8 @@ export class Application {
 
         morphdom(component.element, newElement, this._morphdomOptions);
         for (const foundComponent of Application.queryComponents("*", component.element.parentElement)) {
-            if (foundComponent.element.isDirty) {
-                foundComponent.element.isDirty = false;
+            if (foundComponent.element.appComponentDirty) {
+                foundComponent.element.appComponentDirty = false;
                 foundComponent.onUpdate();
             }
         }
@@ -600,7 +601,7 @@ export class Application {
 
     /** @internal */
     private _onBeforeElementUpdated(fromElement: HTMLElement, toElement: HTMLElement): boolean {
-        const component: Component = fromElement.component;
+        const component: Component = fromElement.appComponent;
         if (!component) {
             return !fromElement.isEqualNode(toElement);
         }
@@ -609,16 +610,18 @@ export class Application {
         if (html instanceof Html) {
             toElement.innerHTML = "";
             toElement.style.display = "contents";
-            for (const key of Object.keys(HTMLElement.prototype)) {
-                if (key.startsWith("on")) {
-                    fromElement[key] = null;
+            if (fromElement.appComponentEvents) {
+                for (const [type, callback] of fromElement.appComponentEvents) {
+                    fromElement.removeEventListener(type, callback);
                 }
+
+                fromElement.appComponentEvents = [];
             }
 
             toElement.appendChild(html.build(fromElement));
             component.onMorph(toElement);
             if (!fromElement.isEqualNode(toElement)) {
-                fromElement.isDirty = true;
+                fromElement.appComponentDirty = true;
                 return true;
             }
 
@@ -639,17 +642,17 @@ export class Application {
 
         class ComponentElement extends HTMLElement {
             public connectedCallback(): void {
-                this.component = new component.ctor(this);
-                app._observeAttributes(this.component);
+                this.appComponent = new component.ctor(this);
+                app._observeAttributes(this.appComponent);
                 (async (): Promise<void> => {
-                    await this.component.onInit();
-                    app._updateComponent(this.component);
-                    this.component.onAppear();
+                    await this.appComponent.onInit();
+                    app._updateComponent(this.appComponent);
+                    this.appComponent.onAppear();
                 })();
             }
 
             public disconnectedCallback(): void {
-                this.component.onDestroy();
+                this.appComponent.onDestroy();
             }
         }
 
@@ -831,7 +834,7 @@ export class Html {
     /** @internal */
     private readonly _children: Html[] = [];
     /** @internal */
-    private readonly _events: [keyof GlobalEventHandlersEventMap, (event: Event) => void][] = [];
+    private readonly _events: [keyof GlobalEventHandlersEventMap | string, (event: Event) => any][] = [];
     /** @internal */
     private _text: string = "";
 
@@ -877,7 +880,7 @@ export class Html {
         return this;
     }
 
-    public on(event: keyof GlobalEventHandlersEventMap, callback: (event: Event) => void): Html {
+    public on(event: keyof GlobalEventHandlersEventMap | string, callback: (event: Event) => any): Html {
         this._events.push([event, callback]);
         return this;
     }
@@ -960,6 +963,7 @@ export class Html {
     /** @internal */
     public build(fromElement: HTMLElement): HTMLElement {
         const element: HTMLElement = document.createElement(this._tag);
+        const eventAttributeName: string = "app-component-event";
 
         for (const [key, value] of this._attributes) {
             element.setAttribute(key, value);
@@ -974,40 +978,25 @@ export class Html {
         }
 
         if (this._events.length > 0) {
-            element.setAttribute("event", "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
+            element.setAttribute(eventAttributeName, "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
                 (+c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +c / 4).toString(16)
             ));
         }
 
-        for (const key of Object.keys(HTMLElement.prototype)) {
-            if (!key.startsWith("on")) {
-                continue;
-            }
-
-            const event = fromElement[key];
-            const events = this._events.filter(e => "on" + e[0] === key);
-            if (events.length === 0) {
-                continue;
-            }
-
-            fromElement[key] = (e: Event) => {
-                if (event) {
-                    event(e);
+        for (const [type, callback] of this._events) {
+            const listener = (event: Event): any => {
+                const target: HTMLElement = (event.target as HTMLElement);
+                if (target.closest(`[${eventAttributeName}="${element.getAttribute(eventAttributeName)}"]`)) {
+                    return callback(event);
                 }
+            };
 
-                let currentElement = (e.target as HTMLElement);
-                while (currentElement && currentElement !== fromElement) {
-                    if (currentElement.getAttribute("event") === element.getAttribute("event")) {
-                        for (const event of events) {
-                            event[1](e);
-                        }
-
-                        break;
-                    }
-
-                    currentElement = currentElement.parentElement;
-                }
+            fromElement.addEventListener(type, listener);
+            if (!fromElement.appComponentEvents) {
+                fromElement.appComponentEvents = [];
             }
+
+            fromElement.appComponentEvents.push([type, listener]);
         }
 
         return element;
@@ -1046,8 +1035,7 @@ export namespace LocalStorage {
 }
 
 export function State(target: Component, key: string): void {
-    const field = `@State_${key}`;
-
+    const field: symbol = Symbol(key);
     Object.defineProperty(target, field, {
         writable: true,
         enumerable: false,

@@ -15,8 +15,9 @@ declare global {
 
     /** @internal */
     interface Element {
-        component?: Component;
-        isDirty?: boolean;
+        appComponent?: Component;
+        appComponentDirty?: boolean;
+        appComponentEvents?: [string, ((event: Event) => any)][];
     }
 }
 
@@ -57,14 +58,14 @@ export class Application {
 
     public static queryComponent<T extends Component>(selector: string, element: HTMLElement = document.documentElement): T | null {
         this._throwIfUninitialized();
-        return element.querySelector(selector)?.component as T || null;
+        return element.querySelector(selector)?.appComponent as T || null;
     }
 
     public static queryComponents<T extends Component>(selector: string, element: HTMLElement = document.documentElement): T[] {
         this._throwIfUninitialized();
         const components: T[] = [];
         for (const foundElement of Array.from(element.querySelectorAll(selector))) {
-            const component = foundElement.component;
+            const component = foundElement.appComponent;
             if (component) {
                 components.push(component as T);
             }
@@ -94,8 +95,8 @@ export class Application {
 
         morphdom(component.element, newElement, this._morphdomOptions);
         for (const foundComponent of Application.queryComponents("*", component.element.parentElement)) {
-            if (foundComponent.element.isDirty) {
-                foundComponent.element.isDirty = false;
+            if (foundComponent.element.appComponentDirty) {
+                foundComponent.element.appComponentDirty = false;
                 foundComponent.onUpdate();
             }
         }
@@ -103,7 +104,7 @@ export class Application {
 
     /** @internal */
     private _onBeforeElementUpdated(fromElement: HTMLElement, toElement: HTMLElement): boolean {
-        const component: Component = fromElement.component;
+        const component: Component = fromElement.appComponent;
         if (!component) {
             return !fromElement.isEqualNode(toElement);
         }
@@ -112,16 +113,18 @@ export class Application {
         if (html instanceof Html) {
             toElement.innerHTML = "";
             toElement.style.display = "contents";
-            for (const key of Object.keys(HTMLElement.prototype)) {
-                if (key.startsWith("on")) {
-                    fromElement[key] = null;
+            if (fromElement.appComponentEvents) {
+                for (const [type, callback] of fromElement.appComponentEvents) {
+                    fromElement.removeEventListener(type, callback);
                 }
+
+                fromElement.appComponentEvents = [];
             }
 
             toElement.appendChild(html.build(fromElement));
             component.onMorph(toElement);
             if (!fromElement.isEqualNode(toElement)) {
-                fromElement.isDirty = true;
+                fromElement.appComponentDirty = true;
                 return true;
             }
 
@@ -142,17 +145,17 @@ export class Application {
 
         class ComponentElement extends HTMLElement {
             public connectedCallback(): void {
-                this.component = new component.ctor(this);
-                app._observeAttributes(this.component);
+                this.appComponent = new component.ctor(this);
+                app._observeAttributes(this.appComponent);
                 (async (): Promise<void> => {
-                    await this.component.onInit();
-                    app._updateComponent(this.component);
-                    this.component.onAppear();
+                    await this.appComponent.onInit();
+                    app._updateComponent(this.appComponent);
+                    this.appComponent.onAppear();
                 })();
             }
 
             public disconnectedCallback(): void {
-                this.component.onDestroy();
+                this.appComponent.onDestroy();
             }
         }
 
