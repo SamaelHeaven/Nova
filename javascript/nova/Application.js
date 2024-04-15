@@ -1,8 +1,13 @@
 import { morphdom } from "./morphdom.js";
+import { Html } from "./Html.js";
+import { formatDate } from "./formatDate.js";
+String.prototype.html = function () {
+    return new Html(this);
+};
+Date.prototype.format = formatDate;
 export class Application {
     constructor() {
         const app = this;
-        this._eventNames = ["click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseenter", "mouseleave", "mouseover", "mouseout", "keydown", "keypress", "keyup", "focus", "blur", "input", "change", "submit", "scroll", "error", "resize", "select", "touchstart", "touchmove", "touchend", "touchcancel", "animationstart", "animationend", "animationiteration", "transitionstart", "transitionend", "transitioncancel"];
         this._morphdomOptions = {
             onBeforeElUpdated: function (fromEl, toEl) {
                 return app._onBeforeElementUpdated(fromEl, toEl);
@@ -45,20 +50,9 @@ export class Application {
             throw new Error("Application has not been launched");
         }
     }
-    _registerEventListeners(component) {
-        for (const key of component.getKeys()) {
-            const eventType = key.substring(2).toLowerCase();
-            if (this._eventNames.includes(eventType)) {
-                component.element.addEventListener(eventType, (event) => {
-                    component[key](event);
-                });
-            }
-        }
-    }
     _updateComponent(component) {
         const newElement = component.element.cloneNode(false);
-        const renderedContent = component.render();
-        if (typeof renderedContent !== "string") {
+        if (!component.getKeys().includes("render")) {
             return;
         }
         morphdom(component.element, newElement, this._morphdomOptions);
@@ -71,20 +65,26 @@ export class Application {
     }
     _onBeforeElementUpdated(fromElement, toElement) {
         const component = fromElement.component;
-        if (component) {
-            const renderedContent = component.render();
-            if (typeof renderedContent === "string") {
-                toElement.innerHTML = renderedContent;
-                toElement.style.display = "contents";
-                component.onMorph(toElement);
-                if (!fromElement.isEqualNode(toElement)) {
-                    fromElement.isDirty = true;
-                    return true;
-                }
-                return false;
-            }
+        if (!component) {
+            return !fromElement.isEqualNode(toElement);
         }
-        return !fromElement.isEqualNode(toElement);
+        const html = component.render();
+        if (html instanceof Html) {
+            toElement.innerHTML = "";
+            toElement.style.display = "contents";
+            for (const key in fromElement) {
+                if (key.startsWith("on")) {
+                    fromElement[key] = null;
+                }
+            }
+            toElement.appendChild(html.build(fromElement));
+            component.onMorph(toElement);
+            if (!fromElement.isEqualNode(toElement)) {
+                fromElement.isDirty = true;
+                return true;
+            }
+            return false;
+        }
     }
     _initializeComponents(components) {
         for (const component of components) {
@@ -94,27 +94,20 @@ export class Application {
     _initializeComponent(component) {
         const app = this;
         class ComponentElement extends HTMLElement {
-            constructor() {
-                super(...arguments);
-                this.isDirty = false;
-            }
             connectedCallback() {
-                this.style.display = "contents";
-                this.component = new component.constructor(this);
+                this.component = new component.ctor(this);
                 app._observeAttributes(this.component);
-                app._registerEventListeners(this.component);
-                this.component.onInit();
-                const renderedContent = this.component.render();
-                if (typeof renderedContent === "string") {
-                    this.innerHTML = renderedContent;
-                }
-                this.component.onAppear();
+                (async () => {
+                    await this.component.onInit();
+                    app._updateComponent(this.component);
+                    this.component.onAppear();
+                })();
             }
             disconnectedCallback() {
                 this.component.onDestroy();
             }
         }
-        customElements.define(component.tagName, ComponentElement);
+        customElements.define(component.tag, ComponentElement);
     }
     _observeAttributes(component) {
         if (!component.getKeys().includes("onAttributeChanged")) {
@@ -123,7 +116,7 @@ export class Application {
         const observerConfig = { attributes: true, attributeOldValue: true, subtree: false };
         const observer = new MutationObserver((mutationsList, _) => {
             for (const mutation of mutationsList) {
-                if (mutation.type === 'attributes') {
+                if (mutation.type === "attributes") {
                     component.onAttributeChanged(mutation.attributeName, mutation.oldValue, component.element.getAttribute(mutation.attributeName));
                 }
             }

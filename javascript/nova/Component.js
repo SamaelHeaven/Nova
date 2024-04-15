@@ -6,6 +6,12 @@ export class Component {
     render() {
         return undefined;
     }
+    onInit() { }
+    onAppear() { }
+    onUpdate() { }
+    onDestroy() { }
+    onMorph(toElement) { }
+    onAttributeChanged(attribute, oldValue, newValue) { }
     update(state) {
         for (const key of this.getKeys()) {
             if (this[key] === state) {
@@ -31,41 +37,4 @@ export class Component {
         }
         return [...new Set(keys)];
     }
-    onInit() { }
-    onAppear() { }
-    onUpdate() { }
-    onDestroy() { }
-    onMorph(toElement) { }
-    onAttributeChanged(attribute, oldValue, newValue) { }
-    onClick(event) { }
-    onDblClick(event) { }
-    onMouseDown(event) { }
-    onMouseUp(event) { }
-    onMouseMove(event) { }
-    onMouseEnter(event) { }
-    onMouseLeave(event) { }
-    onMouseOver(event) { }
-    onMouseOut(event) { }
-    onKeyDown(event) { }
-    onKeyPress(event) { }
-    onKeyUp(event) { }
-    onFocus(event) { }
-    onBlur(event) { }
-    onInput(event) { }
-    onChange(event) { }
-    onSubmit(event) { }
-    onScroll(event) { }
-    onError(event) { }
-    onResize(event) { }
-    onSelect(event) { }
-    onTouchStart(event) { }
-    onTouchMove(event) { }
-    onTouchEnd(event) { }
-    onTouchCancel(event) { }
-    onAnimationStart(event) { }
-    onAnimationEnd(event) { }
-    onAnimationIteration(event) { }
-    onTransitionStart(event) { }
-    onTransitionEnd(event) { }
-    onTransitionCancel(event) { }
 }

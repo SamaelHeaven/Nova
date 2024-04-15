@@ -503,17 +503,36 @@ function morphdomFactory(morphAttrs) {
 
 var morphdom = morphdomFactory(morphAttrs);
 
+declare global {
+    interface String {
+        html(): Html;
+    }
+
+    interface Date {
+        format(format: string): string;
+    }
+
+    /** @internal */
+    interface Element {
+        component?: Component;
+        isDirty?: boolean;
+    }
+}
+
+String.prototype.html = function (): Html {
+    return new Html(this);
+}
+
+Date.prototype.format = formatDate;
+
 export class Application {
     /** @internal */
     private static _instance: Application | null = null;
-    /** @internal */
-    private readonly _eventNames: string[];
     /** @internal */
     private readonly _morphdomOptions: object;
 
     private constructor() {
         const app = this;
-        this._eventNames = ["click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseenter", "mouseleave", "mouseover", "mouseout", "keydown", "keypress", "keyup", "focus", "blur", "input", "change", "submit", "scroll", "error", "resize", "select", "touchstart", "touchmove", "touchend", "touchcancel", "animationstart", "animationend", "animationiteration", "transitionstart", "transitionend", "transitioncancel"];
         this._morphdomOptions = {
             onBeforeElUpdated: function (fromEl: HTMLElement, toEl: HTMLElement): boolean {
                 return app._onBeforeElementUpdated(fromEl, toEl)
@@ -537,16 +556,16 @@ export class Application {
 
     public static queryComponent<T extends Component>(selector: string, element: HTMLElement = document.documentElement): T | null {
         this._throwIfUninitialized();
-        return (element.querySelector(selector) as any)?.component || null;
+        return element.querySelector(selector)?.component as T || null;
     }
 
     public static queryComponents<T extends Component>(selector: string, element: HTMLElement = document.documentElement): T[] {
         this._throwIfUninitialized();
         const components: T[] = [];
         for (const foundElement of Array.from(element.querySelectorAll(selector))) {
-            const component = (foundElement as any).component;
+            const component = foundElement.component;
             if (component) {
-                components.push(component);
+                components.push(component as T);
             }
         }
 
@@ -566,29 +585,16 @@ export class Application {
     }
 
     /** @internal */
-    private _registerEventListeners(component: Component): void {
-        for (const key of component.getKeys()) {
-            const eventType: string = key.substring(2).toLowerCase();
-            if (this._eventNames.includes(eventType)) {
-                component.element.addEventListener(eventType, (event: Event): void => {
-                    component[key](event);
-                });
-            }
-        }
-    }
-
-    /** @internal */
     private _updateComponent(component: Component): void {
         const newElement: HTMLElement = component.element.cloneNode(false) as HTMLElement;
-        const renderedContent: string | undefined = component.render();
-        if (typeof renderedContent !== "string") {
+        if (!component.getKeys().includes("render")) {
             return;
         }
 
         morphdom(component.element, newElement, this._morphdomOptions);
         for (const foundComponent of Application.queryComponents("*", component.element.parentElement)) {
-            if ((foundComponent.element as any).isDirty) {
-                (foundComponent.element as any).isDirty = false;
+            if (foundComponent.element.isDirty) {
+                foundComponent.element.isDirty = false;
                 foundComponent.onUpdate();
             }
         }
@@ -596,23 +602,30 @@ export class Application {
 
     /** @internal */
     private _onBeforeElementUpdated(fromElement: HTMLElement, toElement: HTMLElement): boolean {
-        const component: Component = (fromElement as any).component;
-        if (component) {
-            const renderedContent: string | undefined = component.render();
-            if (typeof renderedContent === "string") {
-                toElement.innerHTML = renderedContent;
-                toElement.style.display = "contents";
-                component.onMorph(toElement);
-                if (!fromElement.isEqualNode(toElement)) {
-                    (fromElement as any).isDirty = true;
-                    return true;
-                }
-
-                return false;
-            }
+        const component: Component = fromElement.component;
+        if (!component) {
+            return !fromElement.isEqualNode(toElement);
         }
 
-        return !fromElement.isEqualNode(toElement);
+        const html: Html = component.render();
+        if (html instanceof Html) {
+            toElement.innerHTML = "";
+            toElement.style.display = "contents";
+            for (const key in fromElement) {
+                if (key.startsWith("on")) {
+                    fromElement[key] = null;
+                }
+            }
+
+            toElement.appendChild(html.build(fromElement));
+            component.onMorph(toElement);
+            if (!fromElement.isEqualNode(toElement)) {
+                fromElement.isDirty = true;
+                return true;
+            }
+
+            return false;
+        }
     }
 
     /** @internal */
@@ -627,21 +640,14 @@ export class Application {
         const app = this;
 
         class ComponentElement extends HTMLElement {
-            public isDirty: boolean = false;
-            public component: Component;
-
             public connectedCallback(): void {
-                this.style.display = "contents";
-                this.component = new component.constructor(this);
+                this.component = new component.ctor(this);
                 app._observeAttributes(this.component);
-                app._registerEventListeners(this.component);
-                this.component.onInit();
-                const renderedContent: string | undefined = this.component.render();
-                if (typeof renderedContent === "string") {
-                    this.innerHTML = renderedContent;
-                }
-
-                this.component.onAppear();
+                (async (): Promise<void> => {
+                    await this.component.onInit();
+                    app._updateComponent(this.component);
+                    this.component.onAppear();
+                })();
             }
 
             public disconnectedCallback(): void {
@@ -649,7 +655,7 @@ export class Application {
             }
         }
 
-        customElements.define(component.tagName, ComponentElement);
+        customElements.define(component.tag, ComponentElement);
     }
 
     /** @internal */
@@ -661,7 +667,7 @@ export class Application {
         const observerConfig: MutationObserverInit = {attributes: true, attributeOldValue: true, subtree: false};
         const observer: MutationObserver = new MutationObserver((mutationsList: MutationRecord[], _: MutationObserver): void => {
             for (const mutation of mutationsList) {
-                if (mutation.type === 'attributes') {
+                if (mutation.type === "attributes") {
                     component.onAttributeChanged(mutation.attributeName, mutation.oldValue, component.element.getAttribute(mutation.attributeName))
                 }
             }
@@ -678,9 +684,21 @@ export abstract class Component {
         this.element = element;
     }
 
-    public render(): string | undefined {
+    public render(): Html {
         return undefined;
     }
+
+    public onInit(): void | Promise<void> {}
+
+    public onAppear(): void {}
+
+    public onUpdate(): void {}
+
+    public onDestroy(): void {}
+
+    public onMorph(toElement: HTMLElement): void {}
+
+    public onAttributeChanged(attribute: string, oldValue: string, newValue: string): void {}
 
     public update(state: object): void {
         for (const key of this.getKeys()) {
@@ -712,122 +730,11 @@ export abstract class Component {
 
         return [...new Set(keys)];
     }
-
-    public onInit(): void {
-    }
-
-    public onAppear(): void {
-    }
-
-    public onUpdate(): void {
-    }
-
-    public onDestroy(): void {
-    }
-
-    public onMorph(toElement: HTMLElement): void {
-    }
-
-    public onAttributeChanged(attribute: string, oldValue: string, newValue: string): void {
-    }
-
-    public onClick(event: Events.Mouse): void {
-    }
-
-    public onDblClick(event: Events.Mouse): void {
-    }
-
-    public onMouseDown(event: Events.Mouse): void {
-    }
-
-    public onMouseUp(event: Events.Mouse): void {
-    }
-
-    public onMouseMove(event: Events.Mouse): void {
-    }
-
-    public onMouseEnter(event: Events.Mouse): void {
-    }
-
-    public onMouseLeave(event: Events.Mouse): void {
-    }
-
-    public onMouseOver(event: Events.Mouse): void {
-    }
-
-    public onMouseOut(event: Events.Mouse): void {
-    }
-
-    public onKeyDown(event: Events.Keyboard): void {
-    }
-
-    public onKeyPress(event: Events.Keyboard): void {
-    }
-
-    public onKeyUp(event: Events.Keyboard): void {
-    }
-
-    public onFocus(event: Events.Focus): void {
-    }
-
-    public onBlur(event: Events.Focus): void {
-    }
-
-    public onInput(event: Events.Input): void {
-    }
-
-    public onChange(event: Events.BaseEvent): void {
-    }
-
-    public onSubmit(event: Events.BaseEvent): void {
-    }
-
-    public onScroll(event: Events.BaseEvent): void {
-    }
-
-    public onError(event: Events.Error): void {
-    }
-
-    public onResize(event: Events.UI): void {
-    }
-
-    public onSelect(event: Events.BaseEvent): void {
-    }
-
-    public onTouchStart(event: Events.Touch): void {
-    }
-
-    public onTouchMove(event: Events.Touch): void {
-    }
-
-    public onTouchEnd(event: Events.Touch): void {
-    }
-
-    public onTouchCancel(event: Events.Touch): void {
-    }
-
-    public onAnimationStart(event: Events.Animation): void {
-    }
-
-    public onAnimationEnd(event: Events.Animation): void {
-    }
-
-    public onAnimationIteration(event: Events.Animation): void {
-    }
-
-    public onTransitionStart(event: Events.Transition): void {
-    }
-
-    public onTransitionEnd(event: Events.Transition): void {
-    }
-
-    public onTransitionCancel(event: Events.Transition): void {
-    }
 }
 
 export type ComponentConstructor = (new (element: HTMLElement) => Component);
 
-export type ComponentDefinition = { tagName: string, constructor: ComponentConstructor };
+export type ComponentDefinition = { tag: string, ctor: ComponentConstructor };
 
 export class Debounce {
     /** @internal */
@@ -850,121 +757,256 @@ export class Debounce {
     }
 }
 
-export namespace Events {
-    export type BaseEvent = Event & { target: HTMLElement, currentTarget: HTMLElement, relatedTarget: HTMLElement }
-    export type Mouse = MouseEvent & BaseEvent;
-    export type Keyboard = KeyboardEvent & BaseEvent;
-    export type Focus = FocusEvent & BaseEvent;
-    export type Input = InputEvent & BaseEvent;
-    export type Error = ErrorEvent & BaseEvent;
-    export type UI = UIEvent & BaseEvent;
-    export type Touch = TouchEvent & BaseEvent;
-    export type Animation = AnimationEvent & BaseEvent;
-    export type Transition = TransitionEvent & BaseEvent;
+function formatDate(format: string): string {
+    const date: Date = this;
+
+    const monthNames: string[] = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const dayNames: string[] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+    return format.replace(/(d{1,4}|m{1,4}|y{2,4}|h{1,2}|H{1,2}|M{1,2}|s{1,2}|l|L|t{1,2}|T{1,2}'[^']*'|"[^"]*")/g, function (match: string): string {
+        switch (match) {
+            case "d":
+                return date.getDate().toString();
+            case "dd":
+                return date.getDate().toString().padStart(2, "0");
+            case "ddd":
+                return dayNames[date.getDay()].slice(0, 3);
+            case "dddd":
+                return dayNames[date.getDay()];
+            case "m":
+                return (date.getMonth() + 1).toString();
+            case "mm":
+                return String(date.getMonth() + 1).padStart(2, "0");
+            case "mmm":
+                return monthNames[date.getMonth()].slice(0, 3);
+            case "mmmm":
+                return monthNames[date.getMonth()];
+            case "yy":
+                return String(date.getFullYear()).slice(-2);
+            case "yyyy":
+                return date.getFullYear().toString();
+            case "h":
+                return (date.getHours() % 12 || 12).toString();
+            case "hh":
+                return String(date.getHours() % 12 || 12).padStart(2, "0");
+            case "H":
+                return date.getHours().toString();
+            case "HH":
+                return String(date.getHours()).padStart(2, "0");
+            case "M":
+                return date.getMinutes().toString();
+            case "MM":
+                return String(date.getMinutes()).padStart(2, "0");
+            case "s":
+                return date.getSeconds().toString();
+            case "ss":
+                return String(date.getSeconds()).padStart(2, "0");
+            case "l":
+                return String(date.getMilliseconds()).padStart(3, "0");
+            case "L":
+                return String(date.getMilliseconds()).padStart(3, "0").substring(0, 2);
+            case "t":
+                return date.getHours() < 12 ? "a" : "p";
+            case "tt":
+                return date.getHours() < 12 ? "am" : "pm";
+            case "T":
+                return date.getHours() < 12 ? "A" : "P";
+            case "TT":
+                return date.getHours() < 12 ? "AM" : "PM";
+            default:
+                return match.slice(1, -1);
+        }
+    });
 }
 
-export namespace Format {
-    export function date(value: Date | number | string | undefined, format: string): string {
-        let date: Date;
-        if (value instanceof Date) {
-            date = value;
-        } else if (!value) {
-            date = new Date();
-        } else {
-            date = new Date(value);
+export class Html {
+    /** @internal */
+    private readonly _tag: string;
+    /** @internal */
+    private readonly _attributes: [string, string][] = [];
+    /** @internal */
+    private readonly _children: Html[] = [];
+    /** @internal */
+    private readonly _events: [keyof GlobalEventHandlersEventMap, (event: Event) => void][] = [];
+    /** @internal */
+    private _text: string = "";
+
+    /** @internal */
+    constructor(tag: string) {
+        this._tag = tag;
+    }
+
+    public attribute(key: string, value: string): Html {
+        this._attributes.push([key, value]);
+        return this;
+    }
+
+    public attributes(attributes: [string, string][]): Html {
+        for (const attribute of attributes) {
+            this._attributes.push(attribute);
         }
 
-        const monthNames: string[] = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-        const dayNames: string[] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        return this;
+    }
 
-        return format.replace(/(d{1,4}|m{1,4}|y{2,4}|h{1,2}|H{1,2}|M{1,2}|s{1,2}|l|L|t{1,2}|T{1,2}'[^']*'|"[^"]*")/g, function (match: string): string {
-            switch (match) {
-                case "d":
-                    return date.getDate().toString();
-                case "dd":
-                    return date.getDate().toString().padStart(2, "0");
-                case "ddd":
-                    return dayNames[date.getDay()].slice(0, 3);
-                case "dddd":
-                    return dayNames[date.getDay()];
-                case "m":
-                    return (date.getMonth() + 1).toString();
-                case "mm":
-                    return String(date.getMonth() + 1).padStart(2, "0");
-                case "mmm":
-                    return monthNames[date.getMonth()].slice(0, 3);
-                case "mmmm":
-                    return monthNames[date.getMonth()];
-                case "yy":
-                    return String(date.getFullYear()).slice(-2);
-                case "yyyy":
-                    return date.getFullYear().toString();
-                case "h":
-                    return (date.getHours() % 12 || 12).toString();
-                case "hh":
-                    return String(date.getHours() % 12 || 12).padStart(2, "0");
-                case "H":
-                    return date.getHours().toString();
-                case "HH":
-                    return String(date.getHours()).padStart(2, "0");
-                case "M":
-                    return date.getMinutes().toString();
-                case "MM":
-                    return String(date.getMinutes()).padStart(2, "0");
-                case "s":
-                    return date.getSeconds().toString();
-                case "ss":
-                    return String(date.getSeconds()).padStart(2, "0");
-                case "l":
-                    return String(date.getMilliseconds()).padStart(3, "0");
-                case "L":
-                    return String(date.getMilliseconds()).padStart(3, "0").substring(0, 2);
-                case "t":
-                    return date.getHours() < 12 ? "a" : "p";
-                case "tt":
-                    return date.getHours() < 12 ? "am" : "pm";
-                case "T":
-                    return date.getHours() < 12 ? "A" : "P";
-                case "TT":
-                    return date.getHours() < 12 ? "AM" : "PM";
-                default:
-                    return match.slice(1, -1);
+    public attributeIf(condition: boolean, key: string, value: string): Html {
+        return this.if(condition, html => html.attribute(key, value));
+    }
+
+    public class(value: string): Html {
+        this.attribute("class", value);
+        return this;
+    }
+
+    public id(value: string): Html {
+        this.attribute("id", value);
+        return this;
+    }
+
+    public style(value: string): Html {
+        this.attribute("style", value);
+        return this;
+    }
+
+    public text(text: string): Html {
+        this._text = text;
+        return this;
+    }
+
+    public on(event: keyof GlobalEventHandlersEventMap, callback: (event: Event) => void): Html {
+        this._events.push([event, callback]);
+        return this;
+    }
+
+    public if(condition: boolean, callback: (html: Html) => void): Html {
+        if (condition) {
+            callback(this);
+        }
+
+        return this;
+    }
+
+    public ifElse(condition: boolean, onTrue: (html: Html) => void, onFalse: (html: Html) => void): Html {
+        if (condition) {
+            onTrue(this);
+            return this;
+        }
+
+        onFalse(this);
+        return this;
+    }
+
+    public append(child: Html): Html {
+        if (child === this) {
+            return;
+        }
+
+        this._children.push(child);
+        return this;
+    }
+
+    public appendAll(children: Html[]): Html {
+        for (const child of children) {
+            this.append(child);
+        }
+
+        return this;
+    }
+
+    public appendIf(condition: boolean, callback: () => Html): Html {
+        return this.if(condition, (html) => html.append(callback()));
+    }
+
+    public appendAllIf(condition: boolean, callback: () => Html[]): Html {
+        return this.if(condition, (html) => html.appendAll(callback()));
+    }
+
+    public appendIfElse(condition: boolean, onTrue: () => Html, onFalse: () => Html): Html {
+        return this.ifElse(condition, (html) => html.append(onTrue()), (html) => html.append(onFalse()));
+    }
+
+    public appendAllIfElse(condition: boolean, onTrue: () => Html[], onFalse: () => Html[]): Html {
+        return this.ifElse(condition, (html) => html.appendAll(onTrue()), (html) => html.appendAll(onFalse()));
+    }
+
+    public forRange(lower: number, upper: number, callback: (html: Html, index: number) => void): Html {
+        for (let i = lower; i < upper; i++) {
+            callback(this, i);
+        }
+
+        return this;
+    }
+
+    public appendForRange(lower: number, upper: number, callback: (index: number) => Html): Html {
+        return this.forRange(lower, upper, (html, index) => html.append(callback(index)));
+    }
+
+    public forEach<T>(array: T[], callback: (html: Html, element: T) => void): Html {
+        for (const element of array) {
+            callback(this, element);
+        }
+
+        return this;
+    }
+
+    public appendForEach<T>(array: T[], callback: (element: T) => Html): Html {
+        return this.forEach(array, (html, element) => html.append(callback(element)));
+    }
+
+    /** @internal */
+    public build(fromElement: HTMLElement): HTMLElement {
+        const element: HTMLElement = document.createElement(this._tag);
+
+        for (const [key, value] of this._attributes) {
+            element.setAttribute(key, value);
+        }
+
+        if (this._text) {
+            element.innerText = this._text;
+        }
+
+        for (const child of this._children) {
+            element.appendChild(child.build(fromElement));
+        }
+
+        if (this._events.length > 0) {
+            element.setAttribute("event", "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
+                (+c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +c / 4).toString(16)
+            ));
+        }
+
+        for (const key in fromElement) {
+            if (!key.startsWith("on")) {
+                continue;
             }
-        });
-    }
 
-    export function capitalize(value: string, lower: boolean = true, trim: boolean = true, words: boolean = false): string {
-        const str: string = trim ? value.trim() : value;
-        return (lower ? str.toLowerCase() : str).replace(words ? /(?:^|\s|["'([{])+\S/g : /(?:^|\s|["'([{])+\S/, match => match.toUpperCase());
-    }
+            const event = fromElement[key];
+            const events = this._events.filter(e => "on" + e[0] === key);
+            if (events.length === 0) {
+                continue;
+            }
 
-    export function upperCase(value: string, trim: boolean = true): string {
-        const str: string = trim ? value.trim() : value;
-        return str.toUpperCase();
-    }
+            fromElement[key] = (e: Event) => {
+                if (event) {
+                    event(e);
+                }
 
-    export function lowerCase(value: string, trim: boolean = true): string {
-        const str: string = trim ? value.trim() : value;
-        return str.toLowerCase();
-    }
+                let currentElement = (e.target as HTMLElement);
+                while (currentElement && currentElement !== fromElement) {
+                    if (currentElement.getAttribute("event") === element.getAttribute("event")) {
+                        for (const event of events) {
+                            event[1](e);
+                        }
 
-    export function json(value: any): string {
-        return JSON.stringify(value);
-    }
+                        break;
+                    }
 
-    export function percentage(value: number, digits: number = 2): string {
-        return value.toFixed(digits) + "%";
-    }
+                    currentElement = currentElement.parentElement;
+                }
+            }
+        }
 
-    export function decimal(value: number, digits: number = 2): string {
-        return value.toFixed(digits);
-    }
-
-    export function currency(value: number, currency: string = "USD"): string {
-        return value.toLocaleString(undefined, {
-            style: 'currency',
-            currency: currency
-        });
+        return element;
     }
 }
 
@@ -999,15 +1041,21 @@ export namespace LocalStorage {
     }
 }
 
-export function State(target: any, key: string): void {
-    let value = target[key];
+export function State(target: Component, key: string): void {
+    const field = `@State_${key}`;
+
+    Object.defineProperty(target, field, {
+        writable: true,
+        enumerable: false,
+        configurable: true,
+    });
 
     const getter = function () {
-        return value;
+        return this[field];
     };
 
     const setter = function (newValue: any): void {
-        value = newValue;
+        this[field] = newValue;
         if (this instanceof Component) {
             Application.updateComponent(this);
         }

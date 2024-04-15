@@ -1,12 +1,6 @@
 import {Application} from "../nova/lib.js";
 import {ButtonComponent} from "./ButtonComponent.js";
-import {DatePickerComponent} from "./DatePickerComponent.js";
-import {EmailInputComponent} from "./EmailInputComponent.js";
-import {NumberInputComponent} from "./NumberInputComponent.js";
 
 Application.launch([
-    ButtonComponent.definition,
-    DatePickerComponent.definition,
-    EmailInputComponent.definition,
-    NumberInputComponent.definition
+    ButtonComponent.definition
 ]);

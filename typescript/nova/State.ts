@@ -1,15 +1,21 @@
 import {Component} from "./Component.js";
 import {Application} from "./Application.js";
 
-export function State(target: any, key: string): void {
-    let value = target[key];
+export function State(target: Component, key: string): void {
+    const field = `@State_${key}`;
+
+    Object.defineProperty(target, field, {
+        writable: true,
+        enumerable: false,
+        configurable: true,
+    });
 
     const getter = function () {
-        return value;
+        return this[field];
     };
 
     const setter = function (newValue: any): void {
-        value = newValue;
+        this[field] = newValue;
         if (this instanceof Component) {
             Application.updateComponent(this);
         }

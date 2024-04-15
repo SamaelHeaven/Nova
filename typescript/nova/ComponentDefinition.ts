@@ -1,3 +1,3 @@
 import {ComponentConstructor} from "./ComponentConstructor.js";
 
-export type ComponentDefinition = { tagName: string, constructor: ComponentConstructor };
+export type ComponentDefinition = { tag: string, ctor: ComponentConstructor };

@@ -1,1 +1,2 @@
-export declare function State(target: any, key: string): void;
+import { Component } from "./Component.js";
+export declare function State(target: Component, key: string): void;

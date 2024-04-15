@@ -12,47 +12,17 @@ import { Component, State } from "../nova/lib.js";
 export class ButtonComponent extends Component {
     constructor() {
         super(...arguments);
-        this._content = this.element.getAttribute("data-content");
         this._count = 0;
     }
-    onInit() {
-        console.log("Initializing Button Component");
-    }
-    onAppear() {
-        console.log("Button Component Appeared");
-    }
-    onUpdate() {
-        console.log("Button Component Updated");
-    }
-    onClick(_) {
-        this.element.setAttribute("data-count", String(this._count + 1));
-        console.log("Clicked!");
-    }
-    onDestroy() {
-        console.log("Button Component Destroyed");
-    }
-    onMorph(toElement) {
-        console.log("Morphing to: ", toElement);
-    }
-    onAttributeChanged(attribute, oldValue, newValue) {
-        console.log(`${attribute} attribute changed from ${oldValue} to ${newValue}`);
-        if (attribute === "data-count") {
-            this._count = parseInt(newValue);
-            if (this._count >= 10) {
-                this.element.remove();
-            }
-        }
-    }
     render() {
-        return `
-            <button class="btn btn-primary">
-                ${this._content}${this._count === 0 ? "" : ": " + this._count}
-            </button>
-        `;
+        return "button".html()
+            .class("btn btn-primary")
+            .text(this._count > 0 ? `Count: ${this._count}!` : "Click Me!")
+            .on("click", () => this._count++);
     }
 }
 _a = ButtonComponent;
-ButtonComponent.definition = { tagName: "button-component", constructor: _a };
+ButtonComponent.definition = { tag: "button-component", ctor: _a };
 __decorate([
     State,
     __metadata("design:type", Number)

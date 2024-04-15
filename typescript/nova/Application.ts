@@ -1,18 +1,39 @@
 import {Component} from "./Component.js";
 import {morphdom} from "./morphdom.js";
 import {ComponentDefinition} from "./ComponentDefinition.js";
+import {Html} from "./Html.js";
+import {formatDate} from "./formatDate.js";
+
+declare global {
+    interface String {
+        html(): Html;
+    }
+
+    interface Date {
+        format(format: string): string;
+    }
+
+    /** @internal */
+    interface Element {
+        component?: Component;
+        isDirty?: boolean;
+    }
+}
+
+String.prototype.html = function (): Html {
+    return new Html(this);
+}
+
+Date.prototype.format = formatDate;
 
 export class Application {
     /** @internal */
     private static _instance: Application | null = null;
     /** @internal */
-    private readonly _eventNames: string[];
-    /** @internal */
     private readonly _morphdomOptions: object;
 
     private constructor() {
         const app = this;
-        this._eventNames = ["click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseenter", "mouseleave", "mouseover", "mouseout", "keydown", "keypress", "keyup", "focus", "blur", "input", "change", "submit", "scroll", "error", "resize", "select", "touchstart", "touchmove", "touchend", "touchcancel", "animationstart", "animationend", "animationiteration", "transitionstart", "transitionend", "transitioncancel"];
         this._morphdomOptions = {
             onBeforeElUpdated: function (fromEl: HTMLElement, toEl: HTMLElement): boolean {
                 return app._onBeforeElementUpdated(fromEl, toEl)
@@ -36,16 +57,16 @@ export class Application {
 
     public static queryComponent<T extends Component>(selector: string, element: HTMLElement = document.documentElement): T | null {
         this._throwIfUninitialized();
-        return (element.querySelector(selector) as any)?.component || null;
+        return element.querySelector(selector)?.component as T || null;
     }
 
     public static queryComponents<T extends Component>(selector: string, element: HTMLElement = document.documentElement): T[] {
         this._throwIfUninitialized();
         const components: T[] = [];
         for (const foundElement of Array.from(element.querySelectorAll(selector))) {
-            const component = (foundElement as any).component;
+            const component = foundElement.component;
             if (component) {
-                components.push(component);
+                components.push(component as T);
             }
         }
 
@@ -65,29 +86,16 @@ export class Application {
     }
 
     /** @internal */
-    private _registerEventListeners(component: Component): void {
-        for (const key of component.getKeys()) {
-            const eventType: string = key.substring(2).toLowerCase();
-            if (this._eventNames.includes(eventType)) {
-                component.element.addEventListener(eventType, (event: Event): void => {
-                    component[key](event);
-                });
-            }
-        }
-    }
-
-    /** @internal */
     private _updateComponent(component: Component): void {
         const newElement: HTMLElement = component.element.cloneNode(false) as HTMLElement;
-        const renderedContent: string | undefined = component.render();
-        if (typeof renderedContent !== "string") {
+        if (!component.getKeys().includes("render")) {
             return;
         }
 
         morphdom(component.element, newElement, this._morphdomOptions);
         for (const foundComponent of Application.queryComponents("*", component.element.parentElement)) {
-            if ((foundComponent.element as any).isDirty) {
-                (foundComponent.element as any).isDirty = false;
+            if (foundComponent.element.isDirty) {
+                foundComponent.element.isDirty = false;
                 foundComponent.onUpdate();
             }
         }
@@ -95,23 +103,30 @@ export class Application {
 
     /** @internal */
     private _onBeforeElementUpdated(fromElement: HTMLElement, toElement: HTMLElement): boolean {
-        const component: Component = (fromElement as any).component;
-        if (component) {
-            const renderedContent: string | undefined = component.render();
-            if (typeof renderedContent === "string") {
-                toElement.innerHTML = renderedContent;
-                toElement.style.display = "contents";
-                component.onMorph(toElement);
-                if (!fromElement.isEqualNode(toElement)) {
-                    (fromElement as any).isDirty = true;
-                    return true;
-                }
-
-                return false;
-            }
+        const component: Component = fromElement.component;
+        if (!component) {
+            return !fromElement.isEqualNode(toElement);
         }
 
-        return !fromElement.isEqualNode(toElement);
+        const html: Html = component.render();
+        if (html instanceof Html) {
+            toElement.innerHTML = "";
+            toElement.style.display = "contents";
+            for (const key in fromElement) {
+                if (key.startsWith("on")) {
+                    fromElement[key] = null;
+                }
+            }
+
+            toElement.appendChild(html.build(fromElement));
+            component.onMorph(toElement);
+            if (!fromElement.isEqualNode(toElement)) {
+                fromElement.isDirty = true;
+                return true;
+            }
+
+            return false;
+        }
     }
 
     /** @internal */
@@ -126,21 +141,14 @@ export class Application {
         const app = this;
 
         class ComponentElement extends HTMLElement {
-            public isDirty: boolean = false;
-            public component: Component;
-
             public connectedCallback(): void {
-                this.style.display = "contents";
-                this.component = new component.constructor(this);
+                this.component = new component.ctor(this);
                 app._observeAttributes(this.component);
-                app._registerEventListeners(this.component);
-                this.component.onInit();
-                const renderedContent: string | undefined = this.component.render();
-                if (typeof renderedContent === "string") {
-                    this.innerHTML = renderedContent;
-                }
-
-                this.component.onAppear();
+                (async (): Promise<void> => {
+                    await this.component.onInit();
+                    app._updateComponent(this.component);
+                    this.component.onAppear();
+                })();
             }
 
             public disconnectedCallback(): void {
@@ -148,7 +156,7 @@ export class Application {
             }
         }
 
-        customElements.define(component.tagName, ComponentElement);
+        customElements.define(component.tag, ComponentElement);
     }
 
     /** @internal */
@@ -160,7 +168,7 @@ export class Application {
         const observerConfig: MutationObserverInit = {attributes: true, attributeOldValue: true, subtree: false};
         const observer: MutationObserver = new MutationObserver((mutationsList: MutationRecord[], _: MutationObserver): void => {
             for (const mutation of mutationsList) {
-                if (mutation.type === 'attributes') {
+                if (mutation.type === "attributes") {
                     component.onAttributeChanged(mutation.attributeName, mutation.oldValue, component.element.getAttribute(mutation.attributeName))
                 }
             }

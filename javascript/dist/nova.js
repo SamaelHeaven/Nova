@@ -500,10 +500,13 @@ function morphdomFactory(morphAttrs) {
     };
 }
 var morphdom = morphdomFactory(morphAttrs);
+String.prototype.html = function () {
+    return new Html(this);
+};
+Date.prototype.format = formatDate;
 export class Application {
     constructor() {
         const app = this;
-        this._eventNames = ["click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseenter", "mouseleave", "mouseover", "mouseout", "keydown", "keypress", "keyup", "focus", "blur", "input", "change", "submit", "scroll", "error", "resize", "select", "touchstart", "touchmove", "touchend", "touchcancel", "animationstart", "animationend", "animationiteration", "transitionstart", "transitionend", "transitioncancel"];
         this._morphdomOptions = {
             onBeforeElUpdated: function (fromEl, toEl) {
                 return app._onBeforeElementUpdated(fromEl, toEl);
@@ -546,20 +549,9 @@ export class Application {
             throw new Error("Application has not been launched");
         }
     }
-    _registerEventListeners(component) {
-        for (const key of component.getKeys()) {
-            const eventType = key.substring(2).toLowerCase();
-            if (this._eventNames.includes(eventType)) {
-                component.element.addEventListener(eventType, (event) => {
-                    component[key](event);
-                });
-            }
-        }
-    }
     _updateComponent(component) {
         const newElement = component.element.cloneNode(false);
-        const renderedContent = component.render();
-        if (typeof renderedContent !== "string") {
+        if (!component.getKeys().includes("render")) {
             return;
         }
         morphdom(component.element, newElement, this._morphdomOptions);
@@ -572,20 +564,26 @@ export class Application {
     }
     _onBeforeElementUpdated(fromElement, toElement) {
         const component = fromElement.component;
-        if (component) {
-            const renderedContent = component.render();
-            if (typeof renderedContent === "string") {
-                toElement.innerHTML = renderedContent;
-                toElement.style.display = "contents";
-                component.onMorph(toElement);
-                if (!fromElement.isEqualNode(toElement)) {
-                    fromElement.isDirty = true;
-                    return true;
-                }
-                return false;
-            }
+        if (!component) {
+            return !fromElement.isEqualNode(toElement);
         }
-        return !fromElement.isEqualNode(toElement);
+        const html = component.render();
+        if (html instanceof Html) {
+            toElement.innerHTML = "";
+            toElement.style.display = "contents";
+            for (const key in fromElement) {
+                if (key.startsWith("on")) {
+                    fromElement[key] = null;
+                }
+            }
+            toElement.appendChild(html.build(fromElement));
+            component.onMorph(toElement);
+            if (!fromElement.isEqualNode(toElement)) {
+                fromElement.isDirty = true;
+                return true;
+            }
+            return false;
+        }
     }
     _initializeComponents(components) {
         for (const component of components) {
@@ -595,27 +593,20 @@ export class Application {
     _initializeComponent(component) {
         const app = this;
         class ComponentElement extends HTMLElement {
-            constructor() {
-                super(...arguments);
-                this.isDirty = false;
-            }
             connectedCallback() {
-                this.style.display = "contents";
-                this.component = new component.constructor(this);
+                this.component = new component.ctor(this);
                 app._observeAttributes(this.component);
-                app._registerEventListeners(this.component);
-                this.component.onInit();
-                const renderedContent = this.component.render();
-                if (typeof renderedContent === "string") {
-                    this.innerHTML = renderedContent;
-                }
-                this.component.onAppear();
+                (async () => {
+                    await this.component.onInit();
+                    app._updateComponent(this.component);
+                    this.component.onAppear();
+                })();
             }
             disconnectedCallback() {
                 this.component.onDestroy();
             }
         }
-        customElements.define(component.tagName, ComponentElement);
+        customElements.define(component.tag, ComponentElement);
     }
     _observeAttributes(component) {
         if (!component.getKeys().includes("onAttributeChanged")) {
@@ -624,7 +615,7 @@ export class Application {
         const observerConfig = { attributes: true, attributeOldValue: true, subtree: false };
         const observer = new MutationObserver((mutationsList, _) => {
             for (const mutation of mutationsList) {
-                if (mutation.type === 'attributes') {
+                if (mutation.type === "attributes") {
                     component.onAttributeChanged(mutation.attributeName, mutation.oldValue, component.element.getAttribute(mutation.attributeName));
                 }
             }
@@ -640,6 +631,12 @@ export class Component {
     render() {
         return undefined;
     }
+    onInit() { }
+    onAppear() { }
+    onUpdate() { }
+    onDestroy() { }
+    onMorph(toElement) { }
+    onAttributeChanged(attribute, oldValue, newValue) { }
     update(state) {
         for (const key of this.getKeys()) {
             if (this[key] === state) {
@@ -665,80 +662,6 @@ export class Component {
         }
         return [...new Set(keys)];
     }
-    onInit() {
-    }
-    onAppear() {
-    }
-    onUpdate() {
-    }
-    onDestroy() {
-    }
-    onMorph(toElement) {
-    }
-    onAttributeChanged(attribute, oldValue, newValue) {
-    }
-    onClick(event) {
-    }
-    onDblClick(event) {
-    }
-    onMouseDown(event) {
-    }
-    onMouseUp(event) {
-    }
-    onMouseMove(event) {
-    }
-    onMouseEnter(event) {
-    }
-    onMouseLeave(event) {
-    }
-    onMouseOver(event) {
-    }
-    onMouseOut(event) {
-    }
-    onKeyDown(event) {
-    }
-    onKeyPress(event) {
-    }
-    onKeyUp(event) {
-    }
-    onFocus(event) {
-    }
-    onBlur(event) {
-    }
-    onInput(event) {
-    }
-    onChange(event) {
-    }
-    onSubmit(event) {
-    }
-    onScroll(event) {
-    }
-    onError(event) {
-    }
-    onResize(event) {
-    }
-    onSelect(event) {
-    }
-    onTouchStart(event) {
-    }
-    onTouchMove(event) {
-    }
-    onTouchEnd(event) {
-    }
-    onTouchCancel(event) {
-    }
-    onAnimationStart(event) {
-    }
-    onAnimationEnd(event) {
-    }
-    onAnimationIteration(event) {
-    }
-    onTransitionStart(event) {
-    }
-    onTransitionEnd(event) {
-    }
-    onTransitionCancel(event) {
-    }
 }
 export class Debounce {
     constructor(callback, wait) {
@@ -754,112 +677,205 @@ export class Debounce {
         this._callback.apply(this, args);
     }
 }
-export var Format;
-(function (Format) {
-    function date(value, format) {
-        let date;
-        if (value instanceof Date) {
-            date = value;
+function formatDate(format) {
+    const date = this;
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    return format.replace(/(d{1,4}|m{1,4}|y{2,4}|h{1,2}|H{1,2}|M{1,2}|s{1,2}|l|L|t{1,2}|T{1,2}'[^']*'|"[^"]*")/g, function (match) {
+        switch (match) {
+            case "d":
+                return date.getDate().toString();
+            case "dd":
+                return date.getDate().toString().padStart(2, "0");
+            case "ddd":
+                return dayNames[date.getDay()].slice(0, 3);
+            case "dddd":
+                return dayNames[date.getDay()];
+            case "m":
+                return (date.getMonth() + 1).toString();
+            case "mm":
+                return String(date.getMonth() + 1).padStart(2, "0");
+            case "mmm":
+                return monthNames[date.getMonth()].slice(0, 3);
+            case "mmmm":
+                return monthNames[date.getMonth()];
+            case "yy":
+                return String(date.getFullYear()).slice(-2);
+            case "yyyy":
+                return date.getFullYear().toString();
+            case "h":
+                return (date.getHours() % 12 || 12).toString();
+            case "hh":
+                return String(date.getHours() % 12 || 12).padStart(2, "0");
+            case "H":
+                return date.getHours().toString();
+            case "HH":
+                return String(date.getHours()).padStart(2, "0");
+            case "M":
+                return date.getMinutes().toString();
+            case "MM":
+                return String(date.getMinutes()).padStart(2, "0");
+            case "s":
+                return date.getSeconds().toString();
+            case "ss":
+                return String(date.getSeconds()).padStart(2, "0");
+            case "l":
+                return String(date.getMilliseconds()).padStart(3, "0");
+            case "L":
+                return String(date.getMilliseconds()).padStart(3, "0").substring(0, 2);
+            case "t":
+                return date.getHours() < 12 ? "a" : "p";
+            case "tt":
+                return date.getHours() < 12 ? "am" : "pm";
+            case "T":
+                return date.getHours() < 12 ? "A" : "P";
+            case "TT":
+                return date.getHours() < 12 ? "AM" : "PM";
+            default:
+                return match.slice(1, -1);
         }
-        else if (!value) {
-            date = new Date();
+    });
+}
+export class Html {
+    constructor(tag) {
+        this._attributes = [];
+        this._children = [];
+        this._events = [];
+        this._text = "";
+        this._tag = tag;
+    }
+    attribute(key, value) {
+        this._attributes.push([key, value]);
+        return this;
+    }
+    attributes(attributes) {
+        for (const attribute of attributes) {
+            this._attributes.push(attribute);
         }
-        else {
-            date = new Date(value);
+        return this;
+    }
+    attributeIf(condition, key, value) {
+        return this.if(condition, html => html.attribute(key, value));
+    }
+    class(value) {
+        this.attribute("class", value);
+        return this;
+    }
+    id(value) {
+        this.attribute("id", value);
+        return this;
+    }
+    style(value) {
+        this.attribute("style", value);
+        return this;
+    }
+    text(text) {
+        this._text = text;
+        return this;
+    }
+    on(event, callback) {
+        this._events.push([event, callback]);
+        return this;
+    }
+    if(condition, callback) {
+        if (condition) {
+            callback(this);
         }
-        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-        const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-        return format.replace(/(d{1,4}|m{1,4}|y{2,4}|h{1,2}|H{1,2}|M{1,2}|s{1,2}|l|L|t{1,2}|T{1,2}'[^']*'|"[^"]*")/g, function (match) {
-            switch (match) {
-                case "d":
-                    return date.getDate().toString();
-                case "dd":
-                    return date.getDate().toString().padStart(2, "0");
-                case "ddd":
-                    return dayNames[date.getDay()].slice(0, 3);
-                case "dddd":
-                    return dayNames[date.getDay()];
-                case "m":
-                    return (date.getMonth() + 1).toString();
-                case "mm":
-                    return String(date.getMonth() + 1).padStart(2, "0");
-                case "mmm":
-                    return monthNames[date.getMonth()].slice(0, 3);
-                case "mmmm":
-                    return monthNames[date.getMonth()];
-                case "yy":
-                    return String(date.getFullYear()).slice(-2);
-                case "yyyy":
-                    return date.getFullYear().toString();
-                case "h":
-                    return (date.getHours() % 12 || 12).toString();
-                case "hh":
-                    return String(date.getHours() % 12 || 12).padStart(2, "0");
-                case "H":
-                    return date.getHours().toString();
-                case "HH":
-                    return String(date.getHours()).padStart(2, "0");
-                case "M":
-                    return date.getMinutes().toString();
-                case "MM":
-                    return String(date.getMinutes()).padStart(2, "0");
-                case "s":
-                    return date.getSeconds().toString();
-                case "ss":
-                    return String(date.getSeconds()).padStart(2, "0");
-                case "l":
-                    return String(date.getMilliseconds()).padStart(3, "0");
-                case "L":
-                    return String(date.getMilliseconds()).padStart(3, "0").substring(0, 2);
-                case "t":
-                    return date.getHours() < 12 ? "a" : "p";
-                case "tt":
-                    return date.getHours() < 12 ? "am" : "pm";
-                case "T":
-                    return date.getHours() < 12 ? "A" : "P";
-                case "TT":
-                    return date.getHours() < 12 ? "AM" : "PM";
-                default:
-                    return match.slice(1, -1);
+        return this;
+    }
+    ifElse(condition, onTrue, onFalse) {
+        if (condition) {
+            onTrue(this);
+            return this;
+        }
+        onFalse(this);
+        return this;
+    }
+    append(child) {
+        if (child === this) {
+            return;
+        }
+        this._children.push(child);
+        return this;
+    }
+    appendAll(children) {
+        for (const child of children) {
+            this.append(child);
+        }
+        return this;
+    }
+    appendIf(condition, callback) {
+        return this.if(condition, (html) => html.append(callback()));
+    }
+    appendAllIf(condition, callback) {
+        return this.if(condition, (html) => html.appendAll(callback()));
+    }
+    appendIfElse(condition, onTrue, onFalse) {
+        return this.ifElse(condition, (html) => html.append(onTrue()), (html) => html.append(onFalse()));
+    }
+    appendAllIfElse(condition, onTrue, onFalse) {
+        return this.ifElse(condition, (html) => html.appendAll(onTrue()), (html) => html.appendAll(onFalse()));
+    }
+    forRange(lower, upper, callback) {
+        for (let i = lower; i < upper; i++) {
+            callback(this, i);
+        }
+        return this;
+    }
+    appendForRange(lower, upper, callback) {
+        return this.forRange(lower, upper, (html, index) => html.append(callback(index)));
+    }
+    forEach(array, callback) {
+        for (const element of array) {
+            callback(this, element);
+        }
+        return this;
+    }
+    appendForEach(array, callback) {
+        return this.forEach(array, (html, element) => html.append(callback(element)));
+    }
+    build(fromElement) {
+        const element = document.createElement(this._tag);
+        for (const [key, value] of this._attributes) {
+            element.setAttribute(key, value);
+        }
+        if (this._text) {
+            element.innerText = this._text;
+        }
+        for (const child of this._children) {
+            element.appendChild(child.build(fromElement));
+        }
+        if (this._events.length > 0) {
+            element.setAttribute("event", "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c => (+c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +c / 4).toString(16)));
+        }
+        for (const key in fromElement) {
+            if (!key.startsWith("on")) {
+                continue;
             }
-        });
+            const event = fromElement[key];
+            const events = this._events.filter(e => "on" + e[0] === key);
+            if (events.length === 0) {
+                continue;
+            }
+            fromElement[key] = (e) => {
+                if (event) {
+                    event(e);
+                }
+                let currentElement = e.target;
+                while (currentElement && currentElement !== fromElement) {
+                    if (currentElement.getAttribute("event") === element.getAttribute("event")) {
+                        for (const event of events) {
+                            event[1](e);
+                        }
+                        break;
+                    }
+                    currentElement = currentElement.parentElement;
+                }
+            };
+        }
+        return element;
     }
-    Format.date = date;
-    function capitalize(value, lower = true, trim = true, words = false) {
-        const str = trim ? value.trim() : value;
-        return (lower ? str.toLowerCase() : str).replace(words ? /(?:^|\s|["'([{])+\S/g : /(?:^|\s|["'([{])+\S/, match => match.toUpperCase());
-    }
-    Format.capitalize = capitalize;
-    function upperCase(value, trim = true) {
-        const str = trim ? value.trim() : value;
-        return str.toUpperCase();
-    }
-    Format.upperCase = upperCase;
-    function lowerCase(value, trim = true) {
-        const str = trim ? value.trim() : value;
-        return str.toLowerCase();
-    }
-    Format.lowerCase = lowerCase;
-    function json(value) {
-        return JSON.stringify(value);
-    }
-    Format.json = json;
-    function percentage(value, digits = 2) {
-        return value.toFixed(digits) + "%";
-    }
-    Format.percentage = percentage;
-    function decimal(value, digits = 2) {
-        return value.toFixed(digits);
-    }
-    Format.decimal = decimal;
-    function currency(value, currency = "USD") {
-        return value.toLocaleString(undefined, {
-            style: 'currency',
-            currency: currency
-        });
-    }
-    Format.currency = currency;
-})(Format || (Format = {}));
+}
 export var LocalStorage;
 (function (LocalStorage) {
     function getItem(key) {
@@ -885,12 +901,17 @@ export var LocalStorage;
     LocalStorage.setItem = setItem;
 })(LocalStorage || (LocalStorage = {}));
 export function State(target, key) {
-    let value = target[key];
+    const field = `@State_${key}`;
+    Object.defineProperty(target, field, {
+        writable: true,
+        enumerable: false,
+        configurable: true,
+    });
     const getter = function () {
-        return value;
+        return this[field];
     };
     const setter = function (newValue) {
-        value = newValue;
+        this[field] = newValue;
         if (this instanceof Component) {
             Application.updateComponent(this);
         }
