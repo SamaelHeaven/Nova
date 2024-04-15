@@ -4,11 +4,9 @@ export class Html {
     /** @internal */
     private readonly _attributes: [string, string][] = [];
     /** @internal */
-    private readonly _children: Html[] = [];
+    private readonly _children: (Html | string)[] = [];
     /** @internal */
     private readonly _events: [keyof GlobalEventHandlersEventMap | string, (event: Event) => any][] = [];
-    /** @internal */
-    private _text: string = "";
 
     /** @internal */
     constructor(tag: string) {
@@ -37,23 +35,11 @@ export class Html {
     }
 
     public class(value: string): Html {
-        this.attribute("class", value);
-        return this;
+        return this.attribute("class", value);
     }
 
     public id(value: string): Html {
-        this.attribute("id", value);
-        return this;
-    }
-
-    public style(value: string): Html {
-        this.attribute("style", value);
-        return this;
-    }
-
-    public text(text: string): Html {
-        this._text = text;
-        return this;
+        return this.attribute("id", value);
     }
 
     public on(event: keyof GlobalEventHandlersEventMap | string, callback: (event: Event) => any): Html {
@@ -69,7 +55,11 @@ export class Html {
         return this;
     }
 
-    public append(...children: Html[]): Html {
+    public append(...children: (Html | string)[]): Html {
+        return this.appendArray(children);
+    }
+
+    public appendArray(children: (Html | string)[]): Html {
         for (const child of children) {
             if (child === this) {
                 continue;
@@ -81,8 +71,17 @@ export class Html {
         return this;
     }
 
-    public appendIf(condition: boolean, ...children: Html[]): Html {
-        return this.if(condition, () => this.append(...children));
+    public appendIf(condition: boolean, callback: (() => (Html | string) | (Html | string)[])): Html {
+        if (!condition) {
+            return this;
+        }
+
+        const value = callback();
+        if (Array.isArray(value)) {
+            return this.appendArray(value);
+        }
+
+        return this.append(value);
     }
 
     public forRange(lower: number, upper: number, callback: (html: Html, index: number) => void): Html {
@@ -93,15 +92,15 @@ export class Html {
         return this;
     }
 
-    public appendForRange(lower: number, upper: number, callback: (index: number) => Html | Html[]): Html {
-        return this.forRange(lower, upper, (html, index) => {
-            const result = callback(index);
-            if (result instanceof Array) {
-                html.append(...result);
+    public appendForRange(lower: number, upper: number, callback: (index: number) => (Html | string) | (Html | string)[]): Html {
+        return this.forRange(lower, upper, (_, index) => {
+            const value = callback(index);
+            if (Array.isArray(value)) {
+                this.appendArray(value);
                 return;
             }
 
-            html.append(result);
+            this.append(value);
         });
     }
 
@@ -113,15 +112,15 @@ export class Html {
         return this;
     }
 
-    public appendForEach<T>(array: T[], callback: (element: T) => Html | Html[]): Html {
-        return this.forEach(array, (html, element) => {
-            const result = callback(element);
-            if (result instanceof Array) {
-                html.append(...result);
+    public appendForEach<T>(array: T[], callback: (element: T) => (Html | string) | (Html | string)[]): Html {
+        return this.forEach(array, (_, element) => {
+            const value = callback(element);
+            if (value instanceof Array) {
+                this.appendArray(value);
                 return;
             }
 
-            html.append(result);
+            this.append(value);
         });
     }
 
@@ -134,12 +133,13 @@ export class Html {
             element.setAttribute(key, value);
         }
 
-        if (this._text) {
-            element.innerText = this._text;
-        }
-
         for (const child of this._children) {
-            element.appendChild(child.build(fromElement));
+            if (child instanceof Html) {
+                element.appendChild(child.build(fromElement));
+                continue;
+            }
+
+            element.appendChild(document.createTextNode(child));
         }
 
         if (this._events.length > 0) {

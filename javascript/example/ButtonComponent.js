@@ -17,7 +17,7 @@ export class ButtonComponent extends Component {
     render() {
         return "button".html()
             .class("btn btn-primary")
-            .text(this._count > 0 ? `Count: ${this._count}!` : "Click Me!")
+            .append(this._count > 0 ? `Count: ${this._count}!` : "Click Me!")
             .on("click", () => this._count++);
     }
 }

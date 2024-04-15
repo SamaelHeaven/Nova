@@ -3,7 +3,6 @@ export class Html {
         this._attributes = [];
         this._children = [];
         this._events = [];
-        this._text = "";
         this._tag = tag;
     }
     attribute(key, value) {
@@ -23,20 +22,10 @@ export class Html {
         return this.if(condition, html => html.attributes(...attributes));
     }
     class(value) {
-        this.attribute("class", value);
-        return this;
+        return this.attribute("class", value);
     }
     id(value) {
-        this.attribute("id", value);
-        return this;
-    }
-    style(value) {
-        this.attribute("style", value);
-        return this;
-    }
-    text(text) {
-        this._text = text;
-        return this;
+        return this.attribute("id", value);
     }
     on(event, callback) {
         this._events.push([event, callback]);
@@ -49,6 +38,9 @@ export class Html {
         return this;
     }
     append(...children) {
+        return this.appendArray(children);
+    }
+    appendArray(children) {
         for (const child of children) {
             if (child === this) {
                 continue;
@@ -57,8 +49,15 @@ export class Html {
         }
         return this;
     }
-    appendIf(condition, ...children) {
-        return this.if(condition, () => this.append(...children));
+    appendIf(condition, callback) {
+        if (!condition) {
+            return this;
+        }
+        const value = callback();
+        if (Array.isArray(value)) {
+            return this.appendArray(value);
+        }
+        return this.append(value);
     }
     forRange(lower, upper, callback) {
         for (let i = lower; i < upper; i++) {
@@ -67,13 +66,13 @@ export class Html {
         return this;
     }
     appendForRange(lower, upper, callback) {
-        return this.forRange(lower, upper, (html, index) => {
-            const result = callback(index);
-            if (result instanceof Array) {
-                html.append(...result);
+        return this.forRange(lower, upper, (_, index) => {
+            const value = callback(index);
+            if (Array.isArray(value)) {
+                this.appendArray(value);
                 return;
             }
-            html.append(result);
+            this.append(value);
         });
     }
     forEach(array, callback) {
@@ -83,13 +82,13 @@ export class Html {
         return this;
     }
     appendForEach(array, callback) {
-        return this.forEach(array, (html, element) => {
-            const result = callback(element);
-            if (result instanceof Array) {
-                html.append(...result);
+        return this.forEach(array, (_, element) => {
+            const value = callback(element);
+            if (value instanceof Array) {
+                this.appendArray(value);
                 return;
             }
-            html.append(result);
+            this.append(value);
         });
     }
     build(fromElement) {
@@ -98,11 +97,12 @@ export class Html {
         for (const [key, value] of this._attributes) {
             element.setAttribute(key, value);
         }
-        if (this._text) {
-            element.innerText = this._text;
-        }
         for (const child of this._children) {
-            element.appendChild(child.build(fromElement));
+            if (child instanceof Html) {
+                element.appendChild(child.build(fromElement));
+                continue;
+            }
+            element.appendChild(document.createTextNode(child));
         }
         if (this._events.length > 0) {
             element.setAttribute(eventAttributeName, "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c => (+c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +c / 4).toString(16)));
