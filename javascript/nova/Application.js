@@ -72,7 +72,7 @@ export class Application {
         if (html instanceof Html) {
             toElement.innerHTML = "";
             toElement.style.display = "contents";
-            for (const key in fromElement) {
+            for (const key of Object.keys(HTMLElement.prototype)) {
                 if (key.startsWith("on")) {
                     fromElement[key] = null;
                 }

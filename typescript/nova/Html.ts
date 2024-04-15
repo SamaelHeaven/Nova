@@ -154,7 +154,7 @@ export class Html {
             ));
         }
 
-        for (const key in fromElement) {
+        for (const key of Object.keys(HTMLElement.prototype)) {
             if (!key.startsWith("on")) {
                 continue;
             }

@@ -110,7 +110,7 @@ export class Html {
         if (this._events.length > 0) {
             element.setAttribute("event", "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c => (+c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +c / 4).toString(16)));
         }
-        for (const key in fromElement) {
+        for (const key of Object.keys(HTMLElement.prototype)) {
             if (!key.startsWith("on")) {
                 continue;
             }

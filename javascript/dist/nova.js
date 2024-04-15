@@ -1,4 +1,7 @@
-'use strict';
+String.prototype.html = function () {
+    return new Html(this);
+};
+Date.prototype.format = formatDate;
 var DOCUMENT_FRAGMENT_NODE = 11;
 function morphAttrs(fromNode, toNode) {
     var toNodeAttrs = toNode.attributes;
@@ -500,10 +503,6 @@ function morphdomFactory(morphAttrs) {
     };
 }
 var morphdom = morphdomFactory(morphAttrs);
-String.prototype.html = function () {
-    return new Html(this);
-};
-Date.prototype.format = formatDate;
 export class Application {
     constructor() {
         const app = this;
@@ -571,7 +570,7 @@ export class Application {
         if (html instanceof Html) {
             toElement.innerHTML = "";
             toElement.style.display = "contents";
-            for (const key in fromElement) {
+            for (const key of Object.keys(HTMLElement.prototype)) {
                 if (key.startsWith("on")) {
                     fromElement[key] = null;
                 }
@@ -631,12 +630,18 @@ export class Component {
     render() {
         return undefined;
     }
-    onInit() { }
-    onAppear() { }
-    onUpdate() { }
-    onDestroy() { }
-    onMorph(toElement) { }
-    onAttributeChanged(attribute, oldValue, newValue) { }
+    onInit() {
+    }
+    onAppear() {
+    }
+    onUpdate() {
+    }
+    onDestroy() {
+    }
+    onMorph(toElement) {
+    }
+    onAttributeChanged(attribute, oldValue, newValue) {
+    }
     update(state) {
         for (const key of this.getKeys()) {
             if (this[key] === state) {
@@ -848,7 +853,7 @@ export class Html {
         if (this._events.length > 0) {
             element.setAttribute("event", "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c => (+c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +c / 4).toString(16)));
         }
-        for (const key in fromElement) {
+        for (const key of Object.keys(HTMLElement.prototype)) {
             if (!key.startsWith("on")) {
                 continue;
             }

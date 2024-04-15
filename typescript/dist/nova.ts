@@ -1,6 +1,26 @@
 // @ts-nocheck
 
-'use strict';
+declare global {
+    interface String {
+        html(): Html;
+    }
+
+    interface Date {
+        format(format: string): string;
+    }
+
+    /** @internal */
+    interface Element {
+        component?: Component;
+        isDirty?: boolean;
+    }
+}
+
+String.prototype.html = function (): Html {
+    return new Html(this);
+}
+
+Date.prototype.format = formatDate;
 
 var DOCUMENT_FRAGMENT_NODE = 11;
 
@@ -503,28 +523,6 @@ function morphdomFactory(morphAttrs) {
 
 var morphdom = morphdomFactory(morphAttrs);
 
-declare global {
-    interface String {
-        html(): Html;
-    }
-
-    interface Date {
-        format(format: string): string;
-    }
-
-    /** @internal */
-    interface Element {
-        component?: Component;
-        isDirty?: boolean;
-    }
-}
-
-String.prototype.html = function (): Html {
-    return new Html(this);
-}
-
-Date.prototype.format = formatDate;
-
 export class Application {
     /** @internal */
     private static _instance: Application | null = null;
@@ -611,7 +609,7 @@ export class Application {
         if (html instanceof Html) {
             toElement.innerHTML = "";
             toElement.style.display = "contents";
-            for (const key in fromElement) {
+            for (const key of Object.keys(HTMLElement.prototype)) {
                 if (key.startsWith("on")) {
                     fromElement[key] = null;
                 }
@@ -688,17 +686,23 @@ export abstract class Component {
         return undefined;
     }
 
-    public onInit(): void | Promise<void> {}
+    public onInit(): void | Promise<void> {
+    }
 
-    public onAppear(): void {}
+    public onAppear(): void {
+    }
 
-    public onUpdate(): void {}
+    public onUpdate(): void {
+    }
 
-    public onDestroy(): void {}
+    public onDestroy(): void {
+    }
 
-    public onMorph(toElement: HTMLElement): void {}
+    public onMorph(toElement: HTMLElement): void {
+    }
 
-    public onAttributeChanged(attribute: string, oldValue: string, newValue: string): void {}
+    public onAttributeChanged(attribute: string, oldValue: string, newValue: string): void {
+    }
 
     public update(state: object): void {
         for (const key of this.getKeys()) {
@@ -975,7 +979,7 @@ export class Html {
             ));
         }
 
-        for (const key in fromElement) {
+        for (const key of Object.keys(HTMLElement.prototype)) {
             if (!key.startsWith("on")) {
                 continue;
             }

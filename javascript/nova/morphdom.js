@@ -1,4 +1,3 @@
-'use strict';
 var DOCUMENT_FRAGMENT_NODE = 11;
 function morphAttrs(fromNode, toNode) {
     var toNodeAttrs = toNode.attributes;
