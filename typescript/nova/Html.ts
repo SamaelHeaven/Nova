@@ -32,6 +32,10 @@ export class Html {
         return this.if(condition, html => html.attribute(key, value));
     }
 
+    public attributesIf(condition: boolean, ...attributes: [string, string][]): Html {
+        return this.if(condition, html => html.attributes(...attributes));
+    }
+
     public class(value: string): Html {
         this.attribute("class", value);
         return this;
@@ -89,8 +93,16 @@ export class Html {
         return this;
     }
 
-    public appendForRange(lower: number, upper: number, callback: (index: number) => Html): Html {
-        return this.forRange(lower, upper, (html, index) => html.append(callback(index)));
+    public appendForRange(lower: number, upper: number, callback: (index: number) => Html | Html[]): Html {
+        return this.forRange(lower, upper, (html, index) => {
+            const result = callback(index);
+            if (result instanceof Array) {
+                html.append(...result);
+                return;
+            }
+
+            html.append(result);
+        });
     }
 
     public forEach<T>(array: T[], callback: (html: Html, element: T) => void): Html {
@@ -101,8 +113,16 @@ export class Html {
         return this;
     }
 
-    public appendForEach<T>(array: T[], callback: (element: T) => Html): Html {
-        return this.forEach(array, (html, element) => html.append(callback(element)));
+    public appendForEach<T>(array: T[], callback: (element: T) => Html | Html[]): Html {
+        return this.forEach(array, (html, element) => {
+            const result = callback(element);
+            if (result instanceof Array) {
+                html.append(...result);
+                return;
+            }
+
+            html.append(result);
+        });
     }
 
     /** @internal */

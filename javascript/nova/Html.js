@@ -19,6 +19,9 @@ export class Html {
     attributeIf(condition, key, value) {
         return this.if(condition, html => html.attribute(key, value));
     }
+    attributesIf(condition, ...attributes) {
+        return this.if(condition, html => html.attributes(...attributes));
+    }
     class(value) {
         this.attribute("class", value);
         return this;
@@ -64,7 +67,14 @@ export class Html {
         return this;
     }
     appendForRange(lower, upper, callback) {
-        return this.forRange(lower, upper, (html, index) => html.append(callback(index)));
+        return this.forRange(lower, upper, (html, index) => {
+            const result = callback(index);
+            if (result instanceof Array) {
+                html.append(...result);
+                return;
+            }
+            html.append(result);
+        });
     }
     forEach(array, callback) {
         for (const element of array) {
@@ -73,7 +83,14 @@ export class Html {
         return this;
     }
     appendForEach(array, callback) {
-        return this.forEach(array, (html, element) => html.append(callback(element)));
+        return this.forEach(array, (html, element) => {
+            const result = callback(element);
+            if (result instanceof Array) {
+                html.append(...result);
+                return;
+            }
+            html.append(result);
+        });
     }
     build(fromElement) {
         const element = document.createElement(this._tag);
