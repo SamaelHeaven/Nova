@@ -838,7 +838,7 @@ export class Html {
     }
     build(fromElement) {
         const element = document.createElement(this._tag);
-        const eventAttributeName = "app-component-event";
+        const eventAttributeName = "data-event-uuid";
         for (const [key, value] of this._attributes) {
             element.setAttribute(key, value);
         }
