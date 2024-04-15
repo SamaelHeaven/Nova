@@ -10,9 +10,9 @@ export class Html {
         this._attributes.push([key, value]);
         return this;
     }
-    attributes(attributes) {
-        for (const attribute of attributes) {
-            this._attributes.push(attribute);
+    attributes(...attributes) {
+        for (const [key, value] of attributes) {
+            this._attributes.push([key, value]);
         }
         return this;
     }
@@ -45,38 +45,17 @@ export class Html {
         }
         return this;
     }
-    ifElse(condition, onTrue, onFalse) {
-        if (condition) {
-            onTrue(this);
-            return this;
-        }
-        onFalse(this);
-        return this;
-    }
-    append(child) {
-        if (child === this) {
-            return;
-        }
-        this._children.push(child);
-        return this;
-    }
-    appendAll(children) {
+    append(...children) {
         for (const child of children) {
-            this.append(child);
+            if (child === this) {
+                continue;
+            }
+            this._children.push(child);
         }
         return this;
     }
-    appendIf(condition, callback) {
-        return this.if(condition, (html) => html.append(callback()));
-    }
-    appendAllIf(condition, callback) {
-        return this.if(condition, (html) => html.appendAll(callback()));
-    }
-    appendIfElse(condition, onTrue, onFalse) {
-        return this.ifElse(condition, (html) => html.append(onTrue()), (html) => html.append(onFalse()));
-    }
-    appendAllIfElse(condition, onTrue, onFalse) {
-        return this.ifElse(condition, (html) => html.appendAll(onTrue()), (html) => html.appendAll(onFalse()));
+    appendIf(condition, ...children) {
+        return this.if(condition, () => this.append(...children));
     }
     forRange(lower, upper, callback) {
         for (let i = lower; i < upper; i++) {

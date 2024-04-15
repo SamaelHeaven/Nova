@@ -20,9 +20,9 @@ export class Html {
         return this;
     }
 
-    public attributes(attributes: [string, string][]): Html {
-        for (const attribute of attributes) {
-            this._attributes.push(attribute);
+    public attributes(...attributes: [string, string][]): Html {
+        for (const [key, value] of attributes) {
+            this._attributes.push([key, value]);
         }
 
         return this;
@@ -65,47 +65,20 @@ export class Html {
         return this;
     }
 
-    public ifElse(condition: boolean, onTrue: (html: Html) => void, onFalse: (html: Html) => void): Html {
-        if (condition) {
-            onTrue(this);
-            return this;
-        }
-
-        onFalse(this);
-        return this;
-    }
-
-    public append(child: Html): Html {
-        if (child === this) {
-            return;
-        }
-
-        this._children.push(child);
-        return this;
-    }
-
-    public appendAll(children: Html[]): Html {
+    public append(...children: Html[]): Html {
         for (const child of children) {
-            this.append(child);
+            if (child === this) {
+                continue;
+            }
+
+            this._children.push(child);
         }
 
         return this;
     }
 
-    public appendIf(condition: boolean, callback: () => Html): Html {
-        return this.if(condition, (html) => html.append(callback()));
-    }
-
-    public appendAllIf(condition: boolean, callback: () => Html[]): Html {
-        return this.if(condition, (html) => html.appendAll(callback()));
-    }
-
-    public appendIfElse(condition: boolean, onTrue: () => Html, onFalse: () => Html): Html {
-        return this.ifElse(condition, (html) => html.append(onTrue()), (html) => html.append(onFalse()));
-    }
-
-    public appendAllIfElse(condition: boolean, onTrue: () => Html[], onFalse: () => Html[]): Html {
-        return this.ifElse(condition, (html) => html.appendAll(onTrue()), (html) => html.appendAll(onFalse()));
+    public appendIf(condition: boolean, ...children: Html[]): Html {
+        return this.if(condition, () => this.append(...children));
     }
 
     public forRange(lower: number, upper: number, callback: (html: Html, index: number) => void): Html {
