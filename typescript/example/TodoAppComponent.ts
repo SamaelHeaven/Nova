@@ -1,41 +1,38 @@
-import {Component, ComponentDefinition, Html, LocalStorage, State} from "../nova/lib.js";
+import {Component, ComponentDefinition, Events, LocalStorage} from "../nova/lib.js";
 
 export class TodoAppComponent extends Component {
     public static readonly definition: ComponentDefinition = {tag: "todo-app-component", ctor: this}
-    @State private todos: string[] = [];
-    @State private todo: string = "";
+    private _todos: string[] = [];
+    private _newTodo: string = "";
 
     public override onInit(): void {
-        this.todos = LocalStorage.getItem("todos") || this.todos;
+        this._todos = LocalStorage.getItem("todos") || this._todos;
     }
 
-    public override render(): Html {
-        return "div".html()
-            .append(
-                "ul".html()
-                    .attribute("style", "word-break: break-all;")
-                    .appendForEach(this.todos, todo => "li".html().append(todo)),
+    public override onInput(event: Events.Input): void {
+        this._newTodo = (event.target as HTMLInputElement).value;
+        this.update();
+    }
 
-                "form".html()
-                    .class("d-flex gap-3")
-                    .append(
-                        "input".html()
-                            .class("form-control")
-                            .attributes(["type", "text"], ["name", "Todo"], ["placeholder", "Todo..."], ["value", this.todo])
-                            .on("input", event => this.todo = (event.target as HTMLInputElement).value),
+    public override onSubmit(event: Events.BaseEvent): void {
+        event.preventDefault();
+        this._todos = this._todos.concat(this._newTodo);
+        this._newTodo = "";
+        LocalStorage.setItem("todos", this._todos);
+        this.update();
+    }
 
-                        "button".html()
-                            .class("btn btn-primary")
-                            .attributeIf(this.todo.trim() === "", "disabled", "")
-                            .attribute("type", "submit")
-                            .append("Add")
-                    )
-                    .on("submit", event => {
-                        event.preventDefault();
-                        this.todos = this.todos.concat(this.todo.trim());
-                        this.todo = "";
-                        LocalStorage.setItem("todos", this.todos)
-                    })
-            );
+    public override render(): string {
+        return `
+            <ul style="word-break: break-all">
+                ${this._todos.map((todo: string): string => `<li>${todo.escape()}</li>`).join("")}
+            </ul>
+            <form class="d-flex gap-3">
+                <input class="form-control" type="text" name="Todo" placeholder="Todo..." value="${this._newTodo.escape()}">
+                <button class="btn btn-primary" type="submit" ${this._newTodo.trim() === "" ? "disabled" : ""}>
+                    Add
+                </button>
+            </form>
+        `;
     }
 }

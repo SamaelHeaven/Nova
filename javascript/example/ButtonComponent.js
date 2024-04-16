@@ -12,13 +12,46 @@ import { Component, State } from "../nova/lib.js";
 export class ButtonComponent extends Component {
     constructor() {
         super(...arguments);
+        this._content = this.element.getAttribute("data-content");
         this._count = 0;
     }
+    onInit() {
+        console.log("Button Component Initializing");
+        this.element.setAttribute("data-count", this._count.toString());
+    }
+    onAppear() {
+        console.log("Button Component Appeared");
+    }
+    onClick(_) {
+        this.element.setAttribute("data-count", String(this._count + 1));
+        console.log("Clicked!");
+    }
+    onDestroy() {
+        console.log("Button Component Destroyed");
+    }
+    onMorph(toElement) {
+        console.log("Button Component Morphing to: ", toElement);
+        toElement.setAttribute("data-count", this._count.toString());
+    }
+    onAttributeChanged(attribute, oldValue, newValue) {
+        console.log(`Button Component ${attribute} attribute changed from ${oldValue} to ${newValue}`);
+        if (attribute === "data-count") {
+            const newCount = parseInt(newValue);
+            if (this._count !== newCount) {
+                this._count = newCount;
+            }
+            if (this._count >= 10) {
+                this.element.remove();
+            }
+        }
+    }
     render() {
-        return "button".html()
-            .class("btn btn-primary")
-            .append(this._count > 0 ? `Count: ${this._count}!` : "Click Me!")
-            .on("click", () => this._count++);
+        console.log("Button Component Rendering");
+        return `
+            <button class="btn btn-primary">
+                ${this._content.escape()}${this._count === 0 ? "" : ": " + String(this._count).escape()}
+            </button>
+        `;
     }
 }
 _a = ButtonComponent;

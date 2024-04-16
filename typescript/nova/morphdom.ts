@@ -207,8 +207,7 @@ var DOCUMENT_FRAGMENT_NODE$1 = 11;
 var TEXT_NODE = 3;
 var COMMENT_NODE = 8;
 
-function noop() {
-}
+function noop() {}
 
 function defaultGetNodeKey(node) {
     if (node) {

@@ -1,5 +1,3 @@
-import { Component } from "./Component.js";
-import { Application } from "./Application.js";
 export function State(target, key) {
     const field = Symbol(key);
     Object.defineProperty(target, field, {
@@ -12,9 +10,7 @@ export function State(target, key) {
     };
     const setter = function (newValue) {
         this[field] = newValue;
-        if (this instanceof Component) {
-            Application.updateComponent(this);
-        }
+        this.update();
     };
     Object.defineProperty(target, key, {
         get: getter,

@@ -1,28 +1,5 @@
 // @ts-nocheck
 
-declare global {
-    interface String {
-        html(): Html;
-    }
-
-    interface Date {
-        format(format: string): string;
-    }
-
-    /** @internal */
-    interface Element {
-        appComponent?: Component;
-        appComponentDirty?: boolean;
-        appComponentEvents?: [string, ((event: Event) => any)][];
-    }
-}
-
-String.prototype.html = function (): Html {
-    return new Html(this);
-}
-
-Date.prototype.format = formatDate;
-
 var DOCUMENT_FRAGMENT_NODE = 11;
 
 function morphAttrs(fromNode, toNode) {
@@ -230,8 +207,7 @@ var DOCUMENT_FRAGMENT_NODE$1 = 11;
 var TEXT_NODE = 3;
 var COMMENT_NODE = 8;
 
-function noop() {
-}
+function noop() {}
 
 function defaultGetNodeKey(node) {
     if (node) {
@@ -524,14 +500,35 @@ function morphdomFactory(morphAttrs) {
 
 var morphdom = morphdomFactory(morphAttrs);
 
+declare global {
+    interface String {
+        escape(): string;
+    }
+
+    interface Date {
+        format(format: string): string;
+    }
+
+    /** @internal */
+    interface Element {
+        component?: Component;
+    }
+}
+
+String.prototype.escape = escapeHtml;
+Date.prototype.format = formatDate;
+
 export class Application {
     /** @internal */
     private static _instance: Application | null = null;
+    /** @internal */
+    private readonly _eventNames: string[];
     /** @internal */
     private readonly _morphdomOptions: object;
 
     private constructor() {
         const app = this;
+        this._eventNames = ["click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseenter", "mouseleave", "mouseover", "mouseout", "keydown", "keypress", "keyup", "focus", "blur", "input", "change", "submit", "scroll", "error", "resize", "select", "touchstart", "touchmove", "touchend", "touchcancel", "animationstart", "animationend", "animationiteration", "transitionstart", "transitionend", "transitioncancel"];
         this._morphdomOptions = {
             onBeforeElUpdated: function (fromEl: HTMLElement, toEl: HTMLElement): boolean {
                 return app._onBeforeElementUpdated(fromEl, toEl)
@@ -555,14 +552,14 @@ export class Application {
 
     public static queryComponent<T extends Component>(selector: string, element: HTMLElement = document.documentElement): T | null {
         this._throwIfUninitialized();
-        return element.querySelector(selector)?.appComponent as T || null;
+        return element.querySelector(selector)?.component as T || null;
     }
 
     public static queryComponents<T extends Component>(selector: string, element: HTMLElement = document.documentElement): T[] {
         this._throwIfUninitialized();
         const components: T[] = [];
         for (const foundElement of Array.from(element.querySelectorAll(selector))) {
-            const component = foundElement.appComponent;
+            const component: Component | undefined = foundElement.component;
             if (component) {
                 components.push(component as T);
             }
@@ -584,49 +581,37 @@ export class Application {
     }
 
     /** @internal */
-    private _updateComponent(component: Component): void {
-        const newElement: HTMLElement = component.element.cloneNode(false) as HTMLElement;
-        if (!component.getKeys().includes("render")) {
-            return;
-        }
-
-        morphdom(component.element, newElement, this._morphdomOptions);
-        for (const foundComponent of Application.queryComponents("*", component.element.parentElement)) {
-            if (foundComponent.element.appComponentDirty) {
-                foundComponent.element.appComponentDirty = false;
-                foundComponent.onUpdate();
+    private _registerEventListeners(component: Component): void {
+        for (const key of component.keys) {
+            const eventType: string = key.substring(2).toLowerCase();
+            if (this._eventNames.includes(eventType)) {
+                component.element.addEventListener(eventType, (event: Event): any => {
+                    return component[key](event);
+                });
             }
         }
     }
 
     /** @internal */
+    private _updateComponent(component: Component): void {
+        if (!component.initialized || !component.keys.includes("render")) {
+            return;
+        }
+
+        const newElement: HTMLElement = component.element.cloneNode(false) as HTMLElement;
+        morphdom(component.element, newElement, this._morphdomOptions);
+    }
+
+    /** @internal */
     private _onBeforeElementUpdated(fromElement: HTMLElement, toElement: HTMLElement): boolean {
-        const component: Component = fromElement.appComponent;
-        if (!component) {
-            return !fromElement.isEqualNode(toElement);
-        }
-
-        const html: Html = component.render();
-        if (html instanceof Html) {
-            toElement.innerHTML = "";
+        const component: Component | undefined = fromElement.component;
+        if (component && component.initialized && component.keys.includes("render")) {
+            toElement.innerHTML = component.render();
             toElement.style.display = "contents";
-            if (fromElement.appComponentEvents) {
-                for (const [type, callback] of fromElement.appComponentEvents) {
-                    fromElement.removeEventListener(type, callback);
-                }
-
-                fromElement.appComponentEvents = [];
-            }
-
-            toElement.appendChild(html.build(fromElement));
             component.onMorph(toElement);
-            if (!fromElement.isEqualNode(toElement)) {
-                fromElement.appComponentDirty = true;
-                return true;
-            }
-
-            return false;
         }
+
+        return !fromElement.isEqualNode(toElement);
     }
 
     /** @internal */
@@ -642,17 +627,20 @@ export class Application {
 
         class ComponentElement extends HTMLElement {
             public connectedCallback(): void {
-                this.appComponent = new component.ctor(this);
-                app._observeAttributes(this.appComponent);
+                this.style.display = "contents";
+                this.component = new component.ctor(this);
                 (async (): Promise<void> => {
-                    await this.appComponent.onInit();
-                    app._updateComponent(this.appComponent);
-                    this.appComponent.onAppear();
+                    await this.component.onInit();
+                    (this.component as any).initialized = true;
+                    app._observeAttributes(this.component);
+                    app._registerEventListeners(this.component);
+                    app._updateComponent(this.component);
+                    this.component.onAppear();
                 })();
             }
 
             public disconnectedCallback(): void {
-                this.appComponent.onDestroy();
+                this.component.onDestroy();
             }
         }
 
@@ -661,14 +649,14 @@ export class Application {
 
     /** @internal */
     private _observeAttributes(component: Component): void {
-        if (!component.getKeys().includes("onAttributeChanged")) {
+        if (!component.keys.includes("onAttributeChanged")) {
             return;
         }
 
         const observerConfig: MutationObserverInit = {attributes: true, attributeOldValue: true, subtree: false};
         const observer: MutationObserver = new MutationObserver((mutationsList: MutationRecord[], _: MutationObserver): void => {
             for (const mutation of mutationsList) {
-                if (mutation.type === "attributes") {
+                if (mutation.type === 'attributes') {
                     component.onAttributeChanged(mutation.attributeName, mutation.oldValue, component.element.getAttribute(mutation.attributeName))
                 }
             }
@@ -680,50 +668,12 @@ export class Application {
 
 export abstract class Component {
     public readonly element: HTMLElement;
+    public readonly initialized: boolean;
+    public readonly keys: string[];
 
     constructor(element: HTMLElement) {
         this.element = element;
-    }
-
-    public render(): Html {
-        return undefined;
-    }
-
-    public onInit(): void | Promise<void> {
-    }
-
-    public onAppear(): void {
-    }
-
-    public onUpdate(): void {
-    }
-
-    public onDestroy(): void {
-    }
-
-    public onMorph(toElement: HTMLElement): void {
-    }
-
-    public onAttributeChanged(attribute: string, oldValue: string, newValue: string): void {
-    }
-
-    public update(state: object): void {
-        for (const key of this.getKeys()) {
-            if (this[key] === state) {
-                this[key] = state;
-            }
-        }
-    }
-
-    public queryComponent<T extends Component>(selector: string, element?: HTMLElement): T | null {
-        return Application.queryComponent<T>(selector, element);
-    }
-
-    public queryComponents<T extends Component>(selector: string, element?: HTMLElement): T[] {
-        return Application.queryComponents<T>(selector, element);
-    }
-
-    public getKeys(): string[] {
+        this.initialized = false;
         let keys: string[] = [];
         let currentPrototype = this;
         while (currentPrototype) {
@@ -735,8 +685,116 @@ export abstract class Component {
             currentPrototype = parentPrototype;
         }
 
-        return [...new Set(keys)];
+        this.keys = [...new Set(keys)];
     }
+
+    public render(): string {
+        return "";
+    }
+
+    public update(): void {
+        Application.updateComponent(this);
+    }
+
+    public updateState(state: object): void {
+        for (const key of this.keys) {
+            if (this[key] === state) {
+                this[key] = state;
+            }
+        }
+    }
+
+    public useUpdate(callback: () => void): void {
+        callback();
+        this.update();
+    }
+
+    public useUpdateAsync(callback: () => Promise<void>): void {
+        (async (): Promise<void> => {
+            await callback();
+            this.update();
+        })();
+    }
+
+    public queryComponent<T extends Component>(selector: string, element?: HTMLElement): T | null {
+        return Application.queryComponent<T>(selector, element);
+    }
+
+    public queryComponents<T extends Component>(selector: string, element?: HTMLElement): T[] {
+        return Application.queryComponents<T>(selector, element);
+    }
+
+    public onInit(): void | Promise<void> {}
+
+    public onAppear(): void {}
+
+    public onDestroy(): void {}
+
+    public onMorph(toElement: HTMLElement): void {}
+
+    public onAttributeChanged(attribute: string, oldValue: string, newValue: string): void {}
+
+    public onClick(event: Events.Mouse): any {}
+
+    public onDblClick(event: Events.Mouse): any {}
+
+    public onMouseDown(event: Events.Mouse): any {}
+
+    public onMouseUp(event: Events.Mouse): any {}
+
+    public onMouseMove(event: Events.Mouse): any {}
+
+    public onMouseEnter(event: Events.Mouse): any {}
+
+    public onMouseLeave(event: Events.Mouse): any {}
+
+    public onMouseOver(event: Events.Mouse): any {}
+
+    public onMouseOut(event: Events.Mouse): any {}
+
+    public onKeyDown(event: Events.Keyboard): any {}
+
+    public onKeyPress(event: Events.Keyboard): any {}
+
+    public onKeyUp(event: Events.Keyboard): any {}
+
+    public onFocus(event: Events.Focus): any {}
+
+    public onBlur(event: Events.Focus): any {}
+
+    public onInput(event: Events.Input): any {}
+
+    public onChange(event: Events.BaseEvent): any {}
+
+    public onSubmit(event: Events.BaseEvent): any {}
+
+    public onScroll(event: Events.BaseEvent): any {}
+
+    public onError(event: Events.Error): any {}
+
+    public onResize(event: Events.UI): any {}
+
+    public onSelect(event: Events.BaseEvent): any {}
+
+    public onTouchStart(event: Events.Touch): any {}
+
+    public onTouchMove(event: Events.Touch): any {}
+
+    public onTouchEnd(event: Events.Touch): any {}
+
+    public onTouchCancel(event: Events.Touch): any {}
+
+    public onAnimationStart(event: Events.Animation): any {}
+
+    public onAnimationEnd(event: Events.Animation): any {}
+
+    public onAnimationIteration(event: Events.Animation): any {}
+
+    public onTransitionStart(event: Events.Transition): any {}
+
+    public onTransitionEnd(event: Events.Transition): any {}
+
+    public onTransitionCancel(event: Events.Transition): any {}
 }
 
 export type ComponentConstructor = (new (element: HTMLElement) => Component);
@@ -762,6 +820,23 @@ export class Debounce {
     public call(...args: any[]): void {
         this._callback.apply(this, args);
     }
+}
+
+function escapeHtml(): string {
+    return this.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
+export namespace Events {
+    export type BaseEvent = Event & { target: HTMLElement, currentTarget: HTMLElement, relatedTarget: HTMLElement }
+    export type Mouse = MouseEvent & BaseEvent;
+    export type Keyboard = KeyboardEvent & BaseEvent;
+    export type Focus = FocusEvent & BaseEvent;
+    export type Input = InputEvent & BaseEvent;
+    export type Error = ErrorEvent & BaseEvent;
+    export type UI = UIEvent & BaseEvent;
+    export type Touch = TouchEvent & BaseEvent;
+    export type Animation = AnimationEvent & BaseEvent;
+    export type Transition = TransitionEvent & BaseEvent;
 }
 
 function formatDate(format: string): string {
@@ -826,181 +901,6 @@ function formatDate(format: string): string {
     });
 }
 
-export class Html {
-    /** @internal */
-    private readonly _tag: string;
-    /** @internal */
-    private readonly _attributes: [string, string][] = [];
-    /** @internal */
-    private readonly _children: (Html | string)[] = [];
-    /** @internal */
-    private readonly _events: [keyof GlobalEventHandlersEventMap | string, (event: Event) => any][] = [];
-
-    /** @internal */
-    constructor(tag: string) {
-        this._tag = tag;
-    }
-
-    public attribute(key: string, value: string): Html {
-        this._attributes.push([key, value]);
-        return this;
-    }
-
-    public attributes(...attributes: [string, string][]): Html {
-        for (const [key, value] of attributes) {
-            this._attributes.push([key, value]);
-        }
-
-        return this;
-    }
-
-    public attributeIf(condition: boolean, key: string, value: string): Html {
-        return this.if(condition, html => html.attribute(key, value));
-    }
-
-    public attributesIf(condition: boolean, ...attributes: [string, string][]): Html {
-        return this.if(condition, html => html.attributes(...attributes));
-    }
-
-    public class(value: string): Html {
-        return this.attribute("class", value);
-    }
-
-    public id(value: string): Html {
-        return this.attribute("id", value);
-    }
-
-    public on(event: keyof GlobalEventHandlersEventMap | string, callback: (event: Event) => any): Html {
-        this._events.push([event, callback]);
-        return this;
-    }
-
-    public if(condition: boolean, callback: (html: Html) => void): Html {
-        if (condition) {
-            callback(this);
-        }
-
-        return this;
-    }
-
-    public append(...children: (Html | string)[]): Html {
-        return this.appendArray(children);
-    }
-
-    public appendArray(children: (Html | string)[]): Html {
-        for (const child of children) {
-            if (child === this) {
-                continue;
-            }
-
-            this._children.push(child);
-        }
-
-        return this;
-    }
-
-    public appendIf(condition: boolean, callback: (() => (Html | string) | (Html | string)[])): Html {
-        if (!condition) {
-            return this;
-        }
-
-        const value = callback();
-        if (Array.isArray(value)) {
-            return this.appendArray(value);
-        }
-
-        return this.append(value);
-    }
-
-    public forRange(lower: number, upper: number, callback: (html: Html, index: number) => void): Html {
-        for (let i = lower; i < upper; i++) {
-            callback(this, i);
-        }
-
-        return this;
-    }
-
-    public appendForRange(lower: number, upper: number, callback: (index: number) => (Html | string) | (Html | string)[]): Html {
-        return this.forRange(lower, upper, (_, index) => {
-            const value = callback(index);
-            if (Array.isArray(value)) {
-                this.appendArray(value);
-                return;
-            }
-
-            this.append(value);
-        });
-    }
-
-    public forEach<T>(array: T[], callback: (html: Html, element: T) => void): Html {
-        for (const element of array) {
-            callback(this, element);
-        }
-
-        return this;
-    }
-
-    public appendForEach<T>(array: T[], callback: (element: T) => (Html | string) | (Html | string)[]): Html {
-        return this.forEach(array, (_, element) => {
-            const value = callback(element);
-            if (value instanceof Array) {
-                this.appendArray(value);
-                return;
-            }
-
-            this.append(value);
-        });
-    }
-
-    /** @internal */
-    public build(fromElement: HTMLElement): HTMLElement {
-        const element: HTMLElement = document.createElement(this._tag);
-        const eventAttributeName: string = "data-event-uuid";
-
-        for (const [key, value] of this._attributes) {
-            element.setAttribute(key, value);
-        }
-
-        for (const child of this._children) {
-            if (child instanceof Html) {
-                element.appendChild(child.build(fromElement));
-                continue;
-            }
-
-            element.appendChild(document.createTextNode(child));
-        }
-
-        if (this._events.length > 0) {
-            element.setAttribute(eventAttributeName, "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
-                (+c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +c / 4).toString(16)
-            ));
-        }
-
-        for (const [type, callback] of this._events) {
-            const listener = (event: Event): any => {
-                const target: HTMLElement = (event.target as HTMLElement);
-                if (target.closest(`[${eventAttributeName}="${element.getAttribute(eventAttributeName)}"]`)) {
-                    return callback(event);
-                }
-            };
-
-            fromElement.addEventListener(type, listener);
-            if (!fromElement.appComponentEvents) {
-                fromElement.appComponentEvents = [];
-            }
-
-            fromElement.appComponentEvents.push([type, listener]);
-        }
-
-        return element;
-    }
-}
-
-type Item<T> = {
-    value: T;
-    expiry: number | undefined;
-};
-
 export namespace LocalStorage {
     export function getItem<T>(key: string): T | null {
         const itemString: string = localStorage.getItem(key);
@@ -1041,9 +941,7 @@ export function State(target: Component, key: string): void {
 
     const setter = function (newValue: any): void {
         this[field] = newValue;
-        if (this instanceof Component) {
-            Application.updateComponent(this);
-        }
+        this.update();
     };
 
     Object.defineProperty(target, key, {

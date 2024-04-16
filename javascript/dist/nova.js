@@ -1,7 +1,3 @@
-String.prototype.html = function () {
-    return new Html(this);
-};
-Date.prototype.format = formatDate;
 var DOCUMENT_FRAGMENT_NODE = 11;
 function morphAttrs(fromNode, toNode) {
     var toNodeAttrs = toNode.attributes;
@@ -204,8 +200,7 @@ var ELEMENT_NODE = 1;
 var DOCUMENT_FRAGMENT_NODE$1 = 11;
 var TEXT_NODE = 3;
 var COMMENT_NODE = 8;
-function noop() {
-}
+function noop() { }
 function defaultGetNodeKey(node) {
     if (node) {
         return (node.getAttribute && node.getAttribute('id')) || node.id;
@@ -503,9 +498,12 @@ function morphdomFactory(morphAttrs) {
     };
 }
 var morphdom = morphdomFactory(morphAttrs);
+String.prototype.escape = escapeHtml;
+Date.prototype.format = formatDate;
 export class Application {
     constructor() {
         const app = this;
+        this._eventNames = ["click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseenter", "mouseleave", "mouseover", "mouseout", "keydown", "keypress", "keyup", "focus", "blur", "input", "change", "submit", "scroll", "error", "resize", "select", "touchstart", "touchmove", "touchend", "touchcancel", "animationstart", "animationend", "animationiteration", "transitionstart", "transitionend", "transitioncancel"];
         this._morphdomOptions = {
             onBeforeElUpdated: function (fromEl, toEl) {
                 return app._onBeforeElementUpdated(fromEl, toEl);
@@ -526,13 +524,13 @@ export class Application {
     static queryComponent(selector, element = document.documentElement) {
         var _a;
         this._throwIfUninitialized();
-        return ((_a = element.querySelector(selector)) === null || _a === void 0 ? void 0 : _a.appComponent) || null;
+        return ((_a = element.querySelector(selector)) === null || _a === void 0 ? void 0 : _a.component) || null;
     }
     static queryComponents(selector, element = document.documentElement) {
         this._throwIfUninitialized();
         const components = [];
         for (const foundElement of Array.from(element.querySelectorAll(selector))) {
-            const component = foundElement.appComponent;
+            const component = foundElement.component;
             if (component) {
                 components.push(component);
             }
@@ -548,42 +546,31 @@ export class Application {
             throw new Error("Application has not been launched");
         }
     }
-    _updateComponent(component) {
-        const newElement = component.element.cloneNode(false);
-        if (!component.getKeys().includes("render")) {
-            return;
-        }
-        morphdom(component.element, newElement, this._morphdomOptions);
-        for (const foundComponent of Application.queryComponents("*", component.element.parentElement)) {
-            if (foundComponent.element.appComponentDirty) {
-                foundComponent.element.appComponentDirty = false;
-                foundComponent.onUpdate();
+    _registerEventListeners(component) {
+        for (const key of component.keys) {
+            const eventType = key.substring(2).toLowerCase();
+            if (this._eventNames.includes(eventType)) {
+                component.element.addEventListener(eventType, (event) => {
+                    return component[key](event);
+                });
             }
         }
     }
+    _updateComponent(component) {
+        if (!component.initialized || !component.keys.includes("render")) {
+            return;
+        }
+        const newElement = component.element.cloneNode(false);
+        morphdom(component.element, newElement, this._morphdomOptions);
+    }
     _onBeforeElementUpdated(fromElement, toElement) {
-        const component = fromElement.appComponent;
-        if (!component) {
-            return !fromElement.isEqualNode(toElement);
-        }
-        const html = component.render();
-        if (html instanceof Html) {
-            toElement.innerHTML = "";
+        const component = fromElement.component;
+        if (component && component.initialized && component.keys.includes("render")) {
+            toElement.innerHTML = component.render();
             toElement.style.display = "contents";
-            if (fromElement.appComponentEvents) {
-                for (const [type, callback] of fromElement.appComponentEvents) {
-                    fromElement.removeEventListener(type, callback);
-                }
-                fromElement.appComponentEvents = [];
-            }
-            toElement.appendChild(html.build(fromElement));
             component.onMorph(toElement);
-            if (!fromElement.isEqualNode(toElement)) {
-                fromElement.appComponentDirty = true;
-                return true;
-            }
-            return false;
         }
+        return !fromElement.isEqualNode(toElement);
     }
     _initializeComponents(components) {
         for (const component of components) {
@@ -594,28 +581,31 @@ export class Application {
         const app = this;
         class ComponentElement extends HTMLElement {
             connectedCallback() {
-                this.appComponent = new component.ctor(this);
-                app._observeAttributes(this.appComponent);
+                this.style.display = "contents";
+                this.component = new component.ctor(this);
                 (async () => {
-                    await this.appComponent.onInit();
-                    app._updateComponent(this.appComponent);
-                    this.appComponent.onAppear();
+                    await this.component.onInit();
+                    this.component.initialized = true;
+                    app._observeAttributes(this.component);
+                    app._registerEventListeners(this.component);
+                    app._updateComponent(this.component);
+                    this.component.onAppear();
                 })();
             }
             disconnectedCallback() {
-                this.appComponent.onDestroy();
+                this.component.onDestroy();
             }
         }
         customElements.define(component.tag, ComponentElement);
     }
     _observeAttributes(component) {
-        if (!component.getKeys().includes("onAttributeChanged")) {
+        if (!component.keys.includes("onAttributeChanged")) {
             return;
         }
         const observerConfig = { attributes: true, attributeOldValue: true, subtree: false };
         const observer = new MutationObserver((mutationsList, _) => {
             for (const mutation of mutationsList) {
-                if (mutation.type === "attributes") {
+                if (mutation.type === 'attributes') {
                     component.onAttributeChanged(mutation.attributeName, mutation.oldValue, component.element.getAttribute(mutation.attributeName));
                 }
             }
@@ -627,36 +617,7 @@ Application._instance = null;
 export class Component {
     constructor(element) {
         this.element = element;
-    }
-    render() {
-        return undefined;
-    }
-    onInit() {
-    }
-    onAppear() {
-    }
-    onUpdate() {
-    }
-    onDestroy() {
-    }
-    onMorph(toElement) {
-    }
-    onAttributeChanged(attribute, oldValue, newValue) {
-    }
-    update(state) {
-        for (const key of this.getKeys()) {
-            if (this[key] === state) {
-                this[key] = state;
-            }
-        }
-    }
-    queryComponent(selector, element) {
-        return Application.queryComponent(selector, element);
-    }
-    queryComponents(selector, element) {
-        return Application.queryComponents(selector, element);
-    }
-    getKeys() {
+        this.initialized = false;
         let keys = [];
         let currentPrototype = this;
         while (currentPrototype) {
@@ -666,8 +627,73 @@ export class Component {
             }
             currentPrototype = parentPrototype;
         }
-        return [...new Set(keys)];
+        this.keys = [...new Set(keys)];
     }
+    render() {
+        return "";
+    }
+    update() {
+        Application.updateComponent(this);
+    }
+    updateState(state) {
+        for (const key of this.keys) {
+            if (this[key] === state) {
+                this[key] = state;
+            }
+        }
+    }
+    useUpdate(callback) {
+        callback();
+        this.update();
+    }
+    useUpdateAsync(callback) {
+        (async () => {
+            await callback();
+            this.update();
+        })();
+    }
+    queryComponent(selector, element) {
+        return Application.queryComponent(selector, element);
+    }
+    queryComponents(selector, element) {
+        return Application.queryComponents(selector, element);
+    }
+    onInit() { }
+    onAppear() { }
+    onDestroy() { }
+    onMorph(toElement) { }
+    onAttributeChanged(attribute, oldValue, newValue) { }
+    onClick(event) { }
+    onDblClick(event) { }
+    onMouseDown(event) { }
+    onMouseUp(event) { }
+    onMouseMove(event) { }
+    onMouseEnter(event) { }
+    onMouseLeave(event) { }
+    onMouseOver(event) { }
+    onMouseOut(event) { }
+    onKeyDown(event) { }
+    onKeyPress(event) { }
+    onKeyUp(event) { }
+    onFocus(event) { }
+    onBlur(event) { }
+    onInput(event) { }
+    onChange(event) { }
+    onSubmit(event) { }
+    onScroll(event) { }
+    onError(event) { }
+    onResize(event) { }
+    onSelect(event) { }
+    onTouchStart(event) { }
+    onTouchMove(event) { }
+    onTouchEnd(event) { }
+    onTouchCancel(event) { }
+    onAnimationStart(event) { }
+    onAnimationEnd(event) { }
+    onAnimationIteration(event) { }
+    onTransitionStart(event) { }
+    onTransitionEnd(event) { }
+    onTransitionCancel(event) { }
 }
 export class Debounce {
     constructor(callback, wait) {
@@ -682,6 +708,9 @@ export class Debounce {
     call(...args) {
         this._callback.apply(this, args);
     }
+}
+function escapeHtml() {
+    return this.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 function formatDate(format) {
     const date = this;
@@ -742,131 +771,6 @@ function formatDate(format) {
         }
     });
 }
-export class Html {
-    constructor(tag) {
-        this._attributes = [];
-        this._children = [];
-        this._events = [];
-        this._tag = tag;
-    }
-    attribute(key, value) {
-        this._attributes.push([key, value]);
-        return this;
-    }
-    attributes(...attributes) {
-        for (const [key, value] of attributes) {
-            this._attributes.push([key, value]);
-        }
-        return this;
-    }
-    attributeIf(condition, key, value) {
-        return this.if(condition, html => html.attribute(key, value));
-    }
-    attributesIf(condition, ...attributes) {
-        return this.if(condition, html => html.attributes(...attributes));
-    }
-    class(value) {
-        return this.attribute("class", value);
-    }
-    id(value) {
-        return this.attribute("id", value);
-    }
-    on(event, callback) {
-        this._events.push([event, callback]);
-        return this;
-    }
-    if(condition, callback) {
-        if (condition) {
-            callback(this);
-        }
-        return this;
-    }
-    append(...children) {
-        return this.appendArray(children);
-    }
-    appendArray(children) {
-        for (const child of children) {
-            if (child === this) {
-                continue;
-            }
-            this._children.push(child);
-        }
-        return this;
-    }
-    appendIf(condition, callback) {
-        if (!condition) {
-            return this;
-        }
-        const value = callback();
-        if (Array.isArray(value)) {
-            return this.appendArray(value);
-        }
-        return this.append(value);
-    }
-    forRange(lower, upper, callback) {
-        for (let i = lower; i < upper; i++) {
-            callback(this, i);
-        }
-        return this;
-    }
-    appendForRange(lower, upper, callback) {
-        return this.forRange(lower, upper, (_, index) => {
-            const value = callback(index);
-            if (Array.isArray(value)) {
-                this.appendArray(value);
-                return;
-            }
-            this.append(value);
-        });
-    }
-    forEach(array, callback) {
-        for (const element of array) {
-            callback(this, element);
-        }
-        return this;
-    }
-    appendForEach(array, callback) {
-        return this.forEach(array, (_, element) => {
-            const value = callback(element);
-            if (value instanceof Array) {
-                this.appendArray(value);
-                return;
-            }
-            this.append(value);
-        });
-    }
-    build(fromElement) {
-        const element = document.createElement(this._tag);
-        const eventAttributeName = "data-event-uuid";
-        for (const [key, value] of this._attributes) {
-            element.setAttribute(key, value);
-        }
-        for (const child of this._children) {
-            if (child instanceof Html) {
-                element.appendChild(child.build(fromElement));
-                continue;
-            }
-            element.appendChild(document.createTextNode(child));
-        }
-        if (this._events.length > 0) {
-            element.setAttribute(eventAttributeName, "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c => (+c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +c / 4).toString(16)));
-        }
-        for (const [type, callback] of this._events) {
-            const listener = (event) => {
-                const target = event.target;
-                if (target.closest(`[${eventAttributeName}="${element.getAttribute(eventAttributeName)}"]`)) {
-                    return callback(event);
-                }
-            };
-            fromElement.addEventListener(type, listener);
-            if (!fromElement.appComponentEvents) {
-                fromElement.appComponentEvents = [];
-            }
-            fromElement.appComponentEvents.push([type, listener]);
-        }
-        return element;
-    }
-}
 export var LocalStorage;
 (function (LocalStorage) {
     function getItem(key) {
@@ -903,9 +807,7 @@ export function State(target, key) {
     };
     const setter = function (newValue) {
         this[field] = newValue;
-        if (this instanceof Component) {
-            Application.updateComponent(this);
-        }
+        this.update();
     };
     Object.defineProperty(target, key, {
         get: getter,
