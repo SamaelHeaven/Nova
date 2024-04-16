@@ -31,12 +31,9 @@ export class Application {
     private readonly _morphdomOptions: object;
 
     private constructor() {
-        const app = this;
         this._eventNames = ["click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseenter", "mouseleave", "mouseover", "mouseout", "keydown", "keypress", "keyup", "focus", "blur", "input", "change", "submit", "scroll", "error", "resize", "select", "touchstart", "touchmove", "touchend", "touchcancel", "animationstart", "animationend", "animationiteration", "transitionstart", "transitionend", "transitioncancel"];
         this._morphdomOptions = {
-            onBeforeElUpdated: function (fromEl: HTMLElement, toEl: HTMLElement): boolean {
-                return app._onBeforeElementUpdated(fromEl, toEl)
-            }
+            onBeforeElUpdated: (fromEl: HTMLElement, toEl: HTMLElement): boolean => this._onBeforeElementUpdated(fromEl, toEl)
         };
     }
 

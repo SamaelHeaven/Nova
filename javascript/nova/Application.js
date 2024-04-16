@@ -5,12 +5,9 @@ String.prototype.escape = escapeHtml;
 Date.prototype.format = formatDate;
 export class Application {
     constructor() {
-        const app = this;
         this._eventNames = ["click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseenter", "mouseleave", "mouseover", "mouseout", "keydown", "keypress", "keyup", "focus", "blur", "input", "change", "submit", "scroll", "error", "resize", "select", "touchstart", "touchmove", "touchend", "touchcancel", "animationstart", "animationend", "animationiteration", "transitionstart", "transitionend", "transitioncancel"];
         this._morphdomOptions = {
-            onBeforeElUpdated: function (fromEl, toEl) {
-                return app._onBeforeElementUpdated(fromEl, toEl);
-            }
+            onBeforeElUpdated: (fromEl, toEl) => this._onBeforeElementUpdated(fromEl, toEl)
         };
     }
     static launch(components) {
