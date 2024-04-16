@@ -927,7 +927,7 @@ export namespace LocalStorage {
         return item.value;
     }
 
-    export function setItem<T>(key: string, value: T, ttl: number | undefined = undefined): void {
+    export function setItem<T>(key: string, value: T, ttl: number = undefined): void {
         const item: Item<T> = {
             value,
             expiry: ttl !== undefined ? new Date().getTime() + ttl : undefined
