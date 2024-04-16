@@ -13,6 +13,7 @@ export class TodoAppComponent extends Component {
         return "div".html()
             .append(
                 "ul".html()
+                    .attribute("style", "word-break: break-all;")
                     .appendForEach(this.todos, todo => "li".html().append(todo)),
 
                 "form".html()
@@ -20,7 +21,7 @@ export class TodoAppComponent extends Component {
                     .append(
                         "input".html()
                             .class("form-control")
-                            .attributes(["type", "text"], ["placeholder", "Todo..."], ["value", this.todo])
+                            .attributes(["type", "text"], ["name", "Todo"], ["placeholder", "Todo..."], ["value", this.todo])
                             .on("input", event => this.todo = (event.target as HTMLInputElement).value),
 
                         "button".html()

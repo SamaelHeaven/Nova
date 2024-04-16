@@ -21,11 +21,12 @@ export class TodoAppComponent extends Component {
     render() {
         return "div".html()
             .append("ul".html()
+            .attribute("style", "word-break: break-all;")
             .appendForEach(this.todos, todo => "li".html().append(todo)), "form".html()
             .class("d-flex gap-3")
             .append("input".html()
             .class("form-control")
-            .attributes(["type", "text"], ["placeholder", "Todo..."], ["value", this.todo])
+            .attributes(["type", "text"], ["name", "Todo"], ["placeholder", "Todo..."], ["value", this.todo])
             .on("input", event => this.todo = event.target.value), "button".html()
             .class("btn btn-primary")
             .attributeIf(this.todo.trim() === "", "disabled", "")
