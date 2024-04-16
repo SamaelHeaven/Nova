@@ -49,7 +49,7 @@ export class DatePickerComponent extends Component {
     }
 }
 _a = DatePickerComponent;
-DatePickerComponent.definition = { tag: "date-picker-component", ctor: _a };
+DatePickerComponent.definition = _a.define("date-picker-component");
 __decorate([
     State,
     __metadata("design:type", String)

@@ -39,4 +39,4 @@ export class NumberInputComponent extends Component {
     }
 }
 _a = NumberInputComponent;
-NumberInputComponent.definition = { tag: "number-input-component", ctor: _a };
+NumberInputComponent.definition = _a.define("number-input-component");

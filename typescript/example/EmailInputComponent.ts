@@ -1,7 +1,7 @@
 import {Component, ComponentDefinition, Debounce, Events, State} from "../nova/lib.js";
 
 export class EmailInputComponent extends Component {
-    public static readonly definition: ComponentDefinition = {tag: "email-input-component", ctor: this}
+    public static readonly definition: ComponentDefinition = this.define("email-input-component");
     @State private _valid: boolean = false;
     private readonly _inputDebounce: Debounce = new Debounce(this._onDebounceInput.bind(this), 300);
 

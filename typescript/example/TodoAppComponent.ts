@@ -1,7 +1,7 @@
 import {Component, ComponentDefinition, Events, LocalStorage} from "../nova/lib.js";
 
 export class TodoAppComponent extends Component {
-    public static readonly definition: ComponentDefinition = {tag: "todo-app-component", ctor: this}
+    public static readonly definition: ComponentDefinition = this.define("todo-app-component");
     private _todos: string[] = [];
     private _newTodo: string = "";
 

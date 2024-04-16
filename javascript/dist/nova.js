@@ -626,6 +626,9 @@ export class Component {
         }
         this.keys = [...new Set(keys)];
     }
+    static define(tag) {
+        return { tag, ctor: this };
+    }
     render() {
         return "";
     }

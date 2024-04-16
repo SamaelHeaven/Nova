@@ -55,7 +55,7 @@ export class ButtonComponent extends Component {
     }
 }
 _a = ButtonComponent;
-ButtonComponent.definition = { tag: "button-component", ctor: _a };
+ButtonComponent.definition = _a.define("button-component");
 __decorate([
     State,
     __metadata("design:type", Number)

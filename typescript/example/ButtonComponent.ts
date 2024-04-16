@@ -1,7 +1,7 @@
 import {Component, ComponentDefinition, Events, State} from "../nova/lib.js";
 
 export class ButtonComponent extends Component {
-    public static readonly definition: ComponentDefinition = {tag: "button-component", ctor: this}
+    public static readonly definition: ComponentDefinition = this.define("button-component");
     private _content: string = this.element.getAttribute("data-content");
     @State private _count: number = 0;
 

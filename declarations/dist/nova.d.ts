@@ -18,6 +18,7 @@ export declare abstract class Component {
     readonly initialized: boolean;
     readonly keys: string[];
     constructor(element: HTMLElement);
+    protected static define(tag: string): ComponentDefinition;
     render(): string;
     update(): void;
     updateState(state: object): void;

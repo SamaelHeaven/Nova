@@ -1,5 +1,7 @@
 import {Events} from "./Events.js";
 import {Application} from "./Application.js";
+import {ComponentDefinition} from "./ComponentDefinition.js";
+import {ComponentConstructor} from "./ComponentConstructor";
 
 export abstract class Component {
     public readonly element: HTMLElement;
@@ -21,6 +23,10 @@ export abstract class Component {
         }
 
         this.keys = [...new Set(keys)];
+    }
+
+    protected static define(tag: string): ComponentDefinition {
+        return {tag, ctor: this as unknown as ComponentConstructor};
     }
 
     public render(): string {

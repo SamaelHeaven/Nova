@@ -1,7 +1,7 @@
 import {Component, ComponentDefinition, Events, State} from "../nova/lib.js";
 
 export class DatePickerComponent extends Component {
-    public static readonly definition: ComponentDefinition = {tag: "date-picker-component", ctor: this}
+    public static readonly definition: ComponentDefinition = this.define("date-picker-component");
     private readonly _today: string = new Date().format("yyyy-mm-dd");
     @State private _startDate: string = this._today;
     @State private _endDate: string | null = null;

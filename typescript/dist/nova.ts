@@ -685,6 +685,10 @@ export abstract class Component {
         this.keys = [...new Set(keys)];
     }
 
+    protected static define(tag: string): ComponentDefinition {
+        return {tag, ctor: this as unknown as ComponentConstructor};
+    }
+
     public render(): string {
         return "";
     }

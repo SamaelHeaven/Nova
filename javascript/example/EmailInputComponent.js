@@ -40,7 +40,7 @@ export class EmailInputComponent extends Component {
     }
 }
 _a = EmailInputComponent;
-EmailInputComponent.definition = { tag: "email-input-component", ctor: _a };
+EmailInputComponent.definition = _a.define("email-input-component");
 __decorate([
     State,
     __metadata("design:type", Boolean)

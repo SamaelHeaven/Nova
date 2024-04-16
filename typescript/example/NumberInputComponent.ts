@@ -1,7 +1,7 @@
 import {Component, ComponentDefinition, Events} from "../nova/lib.js";
 
 export class NumberInputComponent extends Component {
-    public static readonly definition: ComponentDefinition = {tag: "number-input-component", ctor: this}
+    public static readonly definition: ComponentDefinition = this.define("number-input-component");
     private _min: number = Number(this.element.getAttribute("data-min" || "0"));
     private _max: number = Number(this.element.getAttribute("data-max") || Infinity.toString());
 

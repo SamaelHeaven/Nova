@@ -35,4 +35,4 @@ export class TodoAppComponent extends Component {
     }
 }
 _a = TodoAppComponent;
-TodoAppComponent.definition = { tag: "todo-app-component", ctor: _a };
+TodoAppComponent.definition = _a.define("todo-app-component");
