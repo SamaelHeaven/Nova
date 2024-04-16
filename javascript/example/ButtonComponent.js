@@ -8,7 +8,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var _a;
-import { Component, State } from "../nova/lib.js";
+import { Component, escape, State } from "../nova/lib.js";
 export class ButtonComponent extends Component {
     constructor() {
         super(...arguments);
@@ -20,10 +20,10 @@ export class ButtonComponent extends Component {
         this.element.setAttribute("data-count", this._count.toString());
     }
     onAppear() {
-        console.log("Button Component Appeared");
+        console.log("Button Component appeared");
     }
     onClick(_) {
-        console.log("Button component Clicked");
+        console.log("Button component clicked");
         this.element.setAttribute("data-count", String(this._count + 1));
     }
     onUpdate() {
@@ -52,7 +52,7 @@ export class ButtonComponent extends Component {
         console.log("Button component rendering");
         return `
             <button class="btn btn-primary">
-                ${this._content.escape()}${this._count === 0 ? "" : ": " + String(this._count).escape()}
+                ${escape(this._content)}${this._count === 0 ? "" : ": " + escape(this._count)}
             </button>
         `;
     }

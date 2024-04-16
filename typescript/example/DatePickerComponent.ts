@@ -1,4 +1,4 @@
-import {Component, ComponentDefinition, Events, State} from "../nova/lib.js";
+import {Component, ComponentDefinition, escape, Events, State} from "../nova/lib.js";
 
 export class DatePickerComponent extends Component {
     public static readonly definition: ComponentDefinition = this.define("date-picker-component");
@@ -26,16 +26,16 @@ export class DatePickerComponent extends Component {
                 <input id="start-date"
                        class="mt-2 form-control"
                        type="date"
-                       value="${this._startDate.escape()}" 
-                       min="${this._today.escape()}"
-                       max="${(this._endDate || "").escape()}">
+                       value="${escape(this._startDate)}" 
+                       min="${escape(this._today)}"
+                       max="${escape(this._endDate || "")}">
 
                 <label class="mt-4" for="end-date">End Date</label>
                 <input id="end-date" 
                        class="mt-2 form-control"
                        type="date" 
-                       value="${(this._endDate || "").escape()}" 
-                       min="${this._startDate.escape()}">
+                       value="${escape(this._endDate || "")}" 
+                       min="${escape(this._startDate)}">
             </form>
         `;
     }

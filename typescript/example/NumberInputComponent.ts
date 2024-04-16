@@ -1,4 +1,4 @@
-import {Component, ComponentDefinition, Events} from "../nova/lib.js";
+import {Component, ComponentDefinition, escape, Events} from "../nova/lib.js";
 
 export class NumberInputComponent extends Component {
     public static readonly definition: ComponentDefinition = this.define("number-input-component");
@@ -36,7 +36,7 @@ export class NumberInputComponent extends Component {
             <input id="number-input"
                    class="form-control"
                    type="text"
-                   value="${this._min.toString().escape()}"
+                   value="${escape(this._min)}"
                    aria-label="Enter a number" 
                    placeholder="Enter a number">
         `;

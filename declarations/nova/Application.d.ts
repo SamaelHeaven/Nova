@@ -1,9 +1,6 @@
 import { Component } from "./Component.js";
 import { ComponentDefinition } from "./ComponentDefinition.js";
 declare global {
-    interface String {
-        escape(): string;
-    }
     interface Date {
         format(format: string): string;
     }

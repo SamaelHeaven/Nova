@@ -1,14 +1,9 @@
 import {Component} from "./Component.js";
 import {morphdom} from "./morphdom.js";
 import {ComponentDefinition} from "./ComponentDefinition.js";
-import {escapeHtml} from "./escapeHtml.js";
 import {formatDate} from "./formatDate.js";
 
 declare global {
-    interface String {
-        escape(): string;
-    }
-
     interface Date {
         format(format: string): string;
     }
@@ -18,7 +13,6 @@ declare global {
     }
 }
 
-String.prototype.escape = escapeHtml;
 Date.prototype.format = formatDate;
 
 export class Application {
@@ -118,7 +112,7 @@ export class Application {
     /** @internal */
     private _onElementUpdated(element: HTMLElement): void {
         const component: Component | undefined = element.component;
-        if (component) {
+        if (component && component.appeared) {
             component.onUpdate();
         }
     }
@@ -145,6 +139,7 @@ export class Application {
                     app._registerEventListeners(this.component);
                     app._updateComponent(this.component);
                     this.component.onAppear();
+                    (this.component as any).appeared = true;
                 })();
             }
 

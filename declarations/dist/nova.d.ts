@@ -1,7 +1,4 @@
 declare global {
-    interface String {
-        escape(): string;
-    }
     interface Date {
         format(format: string): string;
     }
@@ -19,6 +16,7 @@ export declare class Application {
 export declare abstract class Component {
     readonly element: HTMLElement;
     readonly initialized: boolean;
+    readonly appeared: boolean;
     readonly keys: string[];
     constructor(element: HTMLElement);
     protected static define(tag: string): ComponentDefinition;
@@ -76,6 +74,9 @@ export declare class Debounce {
     constructor(callback: Function, wait: number);
     call(...args: any[]): void;
 }
+export declare function escape(html: {
+    toString(): string;
+}): string;
 export declare namespace Events {
     type BaseEvent = Event & {
         target: HTMLElement;

@@ -1,7 +1,5 @@
 import { morphdom } from "./morphdom.js";
-import { escapeHtml } from "./escapeHtml.js";
 import { formatDate } from "./formatDate.js";
-String.prototype.escape = escapeHtml;
 Date.prototype.format = formatDate;
 export class Application {
     constructor() {
@@ -75,7 +73,7 @@ export class Application {
     }
     _onElementUpdated(element) {
         const component = element.component;
-        if (component) {
+        if (component && component.appeared) {
             component.onUpdate();
         }
     }
@@ -97,6 +95,7 @@ export class Application {
                     app._registerEventListeners(this.component);
                     app._updateComponent(this.component);
                     this.component.onAppear();
+                    this.component.appeared = true;
                 })();
             }
             disconnectedCallback() {

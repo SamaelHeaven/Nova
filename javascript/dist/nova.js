@@ -498,7 +498,6 @@ function morphdomFactory(morphAttrs) {
     };
 }
 var morphdom = morphdomFactory(morphAttrs);
-String.prototype.escape = escapeHtml;
 Date.prototype.format = formatDate;
 export class Application {
     constructor() {
@@ -572,7 +571,7 @@ export class Application {
     }
     _onElementUpdated(element) {
         const component = element.component;
-        if (component) {
+        if (component && component.appeared) {
             component.onUpdate();
         }
     }
@@ -594,6 +593,7 @@ export class Application {
                     app._registerEventListeners(this.component);
                     app._updateComponent(this.component);
                     this.component.onAppear();
+                    this.component.appeared = true;
                 })();
             }
             disconnectedCallback() {
@@ -622,6 +622,7 @@ export class Component {
     constructor(element) {
         this.element = element;
         this.initialized = false;
+        this.appeared = false;
         let keys = [];
         let currentPrototype = this;
         while (currentPrototype) {
@@ -717,8 +718,8 @@ export class Debounce {
         this._callback.apply(this, args);
     }
 }
-function escapeHtml() {
-    return this.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+export function escape(html) {
+    return html.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 function formatDate(format) {
     const date = this;

@@ -6,11 +6,13 @@ import {ComponentConstructor} from "./ComponentConstructor";
 export abstract class Component {
     public readonly element: HTMLElement;
     public readonly initialized: boolean;
+    public readonly appeared: boolean;
     public readonly keys: string[];
 
     constructor(element: HTMLElement) {
         this.element = element;
         this.initialized = false;
+        this.appeared = false;
         let keys: string[] = [];
         let currentPrototype = this;
         while (currentPrototype) {

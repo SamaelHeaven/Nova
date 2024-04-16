@@ -501,10 +501,6 @@ function morphdomFactory(morphAttrs) {
 var morphdom = morphdomFactory(morphAttrs);
 
 declare global {
-    interface String {
-        escape(): string;
-    }
-
     interface Date {
         format(format: string): string;
     }
@@ -514,7 +510,6 @@ declare global {
     }
 }
 
-String.prototype.escape = escapeHtml;
 Date.prototype.format = formatDate;
 
 export class Application {
@@ -614,7 +609,7 @@ export class Application {
     /** @internal */
     private _onElementUpdated(element: HTMLElement): void {
         const component: Component | undefined = element.component;
-        if (component) {
+        if (component && component.appeared) {
             component.onUpdate();
         }
     }
@@ -641,6 +636,7 @@ export class Application {
                     app._registerEventListeners(this.component);
                     app._updateComponent(this.component);
                     this.component.onAppear();
+                    (this.component as any).appeared = true;
                 })();
             }
 
@@ -674,11 +670,13 @@ export class Application {
 export abstract class Component {
     public readonly element: HTMLElement;
     public readonly initialized: boolean;
+    public readonly appeared: boolean;
     public readonly keys: string[];
 
     constructor(element: HTMLElement) {
         this.element = element;
         this.initialized = false;
+        this.appeared = false;
         let keys: string[] = [];
         let currentPrototype = this;
         while (currentPrototype) {
@@ -833,8 +831,8 @@ export class Debounce {
     }
 }
 
-function escapeHtml(): string {
-    return this.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+export function escape(html: { toString(): string }): string {
+    return html.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 
 export namespace Events {
@@ -911,6 +909,11 @@ function formatDate(format: string): string {
         }
     });
 }
+
+type Item<T> = {
+    value: T;
+    expiry: number | undefined;
+};
 
 export namespace LocalStorage {
     export function getItem<T>(key: string): T | null {

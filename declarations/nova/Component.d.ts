@@ -3,6 +3,7 @@ import { ComponentDefinition } from "./ComponentDefinition.js";
 export declare abstract class Component {
     readonly element: HTMLElement;
     readonly initialized: boolean;
+    readonly appeared: boolean;
     readonly keys: string[];
     constructor(element: HTMLElement);
     protected static define(tag: string): ComponentDefinition;

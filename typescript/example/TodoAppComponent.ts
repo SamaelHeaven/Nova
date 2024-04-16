@@ -1,4 +1,4 @@
-import {Component, ComponentDefinition, Events, LocalStorage} from "../nova/lib.js";
+import {Component, ComponentDefinition, escape, Events, LocalStorage} from "../nova/lib.js";
 
 export class TodoAppComponent extends Component {
     public static readonly definition: ComponentDefinition = this.define("todo-app-component");
@@ -25,10 +25,10 @@ export class TodoAppComponent extends Component {
     public override render(): string {
         return `
             <ul style="word-break: break-all">
-                ${this._todos.map((todo: string): string => `<li>${todo.escape()}</li>`).join("")}
+                ${this._todos.map((todo: string): string => `<li>${escape(todo)}</li>`).join("")}
             </ul>
             <form class="d-flex gap-3">
-                <input class="form-control" type="text" name="Todo" placeholder="Todo..." value="${this._newTodo.escape()}">
+                <input class="form-control" type="text" name="Todo" placeholder="Todo..." value="${escape(this._newTodo)}">
                 <button class="btn btn-primary" type="submit" ${this._newTodo.trim() === "" ? "disabled" : ""}>
                     Add
                 </button>
