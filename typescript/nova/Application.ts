@@ -132,15 +132,13 @@ export class Application {
             public connectedCallback(): void {
                 this.style.display = "contents";
                 this.component = new component.ctor(this);
-                (async (): Promise<void> => {
-                    await this.component.onInit();
-                    (this.component as any).initialized = true;
-                    app._observeAttributes(this.component);
-                    app._registerEventListeners(this.component);
-                    app._updateComponent(this.component);
-                    this.component.onAppear();
-                    (this.component as any).appeared = true;
-                })();
+                const initResult: void | Promise<void> = this.component.onInit();
+                if (initResult instanceof Promise) {
+                    initResult.then(() => app._initializeElement(this));
+                    return;
+                }
+
+                app._initializeElement(this);
             }
 
             public disconnectedCallback(): void {
@@ -149,6 +147,16 @@ export class Application {
         }
 
         customElements.define(component.tag, ComponentElement);
+    }
+
+    /** @internal */
+    private _initializeElement(element: HTMLElement): void {
+        (element.component as any).initialized = true;
+        this._observeAttributes(element.component);
+        this._registerEventListeners(element.component);
+        this._updateComponent(element.component);
+        element.component.onAppear();
+        (element.component as any).appeared = true;
     }
 
     /** @internal */

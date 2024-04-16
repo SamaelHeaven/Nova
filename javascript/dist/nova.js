@@ -586,21 +586,26 @@ export class Application {
             connectedCallback() {
                 this.style.display = "contents";
                 this.component = new component.ctor(this);
-                (async () => {
-                    await this.component.onInit();
-                    this.component.initialized = true;
-                    app._observeAttributes(this.component);
-                    app._registerEventListeners(this.component);
-                    app._updateComponent(this.component);
-                    this.component.onAppear();
-                    this.component.appeared = true;
-                })();
+                const initResult = this.component.onInit();
+                if (initResult instanceof Promise) {
+                    initResult.then(() => app._initializeElement(this));
+                    return;
+                }
+                app._initializeElement(this);
             }
             disconnectedCallback() {
                 this.component.onDestroy();
             }
         }
         customElements.define(component.tag, ComponentElement);
+    }
+    _initializeElement(element) {
+        element.component.initialized = true;
+        this._observeAttributes(element.component);
+        this._registerEventListeners(element.component);
+        this._updateComponent(element.component);
+        element.component.onAppear();
+        element.component.appeared = true;
     }
     _observeAttributes(component) {
         if (!component.keys.includes("onAttributeChanged")) {
@@ -640,25 +645,15 @@ export class Component {
     render() {
         return "";
     }
-    update() {
-        Application.updateComponent(this);
-    }
-    updateState(state) {
-        for (const key of this.keys) {
-            if (this[key] === state) {
-                this[key] = state;
+    update(before) {
+        if (before) {
+            const beforeResult = before();
+            if (beforeResult instanceof Promise) {
+                beforeResult.then(() => Application.updateComponent(this));
+                return;
             }
         }
-    }
-    useUpdate(callback) {
-        callback();
-        this.update();
-    }
-    useUpdateAsync(callback) {
-        (async () => {
-            await callback();
-            this.update();
-        })();
+        Application.updateComponent(this);
     }
     queryComponent(selector, element) {
         return Application.queryComponent(selector, element);

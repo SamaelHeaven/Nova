@@ -21,25 +21,15 @@ export class Component {
     render() {
         return "";
     }
-    update() {
-        Application.updateComponent(this);
-    }
-    updateState(state) {
-        for (const key of this.keys) {
-            if (this[key] === state) {
-                this[key] = state;
+    update(before) {
+        if (before) {
+            const beforeResult = before();
+            if (beforeResult instanceof Promise) {
+                beforeResult.then(() => Application.updateComponent(this));
+                return;
             }
         }
-    }
-    useUpdate(callback) {
-        callback();
-        this.update();
-    }
-    useUpdateAsync(callback) {
-        (async () => {
-            await callback();
-            this.update();
-        })();
+        Application.updateComponent(this);
     }
     queryComponent(selector, element) {
         return Application.queryComponent(selector, element);

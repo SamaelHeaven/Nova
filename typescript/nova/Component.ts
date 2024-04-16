@@ -1,7 +1,7 @@
 import {Events} from "./Events.js";
 import {Application} from "./Application.js";
 import {ComponentDefinition} from "./ComponentDefinition.js";
-import {ComponentConstructor} from "./ComponentConstructor";
+import {ComponentConstructor} from "./ComponentConstructor.js";
 
 export abstract class Component {
     public readonly element: HTMLElement;
@@ -35,28 +35,16 @@ export abstract class Component {
         return "";
     }
 
-    public update(): void {
-        Application.updateComponent(this);
-    }
-
-    public updateState(state: object): void {
-        for (const key of this.keys) {
-            if (this[key] === state) {
-                this[key] = state;
+    public update(before?: () => void | Promise<void>): void {
+        if (before) {
+            const beforeResult: void | Promise<void> = before();
+            if (beforeResult instanceof Promise) {
+                beforeResult.then(() => Application.updateComponent(this));
+                return;
             }
         }
-    }
 
-    public useUpdate(callback: () => void): void {
-        callback();
-        this.update();
-    }
-
-    public useUpdateAsync(callback: () => Promise<void>): void {
-        (async (): Promise<void> => {
-            await callback();
-            this.update();
-        })();
+        Application.updateComponent(this);
     }
 
     public queryComponent<T extends Component>(selector: string, element?: HTMLElement): T | null {

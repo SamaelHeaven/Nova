@@ -15,7 +15,7 @@ export class TodoAppComponent extends Component {
     }
     onSubmit(event) {
         event.preventDefault();
-        this._todos = this._todos.concat(this._newTodo);
+        this._todos.push(this._newTodo);
         this._newTodo = "";
         LocalStorage.setItem("todos", this._todos);
         this.update();

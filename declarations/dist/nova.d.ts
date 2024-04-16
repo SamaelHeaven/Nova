@@ -21,10 +21,7 @@ export declare abstract class Component {
     constructor(element: HTMLElement);
     protected static define(tag: string): ComponentDefinition;
     render(): string;
-    update(): void;
-    updateState(state: object): void;
-    useUpdate(callback: () => void): void;
-    useUpdateAsync(callback: () => Promise<void>): void;
+    update(before?: () => void | Promise<void>): void;
     queryComponent<T extends Component>(selector: string, element?: HTMLElement): T | null;
     queryComponents<T extends Component>(selector: string, element?: HTMLElement): T[];
     onInit(): void | Promise<void>;
