@@ -15,21 +15,25 @@ export class ButtonComponent extends Component {
     }
 
     public override onClick(_: Events.Mouse): void {
+        console.log("Button component Clicked");
         this.element.setAttribute("data-count", String(this._count + 1));
-        console.log("Clicked!");
+    }
+
+    public override onUpdate(): void {
+        console.log("Button component updated");
     }
 
     public override onDestroy(): void {
-        console.log("Button Component Destroyed");
+        console.log("Button component destroyed");
     }
 
     public override onMorph(toElement: HTMLElement): void {
-        console.log("Button Component Morphing to: ", toElement);
+        console.log("Button component morphing to: ", toElement);
         toElement.setAttribute("data-count", this._count.toString());
     }
 
     public override onAttributeChanged(attribute: string, oldValue: string, newValue: string): void {
-        console.log(`Button Component ${attribute} attribute changed from ${oldValue} to ${newValue}`);
+        console.log(`Button component ${attribute} attribute changed from ${oldValue} to ${newValue}`);
         if (attribute === "data-count") {
             const newCount: number = parseInt(newValue);
             if (this._count !== newCount) {
@@ -43,7 +47,7 @@ export class ButtonComponent extends Component {
     }
 
     public override render(): string {
-        console.log("Button Component Rendering")
+        console.log("Button component rendering")
         return `
             <button class="btn btn-primary">
                 ${this._content.escape()}${this._count === 0 ? "" : ": " + String(this._count).escape()}

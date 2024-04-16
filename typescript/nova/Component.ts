@@ -69,6 +69,8 @@ export abstract class Component {
 
     public onAppear(): void {}
 
+    public onUpdate(): void {}
+
     public onDestroy(): void {}
 
     public onMorph(toElement: HTMLElement): void {}

@@ -7,7 +7,8 @@ export class Application {
     constructor() {
         this._eventNames = ["click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseenter", "mouseleave", "mouseover", "mouseout", "keydown", "keypress", "keyup", "focus", "blur", "input", "change", "submit", "scroll", "error", "resize", "select", "touchstart", "touchmove", "touchend", "touchcancel", "animationstart", "animationend", "animationiteration", "transitionstart", "transitionend", "transitioncancel"];
         this._morphdomOptions = {
-            onBeforeElUpdated: (fromEl, toEl) => this._onBeforeElementUpdated(fromEl, toEl)
+            onBeforeElUpdated: (fromEl, toEl) => this._onBeforeElementUpdated(fromEl, toEl),
+            onElUpdated: (el) => this._onElementUpdated(el)
         };
     }
     static launch(components) {
@@ -71,6 +72,12 @@ export class Application {
             component.onMorph(toElement);
         }
         return !fromElement.isEqualNode(toElement);
+    }
+    _onElementUpdated(element) {
+        const component = element.component;
+        if (component) {
+            component.onUpdate();
+        }
     }
     _initializeComponents(components) {
         for (const component of components) {

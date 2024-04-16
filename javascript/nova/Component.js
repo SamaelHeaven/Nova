@@ -48,6 +48,7 @@ export class Component {
     }
     onInit() { }
     onAppear() { }
+    onUpdate() { }
     onDestroy() { }
     onMorph(toElement) { }
     onAttributeChanged(attribute, oldValue, newValue) { }

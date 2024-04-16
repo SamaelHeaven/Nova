@@ -509,8 +509,7 @@ declare global {
         format(format: string): string;
     }
 
-    /** @internal */
-    interface Element {
+    interface HTMLElement {
         component?: Component;
     }
 }
@@ -529,7 +528,8 @@ export class Application {
     private constructor() {
         this._eventNames = ["click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseenter", "mouseleave", "mouseover", "mouseout", "keydown", "keypress", "keyup", "focus", "blur", "input", "change", "submit", "scroll", "error", "resize", "select", "touchstart", "touchmove", "touchend", "touchcancel", "animationstart", "animationend", "animationiteration", "transitionstart", "transitionend", "transitioncancel"];
         this._morphdomOptions = {
-            onBeforeElUpdated: (fromEl: HTMLElement, toEl: HTMLElement): boolean => this._onBeforeElementUpdated(fromEl, toEl)
+            onBeforeElUpdated: (fromEl: HTMLElement, toEl: HTMLElement): boolean => this._onBeforeElementUpdated(fromEl, toEl),
+            onElUpdated: (el: HTMLElement): void => this._onElementUpdated(el)
         };
     }
 
@@ -549,14 +549,14 @@ export class Application {
 
     public static queryComponent<T extends Component>(selector: string, element: HTMLElement = document.documentElement): T | null {
         this._throwIfUninitialized();
-        return element.querySelector(selector)?.component as T || null;
+        return (element.querySelector(selector) as HTMLElement)?.component as T || null;
     }
 
     public static queryComponents<T extends Component>(selector: string, element: HTMLElement = document.documentElement): T[] {
         this._throwIfUninitialized();
         const components: T[] = [];
         for (const foundElement of Array.from(element.querySelectorAll(selector))) {
-            const component: Component | undefined = foundElement.component;
+            const component: Component | undefined = (foundElement as HTMLElement).component;
             if (component) {
                 components.push(component as T);
             }
@@ -609,6 +609,13 @@ export class Application {
         }
 
         return !fromElement.isEqualNode(toElement);
+    }
+
+    private _onElementUpdated(element: HTMLElement): void {
+        const component: Component | undefined = element.component;
+        if (component) {
+            component.onUpdate();
+        }
     }
 
     /** @internal */
@@ -728,6 +735,8 @@ export abstract class Component {
     public onInit(): void | Promise<void> {}
 
     public onAppear(): void {}
+
+    public onUpdate(): void {}
 
     public onDestroy(): void {}
 

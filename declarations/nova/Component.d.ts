@@ -15,6 +15,7 @@ export declare abstract class Component {
     queryComponents<T extends Component>(selector: string, element?: HTMLElement): T[];
     onInit(): void | Promise<void>;
     onAppear(): void;
+    onUpdate(): void;
     onDestroy(): void;
     onMorph(toElement: HTMLElement): void;
     onAttributeChanged(attribute: string, oldValue: string, newValue: string): void;

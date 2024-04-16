@@ -23,18 +23,21 @@ export class ButtonComponent extends Component {
         console.log("Button Component Appeared");
     }
     onClick(_) {
+        console.log("Button component Clicked");
         this.element.setAttribute("data-count", String(this._count + 1));
-        console.log("Clicked!");
+    }
+    onUpdate() {
+        console.log("Button component updated");
     }
     onDestroy() {
-        console.log("Button Component Destroyed");
+        console.log("Button component destroyed");
     }
     onMorph(toElement) {
-        console.log("Button Component Morphing to: ", toElement);
+        console.log("Button component morphing to: ", toElement);
         toElement.setAttribute("data-count", this._count.toString());
     }
     onAttributeChanged(attribute, oldValue, newValue) {
-        console.log(`Button Component ${attribute} attribute changed from ${oldValue} to ${newValue}`);
+        console.log(`Button component ${attribute} attribute changed from ${oldValue} to ${newValue}`);
         if (attribute === "data-count") {
             const newCount = parseInt(newValue);
             if (this._count !== newCount) {
@@ -46,7 +49,7 @@ export class ButtonComponent extends Component {
         }
     }
     render() {
-        console.log("Button Component Rendering");
+        console.log("Button component rendering");
         return `
             <button class="btn btn-primary">
                 ${this._content.escape()}${this._count === 0 ? "" : ": " + String(this._count).escape()}

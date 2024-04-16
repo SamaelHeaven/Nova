@@ -6,6 +6,7 @@ export declare class ButtonComponent extends Component {
     onInit(): void;
     onAppear(): void;
     onClick(_: Events.Mouse): void;
+    onUpdate(): void;
     onDestroy(): void;
     onMorph(toElement: HTMLElement): void;
     onAttributeChanged(attribute: string, oldValue: string, newValue: string): void;

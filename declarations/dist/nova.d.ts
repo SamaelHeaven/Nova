@@ -5,6 +5,9 @@ declare global {
     interface Date {
         format(format: string): string;
     }
+    interface HTMLElement {
+        component?: Component;
+    }
 }
 export declare class Application {
     private constructor();
@@ -12,6 +15,7 @@ export declare class Application {
     static updateComponent(component: Component): void;
     static queryComponent<T extends Component>(selector: string, element?: HTMLElement): T | null;
     static queryComponents<T extends Component>(selector: string, element?: HTMLElement): T[];
+    private _onElementUpdated;
 }
 export declare abstract class Component {
     readonly element: HTMLElement;
@@ -28,6 +32,7 @@ export declare abstract class Component {
     queryComponents<T extends Component>(selector: string, element?: HTMLElement): T[];
     onInit(): void | Promise<void>;
     onAppear(): void;
+    onUpdate(): void;
     onDestroy(): void;
     onMorph(toElement: HTMLElement): void;
     onAttributeChanged(attribute: string, oldValue: string, newValue: string): void;
