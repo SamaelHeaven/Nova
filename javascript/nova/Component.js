@@ -3,6 +3,7 @@ export class Component {
     constructor(element) {
         this.element = element;
         this.initialized = false;
+        this.appeared = false;
         let keys = [];
         let currentPrototype = this;
         while (currentPrototype) {
