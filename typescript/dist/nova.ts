@@ -611,6 +611,7 @@ export class Application {
         return !fromElement.isEqualNode(toElement);
     }
 
+    /** @internal */
     private _onElementUpdated(element: HTMLElement): void {
         const component: Component | undefined = element.component;
         if (component) {

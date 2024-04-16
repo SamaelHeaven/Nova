@@ -15,7 +15,6 @@ export declare class Application {
     static updateComponent(component: Component): void;
     static queryComponent<T extends Component>(selector: string, element?: HTMLElement): T | null;
     static queryComponents<T extends Component>(selector: string, element?: HTMLElement): T[];
-    private _onElementUpdated;
 }
 export declare abstract class Component {
     readonly element: HTMLElement;
