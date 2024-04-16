@@ -74,7 +74,7 @@ export declare class Debounce {
     constructor(callback: Function, wait: number);
     call(...args: any[]): void;
 }
-export declare function escape(html: {
+export declare function escape(unsafe: {
     toString(): string;
 }): string;
 export declare namespace Events {

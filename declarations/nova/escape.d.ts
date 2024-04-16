@@ -1,3 +1,3 @@
-export declare function escape(html: {
+export declare function escape(unsafe: {
     toString(): string;
 }): string;
