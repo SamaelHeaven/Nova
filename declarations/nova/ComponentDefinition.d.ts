@@ -1,5 +1,5 @@
 import { ComponentConstructor } from "./ComponentConstructor.js";
-export declare type ComponentDefinition = {
+export type ComponentDefinition = {
     tag: string;
     ctor: ComponentConstructor;
 };

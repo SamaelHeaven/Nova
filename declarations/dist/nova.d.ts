@@ -17,10 +17,9 @@ export declare abstract class Component {
     readonly appeared: boolean;
     readonly keys: ReadonlyArray<string>;
     readonly subscribers: [Component, keyof this][];
+    shouldUpdate: boolean;
     constructor(element: HTMLElement);
     protected static define(tag: string): ComponentDefinition;
-    protected set shouldUpdate(shouldUpdate: boolean);
-    get shouldUpdate(): boolean;
     render(): string;
     update(before?: () => void | Promise<void>): void;
     on(event: keyof GlobalEventHandlersEventMap, key: keyof this): string;
@@ -47,12 +46,12 @@ export declare abstract class Component {
     onFocus(event: Events.Focus): any;
     onBlur(event: Events.Focus): any;
     onInput(event: Events.Input): any;
-    onChange(event: Events.BaseEvent): any;
-    onSubmit(event: Events.BaseEvent): any;
-    onScroll(event: Events.BaseEvent): any;
+    onChange(event: Events.Base): any;
+    onSubmit(event: Events.Base): any;
+    onScroll(event: Events.Base): any;
     onError(event: Events.Error): any;
     onResize(event: Events.UI): any;
-    onSelect(event: Events.BaseEvent): any;
+    onSelect(event: Events.Base): any;
     onTouchStart(event: Events.Touch): any;
     onTouchMove(event: Events.Touch): any;
     onTouchEnd(event: Events.Touch): any;
@@ -64,8 +63,8 @@ export declare abstract class Component {
     onTransitionEnd(event: Events.Transition): any;
     onTransitionCancel(event: Events.Transition): any;
 }
-export declare type ComponentConstructor = (new (element: HTMLElement) => Component);
-export declare type ComponentDefinition = {
+export type ComponentConstructor = (new (element: HTMLElement) => Component);
+export type ComponentDefinition = {
     tag: string;
     ctor: ComponentConstructor;
 };
@@ -78,20 +77,18 @@ export declare function escape(unsafe: {
 }): string;
 export declare function Event(type: keyof GlobalEventHandlersEventMap): <T extends Component>(target: T, key: string) => void;
 export declare namespace Events {
-    type BaseEvent = Event & {
-        target: HTMLElement;
-        currentTarget: HTMLElement;
-        relatedTarget: HTMLElement;
+    type Base<T extends HTMLElement = HTMLElement> = Event & {
+        target: T;
     };
-    type Mouse = MouseEvent & BaseEvent;
-    type Keyboard = KeyboardEvent & BaseEvent;
-    type Focus = FocusEvent & BaseEvent;
-    type Input = InputEvent & BaseEvent;
-    type Error = ErrorEvent & BaseEvent;
-    type UI = UIEvent & BaseEvent;
-    type Touch = TouchEvent & BaseEvent;
-    type Animation = AnimationEvent & BaseEvent;
-    type Transition = TransitionEvent & BaseEvent;
+    type Mouse<T extends HTMLElement = HTMLElement> = MouseEvent & Base<T>;
+    type Keyboard<T extends HTMLElement = HTMLElement> = KeyboardEvent & Base<T>;
+    type Focus<T extends HTMLElement = HTMLElement> = FocusEvent & Base<T>;
+    type Input<T extends HTMLElement = HTMLElement> = InputEvent & Base<T>;
+    type Error<T extends HTMLElement = HTMLElement> = ErrorEvent & Base<T>;
+    type UI<T extends HTMLElement = HTMLElement> = UIEvent & Base<T>;
+    type Touch<T extends HTMLElement = HTMLElement> = TouchEvent & Base<T>;
+    type Animation<T extends HTMLElement = HTMLElement> = AnimationEvent & Base<T>;
+    type Transition<T extends HTMLElement = HTMLElement> = TransitionEvent & Base<T>;
 }
 export declare namespace LocalStorage {
     function getItem<T>(key: string): T | null;

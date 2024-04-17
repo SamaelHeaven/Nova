@@ -5,7 +5,7 @@ export class EmailInputComponent extends Component {
     @State private _valid: boolean = false;
     private readonly _inputDebounce: Debounce = new Debounce(this._onDebounceInput.bind(this), 300);
 
-    public override onInput(event: Events.Input): void {
+    public override onInput(event: Events.Input<HTMLInputElement>): void {
         this._inputDebounce.call(event);
     }
 
@@ -27,8 +27,8 @@ export class EmailInputComponent extends Component {
         `;
     }
 
-    private _onDebounceInput(event: Events.Input): void {
-        this._valid = !!(event.target as HTMLInputElement).value.trim().match(
+    private _onDebounceInput(event: Events.Input<HTMLInputElement>): void {
+        this._valid = !!event.target.value.trim().match(
             /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
         );
     }

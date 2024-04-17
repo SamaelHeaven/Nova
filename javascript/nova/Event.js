@@ -1,5 +1,5 @@
 export function Event(type) {
-    function event(target, key) {
+    return function (target, key) {
         const field = Symbol(key);
         Object.defineProperty(target, field, {
             writable: true,
@@ -20,6 +20,5 @@ export function Event(type) {
             enumerable: true,
             configurable: true,
         });
-    }
-    return event;
+    };
 }

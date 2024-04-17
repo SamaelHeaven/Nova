@@ -4,14 +4,13 @@ import {ComponentDefinition} from "./ComponentDefinition.js";
 import {ComponentConstructor} from "./ComponentConstructor.js";
 
 export abstract class Component {
-    /** @internal */
-    private _shouldUpdate: boolean;
     public readonly uuid: string;
     public readonly element: HTMLElement;
     public readonly initialized: boolean;
     public readonly appeared: boolean;
     public readonly keys: ReadonlyArray<string>;
     public readonly subscribers: [Component, keyof this][];
+    public shouldUpdate: boolean;
 
     constructor(element: HTMLElement) {
         this.uuid = "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (value: string) =>
@@ -22,7 +21,7 @@ export abstract class Component {
         this.initialized = false;
         this.appeared = false;
         this.subscribers = [];
-        this._shouldUpdate = true;
+        this.shouldUpdate = true;
         let keys: string[] = [];
         let currentPrototype = this;
         while (currentPrototype) {
@@ -39,14 +38,6 @@ export abstract class Component {
 
     protected static define(tag: string): ComponentDefinition {
         return {tag, ctor: this as unknown as ComponentConstructor};
-    }
-
-    protected set shouldUpdate(shouldUpdate: boolean) {
-        this._shouldUpdate = shouldUpdate;
-    }
-
-    public get shouldUpdate() {
-        return this._shouldUpdate;
     }
 
     public render(): string {
@@ -73,7 +64,7 @@ export abstract class Component {
     }
 
     public on(event: keyof GlobalEventHandlersEventMap, key: keyof this): string {
-        return `data-event="${this.uuid},${event},${key as string}"`;
+        return `data-event="${this.uuid};${event};${key as string}"`;
     }
 
     public queryComponent<T extends Component>(selector: string, element?: HTMLElement): T | null {
@@ -126,17 +117,17 @@ export abstract class Component {
 
     public onInput(event: Events.Input): any {}
 
-    public onChange(event: Events.BaseEvent): any {}
+    public onChange(event: Events.Base): any {}
 
-    public onSubmit(event: Events.BaseEvent): any {}
+    public onSubmit(event: Events.Base): any {}
 
-    public onScroll(event: Events.BaseEvent): any {}
+    public onScroll(event: Events.Base): any {}
 
     public onError(event: Events.Error): any {}
 
     public onResize(event: Events.UI): any {}
 
-    public onSelect(event: Events.BaseEvent): any {}
+    public onSelect(event: Events.Base): any {}
 
     public onTouchStart(event: Events.Touch): any {}
 

@@ -80,7 +80,7 @@ export class Application {
     }
 
     /** @internal */
-    private _registerEventListeners(component: Component): void {
+    private registerComponentEvents(component: Component): void {
         for (const key of component.keys) {
             const eventType: string = key.substring(2).toLowerCase();
             if (this._eventNames.includes(eventType)) {
@@ -166,7 +166,7 @@ export class Application {
     private _initializeElement(element: HTMLElement): void {
         (element.component as any).initialized = true;
         this._observeAttributes(element.component);
-        this._registerEventListeners(element.component);
+        this.registerComponentEvents(element.component);
         this._updateComponent(element.component);
         element.component.onAppear();
         (element.component as any).appeared = true;
@@ -186,7 +186,7 @@ export class Application {
             return;
         }
 
-        const [uuid, type, call] = eventElement.getAttribute("data-event").split(",");
+        const [uuid, type, call] = eventElement.getAttribute("data-event").split(";");
         if (event.type !== type) {
             return;
         }

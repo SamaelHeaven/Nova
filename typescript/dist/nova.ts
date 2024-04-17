@@ -577,7 +577,7 @@ export class Application {
     }
 
     /** @internal */
-    private _registerEventListeners(component: Component): void {
+    private registerComponentEvents(component: Component): void {
         for (const key of component.keys) {
             const eventType: string = key.substring(2).toLowerCase();
             if (this._eventNames.includes(eventType)) {
@@ -663,7 +663,7 @@ export class Application {
     private _initializeElement(element: HTMLElement): void {
         (element.component as any).initialized = true;
         this._observeAttributes(element.component);
-        this._registerEventListeners(element.component);
+        this.registerComponentEvents(element.component);
         this._updateComponent(element.component);
         element.component.onAppear();
         (element.component as any).appeared = true;
@@ -683,7 +683,7 @@ export class Application {
             return;
         }
 
-        const [uuid, type, call] = eventElement.getAttribute("data-event").split(",");
+        const [uuid, type, call] = eventElement.getAttribute("data-event").split(";");
         if (event.type !== type) {
             return;
         }
@@ -713,14 +713,13 @@ export class Application {
 }
 
 export abstract class Component {
-    /** @internal */
-    private _shouldUpdate: boolean;
     public readonly uuid: string;
     public readonly element: HTMLElement;
     public readonly initialized: boolean;
     public readonly appeared: boolean;
     public readonly keys: ReadonlyArray<string>;
     public readonly subscribers: [Component, keyof this][];
+    public shouldUpdate: boolean;
 
     constructor(element: HTMLElement) {
         this.uuid = "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (value: string) =>
@@ -731,7 +730,7 @@ export abstract class Component {
         this.initialized = false;
         this.appeared = false;
         this.subscribers = [];
-        this._shouldUpdate = true;
+        this.shouldUpdate = true;
         let keys: string[] = [];
         let currentPrototype = this;
         while (currentPrototype) {
@@ -748,14 +747,6 @@ export abstract class Component {
 
     protected static define(tag: string): ComponentDefinition {
         return {tag, ctor: this as unknown as ComponentConstructor};
-    }
-
-    protected set shouldUpdate(shouldUpdate: boolean) {
-        this._shouldUpdate = shouldUpdate;
-    }
-
-    public get shouldUpdate() {
-        return this._shouldUpdate;
     }
 
     public render(): string {
@@ -782,7 +773,7 @@ export abstract class Component {
     }
 
     public on(event: keyof GlobalEventHandlersEventMap, key: keyof this): string {
-        return `data-event="${this.uuid},${event},${key as string}"`;
+        return `data-event="${this.uuid};${event};${key as string}"`;
     }
 
     public queryComponent<T extends Component>(selector: string, element?: HTMLElement): T | null {
@@ -835,17 +826,17 @@ export abstract class Component {
 
     public onInput(event: Events.Input): any {}
 
-    public onChange(event: Events.BaseEvent): any {}
+    public onChange(event: Events.Base): any {}
 
-    public onSubmit(event: Events.BaseEvent): any {}
+    public onSubmit(event: Events.Base): any {}
 
-    public onScroll(event: Events.BaseEvent): any {}
+    public onScroll(event: Events.Base): any {}
 
     public onError(event: Events.Error): any {}
 
     public onResize(event: Events.UI): any {}
 
-    public onSelect(event: Events.BaseEvent): any {}
+    public onSelect(event: Events.Base): any {}
 
     public onTouchStart(event: Events.Touch): any {}
 
@@ -898,7 +889,7 @@ export function escape(unsafe: { toString(): string }): string {
 }
 
 export function Event(type: keyof GlobalEventHandlersEventMap) {
-    function event<T extends Component>(target: T, key: string): void {
+    return function<T extends Component>(target: T, key: string): void {
         const field: symbol = Symbol(key);
         Object.defineProperty(target, field, {
             writable: true,
@@ -923,29 +914,25 @@ export function Event(type: keyof GlobalEventHandlersEventMap) {
             configurable: true,
         });
     }
-
-    return event;
 }
 
 export namespace Events {
-    export type BaseEvent = Event & { target: HTMLElement, currentTarget: HTMLElement, relatedTarget: HTMLElement }
-    export type Mouse = MouseEvent & BaseEvent;
-    export type Keyboard = KeyboardEvent & BaseEvent;
-    export type Focus = FocusEvent & BaseEvent;
-    export type Input = InputEvent & BaseEvent;
-    export type Error = ErrorEvent & BaseEvent;
-    export type UI = UIEvent & BaseEvent;
-    export type Touch = TouchEvent & BaseEvent;
-    export type Animation = AnimationEvent & BaseEvent;
-    export type Transition = TransitionEvent & BaseEvent;
+    export type Base<T extends HTMLElement = HTMLElement> = Event & { target: T }
+    export type Mouse<T extends HTMLElement = HTMLElement> = MouseEvent & Base<T>;
+    export type Keyboard<T extends HTMLElement = HTMLElement> = KeyboardEvent & Base<T>;
+    export type Focus<T extends HTMLElement = HTMLElement> = FocusEvent & Base<T>;
+    export type Input<T extends HTMLElement = HTMLElement> = InputEvent & Base<T>;
+    export type Error<T extends HTMLElement = HTMLElement> = ErrorEvent & Base<T>;
+    export type UI<T extends HTMLElement = HTMLElement> = UIEvent & Base<T>;
+    export type Touch<T extends HTMLElement = HTMLElement> = TouchEvent & Base<T>;
+    export type Animation<T extends HTMLElement = HTMLElement> = AnimationEvent & Base<T>;
+    export type Transition<T extends HTMLElement = HTMLElement> = TransitionEvent & Base<T>;
 }
 
 function formatDate(format: string): string {
     const date: Date = this;
-
     const monthNames: string[] = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     const dayNames: string[] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-
     return format.replace(/(d{1,4}|m{1,4}|y{2,4}|h{1,2}|H{1,2}|M{1,2}|s{1,2}|l|L|t{1,2}|T{1,2}'[^']*'|"[^"]*")/g, function (match: string): string {
         switch (match) {
             case "d":

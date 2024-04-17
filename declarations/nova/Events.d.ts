@@ -1,16 +1,14 @@
 export declare namespace Events {
-    type BaseEvent = Event & {
-        target: HTMLElement;
-        currentTarget: HTMLElement;
-        relatedTarget: HTMLElement;
+    type Base<T extends HTMLElement = HTMLElement> = Event & {
+        target: T;
     };
-    type Mouse = MouseEvent & BaseEvent;
-    type Keyboard = KeyboardEvent & BaseEvent;
-    type Focus = FocusEvent & BaseEvent;
-    type Input = InputEvent & BaseEvent;
-    type Error = ErrorEvent & BaseEvent;
-    type UI = UIEvent & BaseEvent;
-    type Touch = TouchEvent & BaseEvent;
-    type Animation = AnimationEvent & BaseEvent;
-    type Transition = TransitionEvent & BaseEvent;
+    type Mouse<T extends HTMLElement = HTMLElement> = MouseEvent & Base<T>;
+    type Keyboard<T extends HTMLElement = HTMLElement> = KeyboardEvent & Base<T>;
+    type Focus<T extends HTMLElement = HTMLElement> = FocusEvent & Base<T>;
+    type Input<T extends HTMLElement = HTMLElement> = InputEvent & Base<T>;
+    type Error<T extends HTMLElement = HTMLElement> = ErrorEvent & Base<T>;
+    type UI<T extends HTMLElement = HTMLElement> = UIEvent & Base<T>;
+    type Touch<T extends HTMLElement = HTMLElement> = TouchEvent & Base<T>;
+    type Animation<T extends HTMLElement = HTMLElement> = AnimationEvent & Base<T>;
+    type Transition<T extends HTMLElement = HTMLElement> = TransitionEvent & Base<T>;
 }

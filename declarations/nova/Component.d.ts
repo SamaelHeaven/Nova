@@ -7,10 +7,9 @@ export declare abstract class Component {
     readonly appeared: boolean;
     readonly keys: ReadonlyArray<string>;
     readonly subscribers: [Component, keyof this][];
+    shouldUpdate: boolean;
     constructor(element: HTMLElement);
     protected static define(tag: string): ComponentDefinition;
-    protected set shouldUpdate(shouldUpdate: boolean);
-    get shouldUpdate(): boolean;
     render(): string;
     update(before?: () => void | Promise<void>): void;
     on(event: keyof GlobalEventHandlersEventMap, key: keyof this): string;
@@ -37,12 +36,12 @@ export declare abstract class Component {
     onFocus(event: Events.Focus): any;
     onBlur(event: Events.Focus): any;
     onInput(event: Events.Input): any;
-    onChange(event: Events.BaseEvent): any;
-    onSubmit(event: Events.BaseEvent): any;
-    onScroll(event: Events.BaseEvent): any;
+    onChange(event: Events.Base): any;
+    onSubmit(event: Events.Base): any;
+    onScroll(event: Events.Base): any;
     onError(event: Events.Error): any;
     onResize(event: Events.UI): any;
-    onSelect(event: Events.BaseEvent): any;
+    onSelect(event: Events.Base): any;
     onTouchStart(event: Events.Touch): any;
     onTouchMove(event: Events.Touch): any;
     onTouchEnd(event: Events.Touch): any;

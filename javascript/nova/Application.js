@@ -47,7 +47,7 @@ export class Application {
             throw new Error("Application has not been launched");
         }
     }
-    _registerEventListeners(component) {
+    registerComponentEvents(component) {
         for (const key of component.keys) {
             const eventType = key.substring(2).toLowerCase();
             if (this._eventNames.includes(eventType)) {
@@ -115,7 +115,7 @@ export class Application {
     _initializeElement(element) {
         element.component.initialized = true;
         this._observeAttributes(element.component);
-        this._registerEventListeners(element.component);
+        this.registerComponentEvents(element.component);
         this._updateComponent(element.component);
         element.component.onAppear();
         element.component.appeared = true;
@@ -130,7 +130,7 @@ export class Application {
         if (!eventElement) {
             return;
         }
-        const [uuid, type, call] = eventElement.getAttribute("data-event").split(",");
+        const [uuid, type, call] = eventElement.getAttribute("data-event").split(";");
         if (event.type !== type) {
             return;
         }

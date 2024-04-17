@@ -7,13 +7,13 @@ export class DatePickerComponent extends Component {
     @State private _endDate: string | null = null;
 
     @Event("input")
-    private _onStartDateInput = function (event: Events.BaseEvent): void {
-        this._startDate = new Date((event.target as HTMLInputElement).value.replace(/-/g, "/")).format("yyyy-mm-dd");
+    private _onStartDateInput = function (event: Events.Input<HTMLInputElement>): void {
+        this._startDate = new Date(event.target.value.replace(/-/g, "/")).format("yyyy-mm-dd");
     }.bind(this);
 
     @Event("input")
-    private _onEndDateInput = function (event: Events.BaseEvent): void {
-        this._endDate = new Date((event.target as HTMLInputElement).value.replace(/-/g, "/")).format("yyyy-mm-dd");
+    private _onEndDateInput = function (event: Events.Input<HTMLInputElement>): void {
+        this._endDate = new Date(event.target.value.replace(/-/g, "/")).format("yyyy-mm-dd");
     }.bind(this);
 
     public override render(): string {

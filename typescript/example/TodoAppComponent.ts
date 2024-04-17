@@ -9,12 +9,12 @@ export class TodoAppComponent extends Component {
         this._todos = LocalStorage.getItem("todos") || this._todos;
     }
 
-    public override onInput(event: Events.Input): void {
-        this._newTodo = (event.target as HTMLInputElement).value;
+    public override onInput(event: Events.Input<HTMLInputElement>): void {
+        this._newTodo = event.target.value;
         this.update();
     }
 
-    public override onSubmit(event: Events.BaseEvent): void {
+    public override onSubmit(event: Events.Base): void {
         event.preventDefault();
         this._todos.push(this._newTodo);
         this._newTodo = "";

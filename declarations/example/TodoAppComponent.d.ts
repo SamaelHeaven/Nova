@@ -4,7 +4,7 @@ export declare class TodoAppComponent extends Component {
     private _todos;
     private _newTodo;
     onInit(): void;
-    onInput(event: Events.Input): void;
-    onSubmit(event: Events.BaseEvent): void;
+    onInput(event: Events.Input<HTMLInputElement>): void;
+    onSubmit(event: Events.Base): void;
     render(): string;
 }

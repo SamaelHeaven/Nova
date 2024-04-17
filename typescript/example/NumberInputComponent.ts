@@ -5,8 +5,8 @@ export class NumberInputComponent extends Component {
     private _min: number = Number(this.element.getAttribute("data-min" || "0"));
     private _max: number = Number(this.element.getAttribute("data-max") || Infinity.toString());
 
-    public onInput(event: Events.Input): void {
-        const inputElement: HTMLInputElement = event.target as HTMLInputElement;
+    public onInput(event: Events.Input<HTMLInputElement>): void {
+        const inputElement: HTMLInputElement = event.target;
         const inputValue: string = inputElement.value.trim();
         let numericValue: string = inputValue.replace(/\D/g, "");
         while (numericValue.charAt(0) === "0") {

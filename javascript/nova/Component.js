@@ -6,7 +6,7 @@ export class Component {
         this.initialized = false;
         this.appeared = false;
         this.subscribers = [];
-        this._shouldUpdate = true;
+        this.shouldUpdate = true;
         let keys = [];
         let currentPrototype = this;
         while (currentPrototype) {
@@ -20,12 +20,6 @@ export class Component {
     }
     static define(tag) {
         return { tag, ctor: this };
-    }
-    set shouldUpdate(shouldUpdate) {
-        this._shouldUpdate = shouldUpdate;
-    }
-    get shouldUpdate() {
-        return this._shouldUpdate;
     }
     render() {
         return "";
@@ -49,7 +43,7 @@ export class Component {
         Application.updateComponent(this);
     }
     on(event, key) {
-        return `data-event="${this.uuid},${event},${key}"`;
+        return `data-event="${this.uuid};${event};${key}"`;
     }
     queryComponent(selector, element) {
         return Application.queryComponent(selector, element);

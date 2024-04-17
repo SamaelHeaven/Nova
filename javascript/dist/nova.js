@@ -545,7 +545,7 @@ export class Application {
             throw new Error("Application has not been launched");
         }
     }
-    _registerEventListeners(component) {
+    registerComponentEvents(component) {
         for (const key of component.keys) {
             const eventType = key.substring(2).toLowerCase();
             if (this._eventNames.includes(eventType)) {
@@ -613,7 +613,7 @@ export class Application {
     _initializeElement(element) {
         element.component.initialized = true;
         this._observeAttributes(element.component);
-        this._registerEventListeners(element.component);
+        this.registerComponentEvents(element.component);
         this._updateComponent(element.component);
         element.component.onAppear();
         element.component.appeared = true;
@@ -628,7 +628,7 @@ export class Application {
         if (!eventElement) {
             return;
         }
-        const [uuid, type, call] = eventElement.getAttribute("data-event").split(",");
+        const [uuid, type, call] = eventElement.getAttribute("data-event").split(";");
         if (event.type !== type) {
             return;
         }
@@ -659,7 +659,7 @@ export class Component {
         this.initialized = false;
         this.appeared = false;
         this.subscribers = [];
-        this._shouldUpdate = true;
+        this.shouldUpdate = true;
         let keys = [];
         let currentPrototype = this;
         while (currentPrototype) {
@@ -673,12 +673,6 @@ export class Component {
     }
     static define(tag) {
         return { tag, ctor: this };
-    }
-    set shouldUpdate(shouldUpdate) {
-        this._shouldUpdate = shouldUpdate;
-    }
-    get shouldUpdate() {
-        return this._shouldUpdate;
     }
     render() {
         return "";
@@ -702,7 +696,7 @@ export class Component {
         Application.updateComponent(this);
     }
     on(event, key) {
-        return `data-event="${this.uuid},${event},${key}"`;
+        return `data-event="${this.uuid};${event};${key}"`;
     }
     queryComponent(selector, element) {
         return Application.queryComponent(selector, element);
@@ -766,7 +760,7 @@ export function escape(unsafe) {
     return unsafe.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 export function Event(type) {
-    function event(target, key) {
+    return function (target, key) {
         const field = Symbol(key);
         Object.defineProperty(target, field, {
             writable: true,
@@ -787,8 +781,7 @@ export function Event(type) {
             enumerable: true,
             configurable: true,
         });
-    }
-    return event;
+    };
 }
 function formatDate(format) {
     const date = this;
