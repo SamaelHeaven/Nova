@@ -73,16 +73,15 @@ export class Application {
     _onBeforeElementUpdated(fromElement, toElement) {
         const component = fromElement.component;
         if (component && component.initialized && component.keys.includes("render")) {
-            if (!component.shouldUpdate) {
-                return false;
-            }
-            toElement.innerHTML = component.render();
+            toElement.innerHTML = component.shouldUpdate ? component.render() : fromElement.innerHTML;
             toElement.style.display = "contents";
             toElement.setAttribute("data-uuid", component.uuid);
-            const morphResult = component.onMorph(toElement);
-            fromElement.dirty = true;
-            if (morphResult === false) {
-                return false;
+            if (component.shouldUpdate) {
+                const morphResult = component.onMorph(toElement);
+                fromElement.dirty = true;
+                if (morphResult === false) {
+                    return false;
+                }
             }
         }
         return !fromElement.isEqualNode(toElement);
