@@ -608,11 +608,18 @@ export class Application {
     private _onBeforeElementUpdated(fromElement: HTMLElement, toElement: HTMLElement): boolean {
         const component: Component | undefined = fromElement.component;
         if (component && component.initialized && component.keys.includes("render")) {
+            if (!component.shouldUpdate) {
+                return false;
+            }
+
             toElement.innerHTML = component.render();
             toElement.style.display = "contents";
             toElement.setAttribute("data-uuid", component.uuid);
-            component.onMorph(toElement);
+            const morphResult: void | boolean = component.onMorph(toElement);
             fromElement.dirty = true;
+            if (morphResult === false) {
+                return false;
+            }
         }
 
         return !fromElement.isEqualNode(toElement);
@@ -792,7 +799,7 @@ export abstract class Component {
 
     public onDestroy(): void {}
 
-    public onMorph(toElement: HTMLElement): void {}
+    public onMorph(toElement: HTMLElement): void | boolean {}
 
     public onAttributeChanged(attribute: string, oldValue: string, newValue: string): void {}
 

@@ -19,7 +19,7 @@ export declare abstract class Component {
     onAppear(): void;
     onUpdate(): void;
     onDestroy(): void;
-    onMorph(toElement: HTMLElement): void;
+    onMorph(toElement: HTMLElement): void | boolean;
     onAttributeChanged(attribute: string, oldValue: string, newValue: string): void;
     onClick(event: Events.Mouse): any;
     onDblClick(event: Events.Mouse): any;

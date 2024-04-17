@@ -83,7 +83,7 @@ export abstract class Component {
 
     public onDestroy(): void {}
 
-    public onMorph(toElement: HTMLElement): void {}
+    public onMorph(toElement: HTMLElement): void | boolean {}
 
     public onAttributeChanged(attribute: string, oldValue: string, newValue: string): void {}
 
