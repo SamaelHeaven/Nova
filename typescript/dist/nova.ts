@@ -1,7 +1,5 @@
 // @ts-nocheck
 
-import {morphdom} from "../nova/morphdom";
-
 var DOCUMENT_FRAGMENT_NODE = 11;
 
 function morphAttrs(fromNode, toNode) {
