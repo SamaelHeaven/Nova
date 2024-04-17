@@ -9,7 +9,7 @@ export abstract class Component {
     public readonly initialized: boolean;
     public readonly appeared: boolean;
     public readonly keys: ReadonlyArray<string>;
-    public readonly subscribers: [Component, keyof this][];
+    public readonly subscribers: [Component | (() => void), keyof this][];
     public shouldUpdate: boolean;
 
     constructor(element: HTMLElement) {

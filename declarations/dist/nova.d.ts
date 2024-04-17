@@ -16,7 +16,7 @@ export declare abstract class Component {
     readonly initialized: boolean;
     readonly appeared: boolean;
     readonly keys: ReadonlyArray<string>;
-    readonly subscribers: [Component, keyof this][];
+    readonly subscribers: [Component | (() => void), keyof this][];
     shouldUpdate: boolean;
     constructor(element: HTMLElement);
     protected static define(tag: string): ComponentDefinition;

@@ -1,3 +1,4 @@
+import { Component } from "./Component.js";
 export function State(target, key) {
     const field = Symbol(key);
     Object.defineProperty(target, field, {
@@ -11,12 +12,16 @@ export function State(target, key) {
     const setter = function (newValue) {
         this[field] = newValue;
         this.update();
-        for (const [component, state] of this.subscribers) {
-            if (component === this) {
+        for (const [subscriber, state] of this.subscribers) {
+            if (subscriber === this) {
                 continue;
             }
             if (state === key) {
-                component.update();
+                if (subscriber instanceof Component) {
+                    subscriber.update();
+                    continue;
+                }
+                subscriber();
             }
         }
     };

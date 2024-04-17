@@ -718,7 +718,7 @@ export abstract class Component {
     public readonly initialized: boolean;
     public readonly appeared: boolean;
     public readonly keys: ReadonlyArray<string>;
-    public readonly subscribers: [Component, keyof this][];
+    public readonly subscribers: [Component | (() => void), keyof this][];
     public shouldUpdate: boolean;
 
     constructor(element: HTMLElement) {
@@ -1036,13 +1036,18 @@ export function State<T extends Component>(target: T, key: string): void {
         this[field] = newValue;
         this.update();
 
-        for (const [component, state] of this.subscribers) {
-            if (component === this) {
+        for (const [subscriber, state] of this.subscribers) {
+            if (subscriber === this) {
                 continue;
             }
 
             if (state === key) {
-                component.update();
+                if (subscriber instanceof Component) {
+                    subscriber.update();
+                    continue;
+                }
+
+                subscriber();
             }
         }
     };
