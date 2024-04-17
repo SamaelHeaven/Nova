@@ -498,6 +498,8 @@ function morphdomFactory(morphAttrs) {
     }
 }
 
+var morphdom = morphdomFactory(morphAttrs);
+
 declare global {
     interface Date {
         format(format: string): string;

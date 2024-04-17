@@ -497,6 +497,7 @@ function morphdomFactory(morphAttrs) {
         return morphedNode;
     };
 }
+var morphdom = morphdomFactory(morphAttrs);
 Date.prototype.format = formatDate;
 export class Application {
     constructor() {
