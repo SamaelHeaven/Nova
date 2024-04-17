@@ -541,7 +541,7 @@ export class Application {
 
     public static updateComponent(component: Component): void {
         this._throwIfUninitialized();
-        if ((component as any).shouldUpdate) {
+        if (component.shouldUpdate) {
             this._getInstance()._updateComponent(component);
         }
     }
@@ -713,12 +713,14 @@ export class Application {
 }
 
 export abstract class Component {
+    /** @internal */
+    private _shouldUpdate: boolean;
     public readonly uuid: string;
     public readonly element: HTMLElement;
     public readonly initialized: boolean;
     public readonly appeared: boolean;
-    public readonly keys: string[];
-    protected shouldUpdate: boolean;
+    public readonly keys: ReadonlyArray<string>;
+    public readonly subscribers: [Component, keyof this][];
 
     constructor(element: HTMLElement) {
         this.uuid = "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (value: string) =>
@@ -728,7 +730,8 @@ export abstract class Component {
         this.element = element;
         this.initialized = false;
         this.appeared = false;
-        this.shouldUpdate = true;
+        this.subscribers = [];
+        this._shouldUpdate = true;
         let keys: string[] = [];
         let currentPrototype = this;
         while (currentPrototype) {
@@ -747,32 +750,12 @@ export abstract class Component {
         return {tag, ctor: this as unknown as ComponentConstructor};
     }
 
-    protected subscribe<T extends Component>(component: T, state: keyof T): void {
-        for (const key of component.keys) {
-            if (key !== state) {
-                continue;
-            }
+    protected set shouldUpdate(shouldUpdate: boolean) {
+        this._shouldUpdate = shouldUpdate;
+    }
 
-            const prototype = Object.getPrototypeOf(component);
-            const descriptor: PropertyDescriptor = Object.getOwnPropertyDescriptor(prototype, state);
-            const scope = this;
-            const setter = function (newValue: any): void {
-                descriptor.set.call(this, newValue);
-
-                if (this === component) {
-                    scope.update();
-                }
-            }
-
-            Object.defineProperty(prototype, key, {
-                get: descriptor.get,
-                set: setter,
-                enumerable: true,
-                configurable: true,
-            });
-
-            return;
-        }
+    public get shouldUpdate() {
+        return this._shouldUpdate;
     }
 
     public render(): string {
@@ -915,7 +898,7 @@ export function escape(unsafe: { toString(): string }): string {
 }
 
 export function Event(type: keyof GlobalEventHandlersEventMap) {
-    function event(target: Component, key: string): void {
+    function event<T extends Component>(target: T, key: string): void {
         const field: symbol = Symbol(key);
         Object.defineProperty(target, field, {
             writable: true,
@@ -1050,7 +1033,7 @@ export namespace LocalStorage {
     }
 }
 
-export function State(target: Component, key: string): void {
+export function State<T extends Component>(target: T, key: string): void {
     const field: symbol = Symbol(key);
     Object.defineProperty(target, field, {
         writable: true,
@@ -1065,6 +1048,16 @@ export function State(target: Component, key: string): void {
     const setter = function (newValue: any): void {
         this[field] = newValue;
         this.update();
+
+        for (const [component, state] of this.subscribers) {
+            if (component === this) {
+                continue;
+            }
+
+            if (state === key) {
+                component.update();
+            }
+        }
     };
 
     Object.defineProperty(target, key, {

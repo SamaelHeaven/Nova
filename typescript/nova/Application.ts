@@ -44,7 +44,7 @@ export class Application {
 
     public static updateComponent(component: Component): void {
         this._throwIfUninitialized();
-        if ((component as any).shouldUpdate) {
+        if (component.shouldUpdate) {
             this._getInstance()._updateComponent(component);
         }
     }

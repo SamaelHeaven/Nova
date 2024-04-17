@@ -1,2 +1,2 @@
 import { Component } from "./Component.js";
-export type ComponentConstructor = (new (element: HTMLElement) => Component);
+export declare type ComponentConstructor = (new (element: HTMLElement) => Component);

@@ -15,11 +15,12 @@ export declare abstract class Component {
     readonly element: HTMLElement;
     readonly initialized: boolean;
     readonly appeared: boolean;
-    readonly keys: string[];
-    protected shouldUpdate: boolean;
+    readonly keys: ReadonlyArray<string>;
+    readonly subscribers: [Component, keyof this][];
     constructor(element: HTMLElement);
     protected static define(tag: string): ComponentDefinition;
-    protected subscribe<T extends Component>(component: T, state: keyof T): void;
+    protected set shouldUpdate(shouldUpdate: boolean);
+    get shouldUpdate(): boolean;
     render(): string;
     update(before?: () => void | Promise<void>): void;
     on(event: keyof GlobalEventHandlersEventMap, key: keyof this): string;
@@ -63,8 +64,8 @@ export declare abstract class Component {
     onTransitionEnd(event: Events.Transition): any;
     onTransitionCancel(event: Events.Transition): any;
 }
-export type ComponentConstructor = (new (element: HTMLElement) => Component);
-export type ComponentDefinition = {
+export declare type ComponentConstructor = (new (element: HTMLElement) => Component);
+export declare type ComponentDefinition = {
     tag: string;
     ctor: ComponentConstructor;
 };
@@ -75,7 +76,7 @@ export declare class Debounce {
 export declare function escape(unsafe: {
     toString(): string;
 }): string;
-export declare function Event(type: keyof GlobalEventHandlersEventMap): (target: Component, key: string) => void;
+export declare function Event(type: keyof GlobalEventHandlersEventMap): <T extends Component>(target: T, key: string) => void;
 export declare namespace Events {
     type BaseEvent = Event & {
         target: HTMLElement;
@@ -96,4 +97,4 @@ export declare namespace LocalStorage {
     function getItem<T>(key: string): T | null;
     function setItem<T>(key: string, value: T, ttl?: number): void;
 }
-export declare function State(target: Component, key: string): void;
+export declare function State<T extends Component>(target: T, key: string): void;

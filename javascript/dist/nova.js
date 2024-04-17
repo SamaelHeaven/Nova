@@ -658,7 +658,8 @@ export class Component {
         this.element = element;
         this.initialized = false;
         this.appeared = false;
-        this.shouldUpdate = true;
+        this.subscribers = [];
+        this._shouldUpdate = true;
         let keys = [];
         let currentPrototype = this;
         while (currentPrototype) {
@@ -673,28 +674,11 @@ export class Component {
     static define(tag) {
         return { tag, ctor: this };
     }
-    subscribe(component, state) {
-        for (const key of component.keys) {
-            if (key !== state) {
-                continue;
-            }
-            const prototype = Object.getPrototypeOf(component);
-            const descriptor = Object.getOwnPropertyDescriptor(prototype, state);
-            const scope = this;
-            const setter = function (newValue) {
-                descriptor.set.call(this, newValue);
-                if (this === component) {
-                    scope.update();
-                }
-            };
-            Object.defineProperty(prototype, key, {
-                get: descriptor.get,
-                set: setter,
-                enumerable: true,
-                configurable: true,
-            });
-            return;
-        }
+    set shouldUpdate(shouldUpdate) {
+        this._shouldUpdate = shouldUpdate;
+    }
+    get shouldUpdate() {
+        return this._shouldUpdate;
     }
     render() {
         return "";
@@ -902,6 +886,14 @@ export function State(target, key) {
     const setter = function (newValue) {
         this[field] = newValue;
         this.update();
+        for (const [component, state] of this.subscribers) {
+            if (component === this) {
+                continue;
+            }
+            if (state === key) {
+                component.update();
+            }
+        }
     };
     Object.defineProperty(target, key, {
         get: getter,

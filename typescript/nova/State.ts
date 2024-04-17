@@ -1,6 +1,6 @@
 import {Component} from "./Component.js";
 
-export function State(target: Component, key: string): void {
+export function State<T extends Component>(target: T, key: string): void {
     const field: symbol = Symbol(key);
     Object.defineProperty(target, field, {
         writable: true,
@@ -15,6 +15,16 @@ export function State(target: Component, key: string): void {
     const setter = function (newValue: any): void {
         this[field] = newValue;
         this.update();
+
+        for (const [component, state] of this.subscribers) {
+            if (component === this) {
+                continue;
+            }
+
+            if (state === key) {
+                component.update();
+            }
+        }
     };
 
     Object.defineProperty(target, key, {

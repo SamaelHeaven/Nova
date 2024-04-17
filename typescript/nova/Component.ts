@@ -4,12 +4,14 @@ import {ComponentDefinition} from "./ComponentDefinition.js";
 import {ComponentConstructor} from "./ComponentConstructor.js";
 
 export abstract class Component {
+    /** @internal */
+    private _shouldUpdate: boolean;
     public readonly uuid: string;
     public readonly element: HTMLElement;
     public readonly initialized: boolean;
     public readonly appeared: boolean;
-    public readonly keys: string[];
-    protected shouldUpdate: boolean;
+    public readonly keys: ReadonlyArray<string>;
+    public readonly subscribers: [Component, keyof this][];
 
     constructor(element: HTMLElement) {
         this.uuid = "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (value: string) =>
@@ -19,7 +21,8 @@ export abstract class Component {
         this.element = element;
         this.initialized = false;
         this.appeared = false;
-        this.shouldUpdate = true;
+        this.subscribers = [];
+        this._shouldUpdate = true;
         let keys: string[] = [];
         let currentPrototype = this;
         while (currentPrototype) {
@@ -38,32 +41,12 @@ export abstract class Component {
         return {tag, ctor: this as unknown as ComponentConstructor};
     }
 
-    protected subscribe<T extends Component>(component: T, state: keyof T): void {
-        for (const key of component.keys) {
-            if (key !== state) {
-                continue;
-            }
+    protected set shouldUpdate(shouldUpdate: boolean) {
+        this._shouldUpdate = shouldUpdate;
+    }
 
-            const prototype = Object.getPrototypeOf(component);
-            const descriptor: PropertyDescriptor = Object.getOwnPropertyDescriptor(prototype, state);
-            const scope = this;
-            const setter = function (newValue: any): void {
-                descriptor.set.call(this, newValue);
-
-                if (this === component) {
-                    scope.update();
-                }
-            }
-
-            Object.defineProperty(prototype, key, {
-                get: descriptor.get,
-                set: setter,
-                enumerable: true,
-                configurable: true,
-            });
-
-            return;
-        }
+    public get shouldUpdate() {
+        return this._shouldUpdate;
     }
 
     public render(): string {

@@ -1,7 +1,7 @@
 import {Component} from "./Component.js";
 
 export function Event(type: keyof GlobalEventHandlersEventMap) {
-    function event(target: Component, key: string): void {
+    function event<T extends Component>(target: T, key: string): void {
         const field: symbol = Symbol(key);
         Object.defineProperty(target, field, {
             writable: true,
