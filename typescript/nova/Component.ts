@@ -4,12 +4,17 @@ import {ComponentDefinition} from "./ComponentDefinition.js";
 import {ComponentConstructor} from "./ComponentConstructor.js";
 
 export abstract class Component {
+    public readonly uuid: string;
     public readonly element: HTMLElement;
     public readonly initialized: boolean;
     public readonly appeared: boolean;
     public readonly keys: string[];
 
     constructor(element: HTMLElement) {
+        this.uuid = "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (value: string) =>
+            (+value ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +value / 4).toString(16)
+        );
+
         this.element = element;
         this.initialized = false;
         this.appeared = false;
@@ -45,6 +50,10 @@ export abstract class Component {
         }
 
         Application.updateComponent(this);
+    }
+
+    public on(event: keyof GlobalEventHandlersEventMap, key: keyof this): string {
+        return `data-event="${this.uuid},${event},${key as string}"`;
     }
 
     public queryComponent<T extends Component>(selector: string, element?: HTMLElement): T | null {

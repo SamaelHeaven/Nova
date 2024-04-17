@@ -1,6 +1,7 @@
 import { Application } from "./Application.js";
 export class Component {
     constructor(element) {
+        this.uuid = "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (value) => (+value ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +value / 4).toString(16));
         this.element = element;
         this.initialized = false;
         this.appeared = false;
@@ -30,6 +31,9 @@ export class Component {
             }
         }
         Application.updateComponent(this);
+    }
+    on(event, key) {
+        return `data-event="${this.uuid},${event},${key}"`;
     }
     queryComponent(selector, element) {
         return Application.queryComponent(selector, element);

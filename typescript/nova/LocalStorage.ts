@@ -1,6 +1,6 @@
 type Item<T> = {
     value: T;
-    expiry: number | undefined;
+    expiry?: number;
 };
 
 export namespace LocalStorage {

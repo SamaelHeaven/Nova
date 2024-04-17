@@ -5,8 +5,7 @@ export class Application {
     constructor() {
         this._eventNames = ["click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseenter", "mouseleave", "mouseover", "mouseout", "keydown", "keypress", "keyup", "focus", "blur", "input", "change", "submit", "scroll", "error", "resize", "select", "touchstart", "touchmove", "touchend", "touchcancel", "animationstart", "animationend", "animationiteration", "transitionstart", "transitionend", "transitioncancel"];
         this._morphdomOptions = {
-            onBeforeElUpdated: (fromEl, toEl) => this._onBeforeElementUpdated(fromEl, toEl),
-            onElUpdated: (el) => this._onElementUpdated(el)
+            onBeforeElUpdated: (fromEl, toEl) => this._onBeforeElementUpdated(fromEl, toEl)
         };
     }
     static launch(components) {
@@ -15,6 +14,7 @@ export class Application {
         }
         const app = this._getInstance();
         app._initializeComponents([...new Set(components)]);
+        app._initializeEvents();
     }
     static updateComponent(component) {
         this._throwIfUninitialized();
@@ -61,13 +61,21 @@ export class Application {
         }
         const newElement = component.element.cloneNode(false);
         morphdom(component.element, newElement, this._morphdomOptions);
+        for (const element of Array.from(component.element.parentElement.querySelectorAll("*"))) {
+            if (element.dirty === true) {
+                element.dirty = false;
+                this._onElementUpdated(element);
+            }
+        }
     }
     _onBeforeElementUpdated(fromElement, toElement) {
         const component = fromElement.component;
         if (component && component.initialized && component.keys.includes("render")) {
             toElement.innerHTML = component.render();
             toElement.style.display = "contents";
+            toElement.setAttribute("data-uuid", component.uuid);
             component.onMorph(toElement);
+            fromElement.dirty = true;
         }
         return !fromElement.isEqualNode(toElement);
     }
@@ -88,6 +96,7 @@ export class Application {
             connectedCallback() {
                 this.style.display = "contents";
                 this.component = new component.ctor(this);
+                this.setAttribute("data-uuid", this.component.uuid);
                 const initResult = this.component.onInit();
                 if (initResult instanceof Promise) {
                     initResult.then(() => app._initializeElement(this));
@@ -108,6 +117,24 @@ export class Application {
         this._updateComponent(element.component);
         element.component.onAppear();
         element.component.appeared = true;
+    }
+    _initializeEvents() {
+        for (const eventName of this._eventNames) {
+            document.documentElement.addEventListener(eventName, (event) => this._onEvent(event, event.target));
+        }
+    }
+    _onEvent(event, element) {
+        const eventElement = element.closest("[data-event]");
+        if (!eventElement) {
+            return;
+        }
+        const [uuid, type, call] = eventElement.getAttribute("data-event").split(",");
+        if (event.type !== type) {
+            return;
+        }
+        const component = eventElement.closest(`[data-uuid="${uuid}"]`).component;
+        component[call](event);
+        this._onEvent(event, eventElement.parentElement);
     }
     _observeAttributes(component) {
         if (!component.keys.includes("onAttributeChanged")) {

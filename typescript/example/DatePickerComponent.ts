@@ -1,4 +1,4 @@
-import {Component, ComponentDefinition, escape, Events, State} from "../nova/lib.js";
+import {Component, ComponentDefinition, escape, Events, Event, State} from "../nova/lib.js";
 
 export class DatePickerComponent extends Component {
     public static readonly definition: ComponentDefinition = this.define("date-picker-component");
@@ -6,24 +6,22 @@ export class DatePickerComponent extends Component {
     @State private _startDate: string = this._today;
     @State private _endDate: string | null = null;
 
-    public override onInput(event: Events.Input): void {
-        const startDateElement: HTMLInputElement = event.target.closest(`#start-date`);
-        if (startDateElement) {
-            this._startDate = new Date(startDateElement.value.replace(/-/g, "/")).format( "yyyy-mm-dd");
-            return;
-        }
+    @Event("input")
+    private _onStartDateInput = function (event: Events.BaseEvent): void {
+        this._startDate = new Date((event.target as HTMLInputElement).value.replace(/-/g, "/")).format("yyyy-mm-dd");
+    }.bind(this);
 
-        const endDateElement: HTMLInputElement = event.target.closest(`#end-date`);
-        if (endDateElement) {
-            this._endDate = new Date(endDateElement.value.replace(/-/g, "/")).format("yyyy-mm-dd");
-        }
-    }
+    @Event("input")
+    private _onEndDateInput = function (event: Events.BaseEvent): void {
+        this._endDate = new Date((event.target as HTMLInputElement).value.replace(/-/g, "/")).format("yyyy-mm-dd");
+    }.bind(this);
 
     public override render(): string {
         return `
             <form>
                 <label for="start-date">Start Date</label>
                 <input id="start-date"
+                       ${this._onStartDateInput.toString()}
                        class="mt-2 form-control"
                        type="date"
                        value="${escape(this._startDate)}" 
@@ -32,6 +30,7 @@ export class DatePickerComponent extends Component {
 
                 <label class="mt-4" for="end-date">End Date</label>
                 <input id="end-date" 
+                       ${this._onEndDateInput.toString()}
                        class="mt-2 form-control"
                        type="date" 
                        value="${escape(this._endDate || "")}" 

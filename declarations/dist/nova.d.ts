@@ -2,9 +2,6 @@ declare global {
     interface Date {
         format(format: string): string;
     }
-    interface HTMLElement {
-        component?: Component;
-    }
 }
 export declare class Application {
     private constructor();
@@ -14,6 +11,7 @@ export declare class Application {
     static queryComponents<T extends Component>(selector: string, element?: HTMLElement): T[];
 }
 export declare abstract class Component {
+    readonly uuid: string;
     readonly element: HTMLElement;
     readonly initialized: boolean;
     readonly appeared: boolean;
@@ -22,6 +20,7 @@ export declare abstract class Component {
     protected static define(tag: string): ComponentDefinition;
     render(): string;
     update(before?: () => void | Promise<void>): void;
+    on(event: keyof GlobalEventHandlersEventMap, key: keyof this): string;
     queryComponent<T extends Component>(selector: string, element?: HTMLElement): T | null;
     queryComponents<T extends Component>(selector: string, element?: HTMLElement): T[];
     onInit(): void | Promise<void>;
@@ -74,6 +73,7 @@ export declare class Debounce {
 export declare function escape(unsafe: {
     toString(): string;
 }): string;
+export declare function Event(type: keyof GlobalEventHandlersEventMap): (target: Component, key: string) => void;
 export declare namespace Events {
     type BaseEvent = Event & {
         target: HTMLElement;

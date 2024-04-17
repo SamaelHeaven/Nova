@@ -503,8 +503,7 @@ export class Application {
     constructor() {
         this._eventNames = ["click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseenter", "mouseleave", "mouseover", "mouseout", "keydown", "keypress", "keyup", "focus", "blur", "input", "change", "submit", "scroll", "error", "resize", "select", "touchstart", "touchmove", "touchend", "touchcancel", "animationstart", "animationend", "animationiteration", "transitionstart", "transitionend", "transitioncancel"];
         this._morphdomOptions = {
-            onBeforeElUpdated: (fromEl, toEl) => this._onBeforeElementUpdated(fromEl, toEl),
-            onElUpdated: (el) => this._onElementUpdated(el)
+            onBeforeElUpdated: (fromEl, toEl) => this._onBeforeElementUpdated(fromEl, toEl)
         };
     }
     static launch(components) {
@@ -513,6 +512,7 @@ export class Application {
         }
         const app = this._getInstance();
         app._initializeComponents([...new Set(components)]);
+        app._initializeEvents();
     }
     static updateComponent(component) {
         this._throwIfUninitialized();
@@ -559,13 +559,21 @@ export class Application {
         }
         const newElement = component.element.cloneNode(false);
         morphdom(component.element, newElement, this._morphdomOptions);
+        for (const element of Array.from(component.element.parentElement.querySelectorAll("*"))) {
+            if (element.dirty === true) {
+                element.dirty = false;
+                this._onElementUpdated(element);
+            }
+        }
     }
     _onBeforeElementUpdated(fromElement, toElement) {
         const component = fromElement.component;
         if (component && component.initialized && component.keys.includes("render")) {
             toElement.innerHTML = component.render();
             toElement.style.display = "contents";
+            toElement.setAttribute("data-uuid", component.uuid);
             component.onMorph(toElement);
+            fromElement.dirty = true;
         }
         return !fromElement.isEqualNode(toElement);
     }
@@ -586,6 +594,7 @@ export class Application {
             connectedCallback() {
                 this.style.display = "contents";
                 this.component = new component.ctor(this);
+                this.setAttribute("data-uuid", this.component.uuid);
                 const initResult = this.component.onInit();
                 if (initResult instanceof Promise) {
                     initResult.then(() => app._initializeElement(this));
@@ -607,6 +616,24 @@ export class Application {
         element.component.onAppear();
         element.component.appeared = true;
     }
+    _initializeEvents() {
+        for (const eventName of this._eventNames) {
+            document.documentElement.addEventListener(eventName, (event) => this._onEvent(event, event.target));
+        }
+    }
+    _onEvent(event, element) {
+        const eventElement = element.closest("[data-event]");
+        if (!eventElement) {
+            return;
+        }
+        const [uuid, type, call] = eventElement.getAttribute("data-event").split(",");
+        if (event.type !== type) {
+            return;
+        }
+        const component = eventElement.closest(`[data-uuid="${uuid}"]`).component;
+        component[call](event);
+        this._onEvent(event, eventElement.parentElement);
+    }
     _observeAttributes(component) {
         if (!component.keys.includes("onAttributeChanged")) {
             return;
@@ -625,6 +652,7 @@ export class Application {
 Application._instance = null;
 export class Component {
     constructor(element) {
+        this.uuid = "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (value) => (+value ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +value / 4).toString(16));
         this.element = element;
         this.initialized = false;
         this.appeared = false;
@@ -654,6 +682,9 @@ export class Component {
             }
         }
         Application.updateComponent(this);
+    }
+    on(event, key) {
+        return `data-event="${this.uuid},${event},${key}"`;
     }
     queryComponent(selector, element) {
         return Application.queryComponent(selector, element);
@@ -715,6 +746,31 @@ export class Debounce {
 }
 export function escape(unsafe) {
     return unsafe.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+export function Event(type) {
+    function event(target, key) {
+        const field = Symbol(key);
+        Object.defineProperty(target, field, {
+            writable: true,
+            enumerable: false,
+            configurable: true,
+        });
+        const getter = function () {
+            const result = this[field];
+            result.toString = () => this.on(type, key);
+            return result;
+        };
+        const setter = function (newValue) {
+            this[field] = newValue;
+        };
+        Object.defineProperty(target, key, {
+            get: getter,
+            set: setter,
+            enumerable: true,
+            configurable: true,
+        });
+    }
+    return event;
 }
 function formatDate(format) {
     const date = this;

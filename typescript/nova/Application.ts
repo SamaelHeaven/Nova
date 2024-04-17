@@ -8,8 +8,10 @@ declare global {
         format(format: string): string;
     }
 
+    /** @internal */
     interface HTMLElement {
         component?: Component;
+        dirty?: boolean;
     }
 }
 
@@ -26,8 +28,7 @@ export class Application {
     private constructor() {
         this._eventNames = ["click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseenter", "mouseleave", "mouseover", "mouseout", "keydown", "keypress", "keyup", "focus", "blur", "input", "change", "submit", "scroll", "error", "resize", "select", "touchstart", "touchmove", "touchend", "touchcancel", "animationstart", "animationend", "animationiteration", "transitionstart", "transitionend", "transitioncancel"];
         this._morphdomOptions = {
-            onBeforeElUpdated: (fromEl: HTMLElement, toEl: HTMLElement): boolean => this._onBeforeElementUpdated(fromEl, toEl),
-            onElUpdated: (el: HTMLElement): void => this._onElementUpdated(el)
+            onBeforeElUpdated: (fromEl: HTMLElement, toEl: HTMLElement): boolean => this._onBeforeElementUpdated(fromEl, toEl)
         };
     }
 
@@ -38,6 +39,7 @@ export class Application {
 
         const app: Application = this._getInstance();
         app._initializeComponents([...new Set(components)]);
+        app._initializeEvents();
     }
 
     public static updateComponent(component: Component): void {
@@ -95,6 +97,12 @@ export class Application {
 
         const newElement: HTMLElement = component.element.cloneNode(false) as HTMLElement;
         morphdom(component.element, newElement, this._morphdomOptions);
+        for (const element of Array.from(component.element.parentElement.querySelectorAll("*")) as HTMLElement[]) {
+            if (element.dirty === true) {
+                element.dirty = false;
+                this._onElementUpdated(element);
+            }
+        }
     }
 
     /** @internal */
@@ -103,7 +111,9 @@ export class Application {
         if (component && component.initialized && component.keys.includes("render")) {
             toElement.innerHTML = component.render();
             toElement.style.display = "contents";
+            toElement.setAttribute("data-uuid", component.uuid);
             component.onMorph(toElement);
+            fromElement.dirty = true;
         }
 
         return !fromElement.isEqualNode(toElement);
@@ -132,6 +142,7 @@ export class Application {
             public connectedCallback(): void {
                 this.style.display = "contents";
                 this.component = new component.ctor(this);
+                this.setAttribute("data-uuid", this.component.uuid);
                 const initResult: void | Promise<void> = this.component.onInit();
                 if (initResult instanceof Promise) {
                     initResult.then(() => app._initializeElement(this));
@@ -157,6 +168,30 @@ export class Application {
         this._updateComponent(element.component);
         element.component.onAppear();
         (element.component as any).appeared = true;
+    }
+
+    /** @internal */
+    private _initializeEvents(): void {
+        for (const eventName of this._eventNames) {
+            document.documentElement.addEventListener(eventName, (event: Event) => this._onEvent(event, event.target as HTMLElement));
+        }
+    }
+
+    /** @internal */
+    private _onEvent(event: Event, element: HTMLElement): any {
+        const eventElement: Element = element.closest("[data-event]");
+        if (!eventElement) {
+            return;
+        }
+
+        const [uuid, type, call] = eventElement.getAttribute("data-event").split(",");
+        if (event.type !== type) {
+            return;
+        }
+
+        const component: Component = (eventElement.closest(`[data-uuid="${uuid}"]`) as HTMLElement).component;
+        component[call](event);
+        this._onEvent(event, eventElement.parentElement);
     }
 
     /** @internal */

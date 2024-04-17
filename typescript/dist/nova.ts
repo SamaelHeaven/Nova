@@ -505,8 +505,10 @@ declare global {
         format(format: string): string;
     }
 
+    /** @internal */
     interface HTMLElement {
         component?: Component;
+        dirty?: boolean;
     }
 }
 
@@ -523,8 +525,7 @@ export class Application {
     private constructor() {
         this._eventNames = ["click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseenter", "mouseleave", "mouseover", "mouseout", "keydown", "keypress", "keyup", "focus", "blur", "input", "change", "submit", "scroll", "error", "resize", "select", "touchstart", "touchmove", "touchend", "touchcancel", "animationstart", "animationend", "animationiteration", "transitionstart", "transitionend", "transitioncancel"];
         this._morphdomOptions = {
-            onBeforeElUpdated: (fromEl: HTMLElement, toEl: HTMLElement): boolean => this._onBeforeElementUpdated(fromEl, toEl),
-            onElUpdated: (el: HTMLElement): void => this._onElementUpdated(el)
+            onBeforeElUpdated: (fromEl: HTMLElement, toEl: HTMLElement): boolean => this._onBeforeElementUpdated(fromEl, toEl)
         };
     }
 
@@ -535,6 +536,7 @@ export class Application {
 
         const app: Application = this._getInstance();
         app._initializeComponents([...new Set(components)]);
+        app._initializeEvents();
     }
 
     public static updateComponent(component: Component): void {
@@ -592,6 +594,12 @@ export class Application {
 
         const newElement: HTMLElement = component.element.cloneNode(false) as HTMLElement;
         morphdom(component.element, newElement, this._morphdomOptions);
+        for (const element of Array.from(component.element.parentElement.querySelectorAll("*")) as HTMLElement[]) {
+            if (element.dirty === true) {
+                element.dirty = false;
+                this._onElementUpdated(element);
+            }
+        }
     }
 
     /** @internal */
@@ -600,7 +608,9 @@ export class Application {
         if (component && component.initialized && component.keys.includes("render")) {
             toElement.innerHTML = component.render();
             toElement.style.display = "contents";
+            toElement.setAttribute("data-uuid", component.uuid);
             component.onMorph(toElement);
+            fromElement.dirty = true;
         }
 
         return !fromElement.isEqualNode(toElement);
@@ -629,6 +639,7 @@ export class Application {
             public connectedCallback(): void {
                 this.style.display = "contents";
                 this.component = new component.ctor(this);
+                this.setAttribute("data-uuid", this.component.uuid);
                 const initResult: void | Promise<void> = this.component.onInit();
                 if (initResult instanceof Promise) {
                     initResult.then(() => app._initializeElement(this));
@@ -657,6 +668,30 @@ export class Application {
     }
 
     /** @internal */
+    private _initializeEvents(): void {
+        for (const eventName of this._eventNames) {
+            document.documentElement.addEventListener(eventName, (event: Event) => this._onEvent(event, event.target as HTMLElement));
+        }
+    }
+
+    /** @internal */
+    private _onEvent(event: Event, element: HTMLElement): any {
+        const eventElement: Element = element.closest("[data-event]");
+        if (!eventElement) {
+            return;
+        }
+
+        const [uuid, type, call] = eventElement.getAttribute("data-event").split(",");
+        if (event.type !== type) {
+            return;
+        }
+
+        const component: Component = (eventElement.closest(`[data-uuid="${uuid}"]`) as HTMLElement).component;
+        component[call](event);
+        this._onEvent(event, eventElement.parentElement);
+    }
+
+    /** @internal */
     private _observeAttributes(component: Component): void {
         if (!component.keys.includes("onAttributeChanged")) {
             return;
@@ -676,12 +711,17 @@ export class Application {
 }
 
 export abstract class Component {
+    public readonly uuid: string;
     public readonly element: HTMLElement;
     public readonly initialized: boolean;
     public readonly appeared: boolean;
     public readonly keys: string[];
 
     constructor(element: HTMLElement) {
+        this.uuid = "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (value: string) =>
+            (+value ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +value / 4).toString(16)
+        );
+
         this.element = element;
         this.initialized = false;
         this.appeared = false;
@@ -717,6 +757,10 @@ export abstract class Component {
         }
 
         Application.updateComponent(this);
+    }
+
+    public on(event: keyof GlobalEventHandlersEventMap, key: keyof this): string {
+        return `data-event="${this.uuid},${event},${key as string}"`;
     }
 
     public queryComponent<T extends Component>(selector: string, element?: HTMLElement): T | null {
@@ -831,6 +875,36 @@ export function escape(unsafe: { toString(): string }): string {
     return unsafe.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 
+export function Event(type: keyof GlobalEventHandlersEventMap) {
+    function event(target: Component, key: string): void {
+        const field: symbol = Symbol(key);
+        Object.defineProperty(target, field, {
+            writable: true,
+            enumerable: false,
+            configurable: true,
+        });
+
+        const getter = function () {
+            const result = this[field];
+            result.toString = (): string => this.on(type, key);
+            return result;
+        };
+
+        const setter = function (newValue: any): void {
+            this[field] = newValue;
+        };
+
+        Object.defineProperty(target, key, {
+            get: getter,
+            set: setter,
+            enumerable: true,
+            configurable: true,
+        });
+    }
+
+    return event;
+}
+
 export namespace Events {
     export type BaseEvent = Event & { target: HTMLElement, currentTarget: HTMLElement, relatedTarget: HTMLElement }
     export type Mouse = MouseEvent & BaseEvent;
@@ -908,7 +982,7 @@ function formatDate(format: string): string {
 
 type Item<T> = {
     value: T;
-    expiry: number | undefined;
+    expiry?: number;
 };
 
 export namespace LocalStorage {

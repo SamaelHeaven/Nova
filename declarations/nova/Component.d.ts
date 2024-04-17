@@ -1,6 +1,7 @@
 import { Events } from "./Events.js";
 import { ComponentDefinition } from "./ComponentDefinition.js";
 export declare abstract class Component {
+    readonly uuid: string;
     readonly element: HTMLElement;
     readonly initialized: boolean;
     readonly appeared: boolean;
@@ -9,6 +10,7 @@ export declare abstract class Component {
     protected static define(tag: string): ComponentDefinition;
     render(): string;
     update(before?: () => void | Promise<void>): void;
+    on(event: keyof GlobalEventHandlersEventMap, key: keyof this): string;
     queryComponent<T extends Component>(selector: string, element?: HTMLElement): T | null;
     queryComponents<T extends Component>(selector: string, element?: HTMLElement): T[];
     onInit(): void | Promise<void>;
