@@ -13,6 +13,10 @@ export function State<T extends Component>(target: T, key: string): void {
     };
 
     const setter = function (newValue: any): void {
+        if (this[field] === newValue) {
+            return;
+        }
+
         this[field] = newValue;
         this.update();
 

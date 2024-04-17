@@ -19,8 +19,8 @@ export class DatePickerComponent extends Component {
     public override render(): string {
         return `
             <form>
-                <label for="start-date">Start Date</label>
-                <input id="start-date"
+                <label for="start-date-${this.uuid}">Start Date</label>
+                <input id="start-date-${this.uuid}"
                        ${this._onStartDateInput.toString()}
                        class="mt-2 form-control"
                        type="date"
@@ -28,8 +28,8 @@ export class DatePickerComponent extends Component {
                        min="${escape(this._today)}"
                        max="${escape(this._endDate || "")}">
 
-                <label class="mt-4" for="end-date">End Date</label>
-                <input id="end-date" 
+                <label class="mt-4" for="end-date-${this.uuid}">End Date</label>
+                <input id="end-date-${this.uuid}" 
                        ${this._onEndDateInput.toString()}
                        class="mt-2 form-control"
                        type="date" 

@@ -131,17 +131,39 @@ export class Application {
         }
     }
     _onEvent(event, element) {
+        this._handleEvent(event, element);
+        this._handleBind(event);
+    }
+    _handleEvent(event, element) {
         const eventElement = element.closest("[data-event]");
         if (!eventElement) {
             return;
         }
         const [uuid, type, call] = eventElement.getAttribute("data-event").split(";");
-        if (event.type !== type) {
+        if (event.type === type) {
+            const component = eventElement.closest(`[data-uuid="${uuid}"]`).component;
+            component[call](event);
+        }
+        this._handleEvent(event, eventElement.parentElement);
+    }
+    _handleBind(event) {
+        if (event.type !== "input") {
             return;
         }
-        const component = eventElement.closest(`[data-uuid="${uuid}"]`).component;
-        component[call](event);
-        this._onEvent(event, eventElement.parentElement);
+        const bindElement = event.target;
+        const binding = bindElement.getAttribute("data-bind");
+        if (!binding) {
+            return;
+        }
+        const [uuid, key] = binding.split(";");
+        let value = bindElement.value;
+        if (value === undefined || value === null) {
+            value = bindElement.getAttribute("value");
+        }
+        if (value !== undefined && value !== null) {
+            const component = bindElement.closest(`[data-uuid="${uuid}"]`).component;
+            component[key] = value;
+        }
     }
     _observeAttributes(component) {
         if (!component.keys.includes("onAttributeChanged")) {

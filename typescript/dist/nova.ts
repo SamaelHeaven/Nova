@@ -1,5 +1,7 @@
 // @ts-nocheck
 
+import {morphdom} from "../nova/morphdom";
+
 var DOCUMENT_FRAGMENT_NODE = 11;
 
 function morphAttrs(fromNode, toNode) {
@@ -498,14 +500,11 @@ function morphdomFactory(morphAttrs) {
     }
 }
 
-var morphdom = morphdomFactory(morphAttrs);
-
 declare global {
     interface Date {
         format(format: string): string;
     }
 
-    /** @internal */
     interface HTMLElement {
         component?: Component;
         dirty?: boolean;
@@ -682,20 +681,49 @@ export class Application {
     }
 
     /** @internal */
-    private _onEvent(event: Event, element: HTMLElement): any {
-        const eventElement: Element = element.closest("[data-event]");
+    private _onEvent(event: Event, element: HTMLElement): void {
+        this._handleEvent(event, element);
+        this._handleBind(event);
+    }
+
+    /** @internal */
+    private _handleEvent(event: Event, element: HTMLElement): void {
+        const eventElement: HTMLElement = element.closest("[data-event]");
         if (!eventElement) {
             return;
         }
 
         const [uuid, type, call] = eventElement.getAttribute("data-event").split(";");
-        if (event.type !== type) {
+        if (event.type === type) {
+            const component: Component = (eventElement.closest(`[data-uuid="${uuid}"]`) as HTMLElement).component;
+            component[call](event);
+        }
+
+        this._handleEvent(event, eventElement.parentElement);
+    }
+
+    /** @internal */
+    private _handleBind(event: Event): void {
+        if (event.type !== "input") {
             return;
         }
 
-        const component: Component = (eventElement.closest(`[data-uuid="${uuid}"]`) as HTMLElement).component;
-        component[call](event);
-        this._onEvent(event, eventElement.parentElement);
+        const bindElement: HTMLInputElement = event.target as HTMLInputElement;
+        const binding: string | null = bindElement.getAttribute("data-bind");
+        if (!binding) {
+            return;
+        }
+
+        const [uuid, key] = binding.split(";");
+        let value: string | undefined | null = bindElement.value;
+        if (value === undefined || value === null) {
+            value = bindElement.getAttribute("value");
+        }
+
+        if (value !== undefined && value !== null) {
+            const component: Component = (bindElement.closest(`[data-uuid="${uuid}"]`) as HTMLElement).component;
+            component[key] = value;
+        }
     }
 
     /** @internal */
@@ -777,8 +805,12 @@ export abstract class Component {
         Application.updateComponent(this);
     }
 
-    public on(event: keyof GlobalEventHandlersEventMap, key: keyof this): string {
-        return `data-event="${this.uuid};${event};${key as string}"`;
+    public on(event: keyof GlobalEventHandlersEventMap, call: keyof this): string {
+        return `data-event="${this.uuid};${event};${call as string}"`;
+    }
+
+    public bind(key: keyof this): string {
+        return `data-bind="${this.uuid};${key as string}"`;
     }
 
     public queryComponent<T extends Component>(selector: string, element?: HTMLElement): T | null {
@@ -1038,6 +1070,10 @@ export function State<T extends Component>(target: T, key: string): void {
     };
 
     const setter = function (newValue: any): void {
+        if (this[field] === newValue) {
+            return;
+        }
+
         this[field] = newValue;
         this.update();
 

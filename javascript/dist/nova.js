@@ -1,3 +1,4 @@
+import { morphdom } from "../nova/morphdom";
 var DOCUMENT_FRAGMENT_NODE = 11;
 function morphAttrs(fromNode, toNode) {
     var toNodeAttrs = toNode.attributes;
@@ -497,7 +498,6 @@ function morphdomFactory(morphAttrs) {
         return morphedNode;
     };
 }
-var morphdom = morphdomFactory(morphAttrs);
 Date.prototype.format = formatDate;
 export class Application {
     constructor() {
@@ -629,17 +629,39 @@ export class Application {
         }
     }
     _onEvent(event, element) {
+        this._handleEvent(event, element);
+        this._handleBind(event);
+    }
+    _handleEvent(event, element) {
         const eventElement = element.closest("[data-event]");
         if (!eventElement) {
             return;
         }
         const [uuid, type, call] = eventElement.getAttribute("data-event").split(";");
-        if (event.type !== type) {
+        if (event.type === type) {
+            const component = eventElement.closest(`[data-uuid="${uuid}"]`).component;
+            component[call](event);
+        }
+        this._handleEvent(event, eventElement.parentElement);
+    }
+    _handleBind(event) {
+        if (event.type !== "input") {
             return;
         }
-        const component = eventElement.closest(`[data-uuid="${uuid}"]`).component;
-        component[call](event);
-        this._onEvent(event, eventElement.parentElement);
+        const bindElement = event.target;
+        const binding = bindElement.getAttribute("data-bind");
+        if (!binding) {
+            return;
+        }
+        const [uuid, key] = binding.split(";");
+        let value = bindElement.value;
+        if (value === undefined || value === null) {
+            value = bindElement.getAttribute("value");
+        }
+        if (value !== undefined && value !== null) {
+            const component = bindElement.closest(`[data-uuid="${uuid}"]`).component;
+            component[key] = value;
+        }
     }
     _observeAttributes(component) {
         if (!component.keys.includes("onAttributeChanged")) {
@@ -700,8 +722,11 @@ export class Component {
         }
         Application.updateComponent(this);
     }
-    on(event, key) {
-        return `data-event="${this.uuid};${event};${key}"`;
+    on(event, call) {
+        return `data-event="${this.uuid};${event};${call}"`;
+    }
+    bind(key) {
+        return `data-bind="${this.uuid};${key}"`;
     }
     queryComponent(selector, element) {
         return Application.queryComponent(selector, element);
@@ -882,6 +907,9 @@ export function State(target, key) {
         return this[field];
     };
     const setter = function (newValue) {
+        if (this[field] === newValue) {
+            return;
+        }
         this[field] = newValue;
         this.update();
         for (const [subscriber, state] of this.subscribers) {

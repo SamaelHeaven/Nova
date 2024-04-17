@@ -3,7 +3,7 @@ import { Component, escape } from "../nova/lib.js";
 export class NumberInputComponent extends Component {
     constructor() {
         super(...arguments);
-        this._min = Number(this.element.getAttribute("data-min" || "0"));
+        this._min = Number(this.element.getAttribute("data-min") || "0");
         this._max = Number(this.element.getAttribute("data-max") || Infinity.toString());
     }
     onInput(event) {

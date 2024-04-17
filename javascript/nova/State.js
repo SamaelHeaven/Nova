@@ -10,6 +10,9 @@ export function State(target, key) {
         return this[field];
     };
     const setter = function (newValue) {
+        if (this[field] === newValue) {
+            return;
+        }
         this[field] = newValue;
         this.update();
         for (const [subscriber, state] of this.subscribers) {

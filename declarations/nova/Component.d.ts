@@ -12,7 +12,8 @@ export declare abstract class Component {
     protected static define(tag: string): ComponentDefinition;
     render(): string;
     update(before?: () => void | Promise<void>): void;
-    on(event: keyof GlobalEventHandlersEventMap, key: keyof this): string;
+    on(event: keyof GlobalEventHandlersEventMap, call: keyof this): string;
+    bind(key: keyof this): string;
     queryComponent<T extends Component>(selector: string, element?: HTMLElement): T | null;
     queryComponents<T extends Component>(selector: string, element?: HTMLElement): T[];
     onInit(): void | Promise<void>;

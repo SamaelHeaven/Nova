@@ -8,40 +8,36 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var _a;
-import { Component, Debounce, State } from "../nova/lib.js";
+import { Component, escape, State } from "../nova/lib.js";
 export class EmailInputComponent extends Component {
     constructor() {
         super(...arguments);
-        this._valid = false;
-        this._inputDebounce = new Debounce(this._onDebounceInput.bind(this), 300);
+        this.email = "";
     }
-    onInput(event) {
-        this._inputDebounce.call(event);
+    onSubmit(event) {
+        event.preventDefault();
     }
     render() {
+        const valid = this._valid;
         return `
             <form>
-                <label for="email-input">Email</label>
-                <input type="email" id="email-input" class="form-control mt-2" placeholder="Email">
-                ${this._valid ? `
-                    <div class="alert alert-success mt-4" role="alert">
-                        Email is valid
+                <label for="email-input-${this.uuid}">Email</label>
+                <input ${this.bind("email")} type="text" id="email-input-${this.uuid}" class="form-control mt-2" placeholder="Email">
+                ${this.email.trim().length > 0 ? `
+                    <div style="word-break: break-all" class="alert alert-${valid ? "success" : "danger"} mt-4" role="alert">
+                        ${escape(this.email)} is an ${valid ? "valid" : "invalid"} email
                     </div>
-                ` : `
-                    <div class="alert alert-danger mt-4" role="alert">
-                        Email is invalid
-                    </div>
-                `}
+                ` : ""}
             </form>
         `;
     }
-    _onDebounceInput(event) {
-        this._valid = !!event.target.value.trim().match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
+    get _valid() {
+        return !!this.email.trim().match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
     }
 }
 _a = EmailInputComponent;
 EmailInputComponent.definition = _a.define("email-input-component");
 __decorate([
     State,
-    __metadata("design:type", Boolean)
-], EmailInputComponent.prototype, "_valid", void 0);
+    __metadata("design:type", String)
+], EmailInputComponent.prototype, "email", void 0);

@@ -4,6 +4,10 @@ declare global {
     interface Date {
         format(format: string): string;
     }
+    interface HTMLElement {
+        component?: Component;
+        dirty?: boolean;
+    }
 }
 export declare class Application {
     private constructor();

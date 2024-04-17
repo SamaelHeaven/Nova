@@ -42,8 +42,11 @@ export class Component {
         }
         Application.updateComponent(this);
     }
-    on(event, key) {
-        return `data-event="${this.uuid};${event};${key}"`;
+    on(event, call) {
+        return `data-event="${this.uuid};${event};${call}"`;
+    }
+    bind(key) {
+        return `data-bind="${this.uuid};${key}"`;
     }
     queryComponent(selector, element) {
         return Application.queryComponent(selector, element);
