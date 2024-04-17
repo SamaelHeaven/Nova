@@ -6,8 +6,10 @@ export declare abstract class Component {
     readonly initialized: boolean;
     readonly appeared: boolean;
     readonly keys: string[];
+    protected shouldUpdate: boolean;
     constructor(element: HTMLElement);
     protected static define(tag: string): ComponentDefinition;
+    protected subscribe<T extends Component>(component: T, state: keyof T): void;
     render(): string;
     update(before?: () => void | Promise<void>): void;
     on(event: keyof GlobalEventHandlersEventMap, key: keyof this): string;

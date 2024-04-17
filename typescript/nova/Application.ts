@@ -44,7 +44,9 @@ export class Application {
 
     public static updateComponent(component: Component): void {
         this._throwIfUninitialized();
-        this._getInstance()._updateComponent(component);
+        if ((component as any).shouldUpdate) {
+            this._getInstance()._updateComponent(component);
+        }
     }
 
     public static queryComponent<T extends Component>(selector: string, element: HTMLElement = document.documentElement): T | null {

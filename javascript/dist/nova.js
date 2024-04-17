@@ -516,7 +516,9 @@ export class Application {
     }
     static updateComponent(component) {
         this._throwIfUninitialized();
-        this._getInstance()._updateComponent(component);
+        if (component.shouldUpdate) {
+            this._getInstance()._updateComponent(component);
+        }
     }
     static queryComponent(selector, element = document.documentElement) {
         var _a;
@@ -656,6 +658,7 @@ export class Component {
         this.element = element;
         this.initialized = false;
         this.appeared = false;
+        this.shouldUpdate = true;
         let keys = [];
         let currentPrototype = this;
         while (currentPrototype) {
@@ -670,15 +673,46 @@ export class Component {
     static define(tag) {
         return { tag, ctor: this };
     }
+    subscribe(component, state) {
+        for (const key of component.keys) {
+            if (key !== state) {
+                continue;
+            }
+            const prototype = Object.getPrototypeOf(component);
+            const descriptor = Object.getOwnPropertyDescriptor(prototype, state);
+            const scope = this;
+            const setter = function (newValue) {
+                descriptor.set.call(this, newValue);
+                if (this === component) {
+                    scope.update();
+                }
+            };
+            Object.defineProperty(prototype, key, {
+                get: descriptor.get,
+                set: setter,
+                enumerable: true,
+                configurable: true,
+            });
+            return;
+        }
+    }
     render() {
         return "";
     }
     update(before) {
         if (before) {
+            const shouldUpdate = this.shouldUpdate;
+            this.shouldUpdate = false;
             const beforeResult = before();
             if (beforeResult instanceof Promise) {
-                beforeResult.then(() => Application.updateComponent(this));
+                beforeResult.then(() => {
+                    this.shouldUpdate = shouldUpdate;
+                    Application.updateComponent(this);
+                });
                 return;
+            }
+            else {
+                this.shouldUpdate = shouldUpdate;
             }
         }
         Application.updateComponent(this);

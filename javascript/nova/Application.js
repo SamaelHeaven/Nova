@@ -18,7 +18,9 @@ export class Application {
     }
     static updateComponent(component) {
         this._throwIfUninitialized();
-        this._getInstance()._updateComponent(component);
+        if (component.shouldUpdate) {
+            this._getInstance()._updateComponent(component);
+        }
     }
     static queryComponent(selector, element = document.documentElement) {
         var _a;
