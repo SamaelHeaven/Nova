@@ -633,16 +633,15 @@ export class Application {
         this._handleBind(event);
     }
     _handleEvent(event, element) {
-        const eventElement = element.closest("[data-event]");
+        const eventElement = element.closest(`[data-on-${event.type}]`);
         if (!eventElement) {
             return;
         }
-        const [uuid, type, call] = eventElement.getAttribute("data-event").split(";");
-        if (event.type === type) {
-            const component = eventElement.closest(`[data-uuid="${uuid}"]`).component;
-            component[call](event);
+        const [uuid, call] = eventElement.getAttribute(`data-on-${event.type}`).split(";");
+        const component = eventElement.closest(`[data-uuid="${uuid}"]`).component;
+        if (component[call](event) !== false) {
+            this._handleEvent(event, eventElement.parentElement);
         }
-        this._handleEvent(event, eventElement.parentElement);
     }
     _handleBind(event) {
         if (event.type !== "input") {
@@ -723,7 +722,7 @@ export class Component {
         Application.updateComponent(this);
     }
     on(event, call) {
-        return `data-event="${this.uuid};${event};${call}"`;
+        return `data-on-${event}="${this.uuid};${call}"`;
     }
     bind(key) {
         return `data-bind="${this.uuid};${key}"`;

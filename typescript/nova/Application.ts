@@ -191,18 +191,16 @@ export class Application {
 
     /** @internal */
     private _handleEvent(event: Event, element: HTMLElement): void {
-        const eventElement: HTMLElement = element.closest("[data-event]");
+        const eventElement: HTMLElement = element.closest(`[data-on-${event.type}]`);
         if (!eventElement) {
             return;
         }
 
-        const [uuid, type, call] = eventElement.getAttribute("data-event").split(";");
-        if (event.type === type) {
-            const component: Component = (eventElement.closest(`[data-uuid="${uuid}"]`) as HTMLElement).component;
-            component[call](event);
+        const [uuid, call] = eventElement.getAttribute(`data-on-${event.type}`).split(";");
+        const component: Component = (eventElement.closest(`[data-uuid="${uuid}"]`) as HTMLElement).component;
+        if (component[call](event) !== false) {
+            this._handleEvent(event, eventElement.parentElement);
         }
-
-        this._handleEvent(event, eventElement.parentElement);
     }
 
     /** @internal */

@@ -64,7 +64,7 @@ export abstract class Component {
     }
 
     public on(event: keyof GlobalEventHandlersEventMap, call: keyof this): string {
-        return `data-event="${this.uuid};${event};${call as string}"`;
+        return `data-on-${event}="${this.uuid};${call as string}"`;
     }
 
     public bind(key: keyof this): string {

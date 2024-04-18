@@ -43,7 +43,7 @@ export class Component {
         Application.updateComponent(this);
     }
     on(event, call) {
-        return `data-event="${this.uuid};${event};${call}"`;
+        return `data-on-${event}="${this.uuid};${call}"`;
     }
     bind(key) {
         return `data-bind="${this.uuid};${key}"`;

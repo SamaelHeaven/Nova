@@ -4,7 +4,7 @@ export declare class DatePickerComponent extends Component {
     private readonly _today;
     private _startDate;
     private _endDate;
-    private _onStartDateInput;
-    private _onEndDateInput;
+    private readonly _onStartDateInput;
+    private readonly _onEndDateInput;
     render(): string;
 }
