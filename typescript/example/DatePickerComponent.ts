@@ -7,21 +7,21 @@ export class DatePickerComponent extends Component {
     @State private _endDate: string | null = null;
 
     @Event("input")
-    private _onStartDateInput = function (event: Events.Input<HTMLInputElement>): void {
+    private _onStartDateInput = (event: Events.Input<HTMLInputElement>): void => {
         this._startDate = new Date(event.target.value.replace(/-/g, "/")).format("yyyy-mm-dd");
-    }.bind(this);
+    };
 
     @Event("input")
-    private _onEndDateInput = function (event: Events.Input<HTMLInputElement>): void {
+    private _onEndDateInput = (event: Events.Input<HTMLInputElement>): void => {
         this._endDate = new Date(event.target.value.replace(/-/g, "/")).format("yyyy-mm-dd");
-    }.bind(this);
+    };
 
     public override render(): string {
         return `
             <form>
                 <label for="start-date-${this.uuid}">Start Date</label>
                 <input id="start-date-${this.uuid}"
-                       ${this._onStartDateInput.toString()}
+                       ${this._onStartDateInput}
                        class="mt-2 form-control"
                        type="date"
                        value="${escape(this._startDate)}" 
@@ -30,7 +30,7 @@ export class DatePickerComponent extends Component {
 
                 <label class="mt-4" for="end-date-${this.uuid}">End Date</label>
                 <input id="end-date-${this.uuid}" 
-                       ${this._onEndDateInput.toString()}
+                       ${this._onEndDateInput}
                        class="mt-2 form-control"
                        type="date" 
                        value="${escape(this._endDate || "")}" 

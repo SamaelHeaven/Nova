@@ -15,19 +15,19 @@ export class DatePickerComponent extends Component {
         this._today = new Date().format("yyyy-mm-dd");
         this._startDate = this._today;
         this._endDate = null;
-        this._onStartDateInput = function (event) {
+        this._onStartDateInput = (event) => {
             this._startDate = new Date(event.target.value.replace(/-/g, "/")).format("yyyy-mm-dd");
-        }.bind(this);
-        this._onEndDateInput = function (event) {
+        };
+        this._onEndDateInput = (event) => {
             this._endDate = new Date(event.target.value.replace(/-/g, "/")).format("yyyy-mm-dd");
-        }.bind(this);
+        };
     }
     render() {
         return `
             <form>
                 <label for="start-date-${this.uuid}">Start Date</label>
                 <input id="start-date-${this.uuid}"
-                       ${this._onStartDateInput.toString()}
+                       ${this._onStartDateInput}
                        class="mt-2 form-control"
                        type="date"
                        value="${escape(this._startDate)}" 
@@ -36,7 +36,7 @@ export class DatePickerComponent extends Component {
 
                 <label class="mt-4" for="end-date-${this.uuid}">End Date</label>
                 <input id="end-date-${this.uuid}" 
-                       ${this._onEndDateInput.toString()}
+                       ${this._onEndDateInput}
                        class="mt-2 form-control"
                        type="date" 
                        value="${escape(this._endDate || "")}" 
