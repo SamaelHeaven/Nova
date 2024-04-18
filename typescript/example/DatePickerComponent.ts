@@ -7,7 +7,7 @@ export class DatePickerComponent extends Component {
     @State private _endDate: string | null = null;
 
     @Event("input")
-    private _onStartDateInput (event: Events.Input<HTMLInputElement>): void {
+    private _onStartDateInput(event: Events.Input<HTMLInputElement>): void {
         this._startDate = new Date(event.target.value.replace(/-/g, "/")).format("yyyy-mm-dd");
     }
 
