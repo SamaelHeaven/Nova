@@ -924,30 +924,19 @@ export function escape(unsafe: { toString(): string }): string {
 }
 
 export function Event(type: keyof GlobalEventHandlersEventMap) {
-    return function<T extends Component>(target: T, key: string): void {
-        const field: symbol = Symbol(key);
-        Object.defineProperty(target, field, {
-            writable: true,
-            enumerable: false,
-            configurable: true,
-        });
-
-        const getter = function () {
-            const result = this[field];
-            result.toString = (): string => this.on(type, key);
-            return result;
-        };
-
-        const setter = function (newValue: any): void {
-            this[field] = newValue;
-        };
-
-        Object.defineProperty(target, key, {
-            get: getter,
-            set: setter,
+    return function <T extends Component>(_: T, key: string, propertyDescriptor: TypedPropertyDescriptor<(event?: Events.Base) => void>) {
+        return {
+            get: function (): (event?: Events.Base) => void {
+                const method = propertyDescriptor.value.bind(this);
+                method.toString = (): string => this.on(type, key as keyof T);
+                return method;
+            },
+            set: function (value: any): void {
+                propertyDescriptor.value = value;
+            },
             enumerable: true,
-            configurable: true,
-        });
+            configurable: true
+        };
     }
 }
 

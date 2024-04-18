@@ -80,7 +80,12 @@ export declare class Debounce {
 export declare function escape(unsafe: {
     toString(): string;
 }): string;
-export declare function Event(type: keyof GlobalEventHandlersEventMap): <T extends Component>(target: T, key: string) => void;
+export declare function Event(type: keyof GlobalEventHandlersEventMap): <T extends Component>(_: T, key: string, propertyDescriptor: TypedPropertyDescriptor<(event?: Events.Base) => void>) => {
+    get: () => (event?: Events.Base) => void;
+    set: (value: any) => void;
+    enumerable: boolean;
+    configurable: boolean;
+};
 export declare namespace Events {
     type Base<T extends HTMLElement = HTMLElement> = Event & {
         target: T;

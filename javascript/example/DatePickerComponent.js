@@ -15,12 +15,12 @@ export class DatePickerComponent extends Component {
         this._today = new Date().format("yyyy-mm-dd");
         this._startDate = this._today;
         this._endDate = null;
-        this._onStartDateInput = (event) => {
-            this._startDate = new Date(event.target.value.replace(/-/g, "/")).format("yyyy-mm-dd");
-        };
-        this._onEndDateInput = (event) => {
-            this._endDate = new Date(event.target.value.replace(/-/g, "/")).format("yyyy-mm-dd");
-        };
+    }
+    _onStartDateInput(event) {
+        this._startDate = new Date(event.target.value.replace(/-/g, "/")).format("yyyy-mm-dd");
+    }
+    _onEndDateInput(event) {
+        this._endDate = new Date(event.target.value.replace(/-/g, "/")).format("yyyy-mm-dd");
     }
     render() {
         return `
@@ -57,9 +57,13 @@ __decorate([
 ], DatePickerComponent.prototype, "_endDate", void 0);
 __decorate([
     Event("input"),
-    __metadata("design:type", Object)
-], DatePickerComponent.prototype, "_onStartDateInput", void 0);
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], DatePickerComponent.prototype, "_onStartDateInput", null);
 __decorate([
     Event("input"),
-    __metadata("design:type", Object)
-], DatePickerComponent.prototype, "_onEndDateInput", void 0);
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], DatePickerComponent.prototype, "_onEndDateInput", null);

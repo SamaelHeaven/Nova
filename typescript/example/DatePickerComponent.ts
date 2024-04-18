@@ -7,14 +7,14 @@ export class DatePickerComponent extends Component {
     @State private _endDate: string | null = null;
 
     @Event("input")
-    private readonly _onStartDateInput = (event: Events.Input<HTMLInputElement>): void => {
+    private _onStartDateInput (event: Events.Input<HTMLInputElement>): void {
         this._startDate = new Date(event.target.value.replace(/-/g, "/")).format("yyyy-mm-dd");
-    };
+    }
 
     @Event("input")
-    private readonly _onEndDateInput = (event: Events.Input<HTMLInputElement>): void => {
+    private _onEndDateInput(event: Events.Input<HTMLInputElement>): void {
         this._endDate = new Date(event.target.value.replace(/-/g, "/")).format("yyyy-mm-dd");
-    };
+    }
 
     public override render(): string {
         return `
