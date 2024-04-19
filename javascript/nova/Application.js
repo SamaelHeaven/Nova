@@ -38,6 +38,17 @@ export class Application {
         }
         return components;
     }
+    static closestComponent(selector, element) {
+        this._throwIfUninitialized();
+        const foundElement = element.closest(selector);
+        if (!foundElement) {
+            return null;
+        }
+        if (foundElement.component) {
+            return foundElement.component;
+        }
+        return this.closestComponent(selector, foundElement.parentElement);
+    }
     static _getInstance() {
         var _a;
         return (_a = this._instance) !== null && _a !== void 0 ? _a : (this._instance = new Application());

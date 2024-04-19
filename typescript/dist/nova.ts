@@ -564,6 +564,20 @@ export class Application {
         return components;
     }
 
+    public static closestComponent<T extends Component>(selector: string, element: HTMLElement): T | null {
+        this._throwIfUninitialized();
+        const foundElement: HTMLElement = element.closest(selector);
+        if (!foundElement) {
+            return null;
+        }
+
+        if (foundElement.component) {
+            return foundElement.component as T;
+        }
+
+        return this.closestComponent(selector, foundElement.parentElement);
+    }
+
     /** @internal */
     private static _getInstance(): Application {
         return this._instance ??= new Application();
@@ -818,6 +832,10 @@ export abstract class Component {
 
     public queryComponents<T extends Component>(selector: string, element?: HTMLElement): T[] {
         return Application.queryComponents<T>(selector, element);
+    }
+
+    public closestComponent<T extends Component>(selector: string, element: HTMLElement = this.element): T | null {
+        return Application.closestComponent<T>(selector, element);
     }
 
     public onInit(): void | Promise<void> {}

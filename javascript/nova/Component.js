@@ -54,6 +54,9 @@ export class Component {
     queryComponents(selector, element) {
         return Application.queryComponents(selector, element);
     }
+    closestComponent(selector, element = this.element) {
+        return Application.closestComponent(selector, element);
+    }
     onInit() { }
     onAppear() { }
     onUpdate() { }

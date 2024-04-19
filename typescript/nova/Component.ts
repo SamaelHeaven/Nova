@@ -9,7 +9,7 @@ export abstract class Component {
     public readonly initialized: boolean;
     public readonly appeared: boolean;
     public readonly keys: ReadonlyArray<string>;
-    public readonly subscribers: [Component | (() => void), keyof this][];
+    public readonly subscribers: [Component | (() => void), keyof this & string][];
     public shouldUpdate: boolean;
 
     constructor(element: HTMLElement) {
@@ -77,6 +77,10 @@ export abstract class Component {
 
     public queryComponents<T extends Component>(selector: string, element?: HTMLElement): T[] {
         return Application.queryComponents<T>(selector, element);
+    }
+
+    public closestComponent<T extends Component>(selector: string, element: HTMLElement = this.element): T | null {
+        return Application.closestComponent<T>(selector, element);
     }
 
     public onInit(): void | Promise<void> {}

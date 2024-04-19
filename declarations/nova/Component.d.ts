@@ -6,7 +6,7 @@ export declare abstract class Component {
     readonly initialized: boolean;
     readonly appeared: boolean;
     readonly keys: ReadonlyArray<string>;
-    readonly subscribers: [Component | (() => void), keyof this][];
+    readonly subscribers: [Component | (() => void), keyof this & string][];
     shouldUpdate: boolean;
     constructor(element: HTMLElement);
     protected static define(tag: string): ComponentDefinition;
@@ -16,6 +16,7 @@ export declare abstract class Component {
     bind(key: keyof this & string): string;
     queryComponent<T extends Component>(selector: string, element?: HTMLElement): T | null;
     queryComponents<T extends Component>(selector: string, element?: HTMLElement): T[];
+    closestComponent<T extends Component>(selector: string, element?: HTMLElement): T | null;
     onInit(): void | Promise<void>;
     onAppear(): void;
     onUpdate(): void;

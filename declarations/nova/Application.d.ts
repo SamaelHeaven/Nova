@@ -14,4 +14,5 @@ export declare class Application {
     static updateComponent(component: Component): void;
     static queryComponent<T extends Component>(selector: string, element?: HTMLElement): T | null;
     static queryComponents<T extends Component>(selector: string, element?: HTMLElement): T[];
+    static closestComponent<T extends Component>(selector: string, element: HTMLElement): T | null;
 }
