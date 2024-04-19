@@ -8,7 +8,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var _a;
-import { Component, escape, State } from "../nova/lib.js";
+import { Component, escapeHTML, State } from "../nova/lib.js";
 export class ButtonComponent extends Component {
     constructor() {
         super(...arguments);
@@ -49,10 +49,9 @@ export class ButtonComponent extends Component {
         }
     }
     render() {
-        console.log("Button component rendering");
         return `
             <button class="btn btn-primary">
-                ${escape(this._content)}${this._count === 0 ? "" : ": " + escape(this._count)}
+                ${escapeHTML(this._content)}${this._count === 0 ? "" : ": " + escapeHTML(this._count)}
             </button>
         `;
     }

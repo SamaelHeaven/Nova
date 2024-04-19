@@ -1,4 +1,4 @@
-import {Component, ComponentDefinition, escape, Events, State} from "../nova/lib.js";
+import {Component, ComponentDefinition, escapeHTML, Events, State} from "../nova/lib.js";
 
 export class ButtonComponent extends Component {
     public static readonly definition: ComponentDefinition = this.define("button-component");
@@ -47,10 +47,9 @@ export class ButtonComponent extends Component {
     }
 
     public override render(): string {
-        console.log("Button component rendering")
         return `
             <button class="btn btn-primary">
-                ${escape(this._content)}${this._count === 0 ? "" : ": " + escape(this._count)}
+                ${escapeHTML(this._content)}${this._count === 0 ? "" : ": " + escapeHTML(this._count)}
             </button>
         `;
     }

@@ -1,4 +1,4 @@
-import {Component, ComponentDefinition, escape, Events, State} from "../nova/lib.js";
+import {Component, ComponentDefinition, escapeHTML, Events, State} from "../nova/lib.js";
 
 export class EmailInputComponent extends Component {
     public static readonly definition: ComponentDefinition = this.define("email-input-component");
@@ -16,7 +16,7 @@ export class EmailInputComponent extends Component {
                 <input ${this.bind("email")} type="text" id="email-input-${this.uuid}" class="form-control mt-2" placeholder="Email">
                 ${this.email.trim().length > 0 ? `
                     <div style="word-break: break-all" class="alert alert-${valid ? "success" : "danger"} mt-4" role="alert">
-                        ${escape(this.email)} is an ${valid ? "valid" : "invalid"} email
+                        ${escapeHTML(this.email)} is an ${valid ? "valid" : "invalid"} email
                     </div>
                 ` : ""}
             </form>

@@ -6,7 +6,6 @@ declare global {
     }
     interface HTMLElement {
         component?: Component;
-        dirty?: boolean;
     }
 }
 export declare class Application {

@@ -1,5 +1,5 @@
 var _a;
-import { Component, escape } from "../nova/lib.js";
+import { Component, escapeHTML } from "../nova/lib.js";
 export class NumberInputComponent extends Component {
     constructor() {
         super(...arguments);
@@ -32,7 +32,7 @@ export class NumberInputComponent extends Component {
             <input id="number-input"
                    class="form-control"
                    type="text"
-                   value="${escape(this._min)}"
+                   value="${escapeHTML(this._min)}"
                    aria-label="Enter a number" 
                    placeholder="Enter a number">
         `;

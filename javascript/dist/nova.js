@@ -785,8 +785,13 @@ export class Debounce {
         this._callback.apply(this, args);
     }
 }
-export function escape(unsafe) {
-    return unsafe.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+export function escapeHTML(value) {
+    return value.toString()
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 export function Event(type) {
     return function (_, key, propertyDescriptor) {
@@ -795,9 +800,6 @@ export function Event(type) {
                 const method = propertyDescriptor.value.bind(this);
                 method.toString = () => this.on(type, key);
                 return method;
-            },
-            set: function (value) {
-                propertyDescriptor.value = value;
             },
             enumerable: true,
             configurable: true

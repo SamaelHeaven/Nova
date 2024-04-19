@@ -8,7 +8,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var _a;
-import { Component, escape, State } from "../nova/lib.js";
+import { Component, escapeHTML, State } from "../nova/lib.js";
 export class EmailInputComponent extends Component {
     constructor() {
         super(...arguments);
@@ -25,7 +25,7 @@ export class EmailInputComponent extends Component {
                 <input ${this.bind("email")} type="text" id="email-input-${this.uuid}" class="form-control mt-2" placeholder="Email">
                 ${this.email.trim().length > 0 ? `
                     <div style="word-break: break-all" class="alert alert-${valid ? "success" : "danger"} mt-4" role="alert">
-                        ${escape(this.email)} is an ${valid ? "valid" : "invalid"} email
+                        ${escapeHTML(this.email)} is an ${valid ? "valid" : "invalid"} email
                     </div>
                 ` : ""}
             </form>

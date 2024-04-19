@@ -10,6 +10,7 @@ declare global {
 
     interface HTMLElement {
         component?: Component;
+        /** @internal */
         dirty?: boolean;
     }
 }

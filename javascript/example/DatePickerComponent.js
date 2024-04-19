@@ -8,7 +8,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var _a;
-import { Component, escape, Event, State } from "../nova/lib.js";
+import { Component, escapeHTML, Event, State } from "../nova/lib.js";
 export class DatePickerComponent extends Component {
     constructor() {
         super(...arguments);
@@ -16,10 +16,10 @@ export class DatePickerComponent extends Component {
         this._startDate = this._today;
         this._endDate = null;
     }
-    _onStartDateInput(event) {
+    onStartDateInput(event) {
         this._startDate = new Date(event.target.value.replace(/-/g, "/")).format("yyyy-mm-dd");
     }
-    _onEndDateInput(event) {
+    onEndDateInput(event) {
         this._endDate = new Date(event.target.value.replace(/-/g, "/")).format("yyyy-mm-dd");
     }
     render() {
@@ -27,20 +27,20 @@ export class DatePickerComponent extends Component {
             <form>
                 <label for="start-date-${this.uuid}">Start Date</label>
                 <input id="start-date-${this.uuid}"
-                       ${this._onStartDateInput}
+                       ${this.onStartDateInput}
                        class="mt-2 form-control"
                        type="date"
-                       value="${escape(this._startDate)}" 
-                       min="${escape(this._today)}"
-                       max="${escape(this._endDate || "")}">
+                       value="${escapeHTML(this._startDate)}" 
+                       min="${escapeHTML(this._today)}"
+                       max="${escapeHTML(this._endDate || "")}">
 
                 <label class="mt-4" for="end-date-${this.uuid}">End Date</label>
                 <input id="end-date-${this.uuid}" 
-                       ${this._onEndDateInput}
+                       ${this.onEndDateInput}
                        class="mt-2 form-control"
                        type="date" 
-                       value="${escape(this._endDate || "")}" 
-                       min="${escape(this._startDate)}">
+                       value="${escapeHTML(this._endDate || "")}" 
+                       min="${escapeHTML(this._startDate)}">
             </form>
         `;
     }
@@ -60,10 +60,10 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
-], DatePickerComponent.prototype, "_onStartDateInput", null);
+], DatePickerComponent.prototype, "onStartDateInput", null);
 __decorate([
     Event("input"),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
-], DatePickerComponent.prototype, "_onEndDateInput", null);
+], DatePickerComponent.prototype, "onEndDateInput", null);

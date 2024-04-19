@@ -6,9 +6,6 @@ export function Event(type) {
                 method.toString = () => this.on(type, key);
                 return method;
             },
-            set: function (value) {
-                propertyDescriptor.value = value;
-            },
             enumerable: true,
             configurable: true
         };

@@ -4,7 +4,6 @@ declare global {
     }
     interface HTMLElement {
         component?: Component;
-        dirty?: boolean;
     }
 }
 export declare class Application {
@@ -26,8 +25,8 @@ export declare abstract class Component {
     protected static define(tag: string): ComponentDefinition;
     render(): string;
     update(before?: () => void | Promise<void>): void;
-    on(event: keyof GlobalEventHandlersEventMap, call: keyof this): string;
-    bind(key: keyof this): string;
+    on(event: keyof GlobalEventHandlersEventMap, call: keyof this & string): string;
+    bind(key: keyof this & string): string;
     queryComponent<T extends Component>(selector: string, element?: HTMLElement): T | null;
     queryComponents<T extends Component>(selector: string, element?: HTMLElement): T[];
     onInit(): void | Promise<void>;
@@ -77,12 +76,11 @@ export declare class Debounce {
     constructor(callback: Function, wait: number);
     call(...args: any[]): void;
 }
-export declare function escape(unsafe: {
+export declare function escapeHTML(value: {
     toString(): string;
 }): string;
-export declare function Event(type: keyof GlobalEventHandlersEventMap): <T extends Component>(_: T, key: string, propertyDescriptor: TypedPropertyDescriptor<(event?: Events.Base) => void>) => {
+export declare function Event(type: keyof GlobalEventHandlersEventMap): <T extends Component>(_: T, key: keyof T & string, propertyDescriptor: TypedPropertyDescriptor<(event?: Events.Base) => void>) => {
     get: () => (event?: Events.Base) => void;
-    set: (value: any) => void;
     enumerable: boolean;
     configurable: boolean;
 };

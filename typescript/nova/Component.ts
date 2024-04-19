@@ -63,12 +63,12 @@ export abstract class Component {
         Application.updateComponent(this);
     }
 
-    public on(event: keyof GlobalEventHandlersEventMap, call: keyof this): string {
+    public on(event: keyof GlobalEventHandlersEventMap, call: keyof this & string): string {
         return `data-on-${event}="${this.uuid};${call as string}"`;
     }
 
-    public bind(key: keyof this): string {
-        return `data-bind="${this.uuid};${key as string}"`;
+    public bind(key: keyof this & string): string {
+        return `data-bind="${this.uuid};${key}"`;
     }
 
     public queryComponent<T extends Component>(selector: string, element?: HTMLElement): T | null {

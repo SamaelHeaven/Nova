@@ -1,5 +1,5 @@
 var _a;
-import { Component, escape, LocalStorage } from "../nova/lib.js";
+import { Component, escapeHTML, LocalStorage } from "../nova/lib.js";
 export class TodoAppComponent extends Component {
     constructor() {
         super(...arguments);
@@ -23,10 +23,10 @@ export class TodoAppComponent extends Component {
     render() {
         return `
             <ul style="word-break: break-all">
-                ${this._todos.map((todo) => `<li>${escape(todo)}</li>`).join("")}
+                ${this._todos.map((todo) => `<li>${escapeHTML(todo)}</li>`).join("")}
             </ul>
             <form class="d-flex gap-3">
-                <input class="form-control" type="text" name="Todo" placeholder="Todo..." value="${escape(this._newTodo)}">
+                <input class="form-control" type="text" name="Todo" placeholder="Todo..." value="${escapeHTML(this._newTodo)}">
                 <button class="btn btn-primary" type="submit" ${this._newTodo.trim() === "" ? "disabled" : ""}>
                     Add
                 </button>

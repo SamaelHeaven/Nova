@@ -507,6 +507,7 @@ declare global {
 
     interface HTMLElement {
         component?: Component;
+        /** @internal */
         dirty?: boolean;
     }
 }
@@ -803,12 +804,12 @@ export abstract class Component {
         Application.updateComponent(this);
     }
 
-    public on(event: keyof GlobalEventHandlersEventMap, call: keyof this): string {
+    public on(event: keyof GlobalEventHandlersEventMap, call: keyof this & string): string {
         return `data-on-${event}="${this.uuid};${call as string}"`;
     }
 
-    public bind(key: keyof this): string {
-        return `data-bind="${this.uuid};${key as string}"`;
+    public bind(key: keyof this & string): string {
+        return `data-bind="${this.uuid};${key}"`;
     }
 
     public queryComponent<T extends Component>(selector: string, element?: HTMLElement): T | null {
@@ -919,20 +920,22 @@ export class Debounce {
     }
 }
 
-export function escape(unsafe: { toString(): string }): string {
-    return unsafe.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+export function escapeHTML(value: { toString(): string }): string {
+    return value.toString()
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
 export function Event(type: keyof GlobalEventHandlersEventMap) {
-    return function <T extends Component>(_: T, key: string, propertyDescriptor: TypedPropertyDescriptor<(event?: Events.Base) => void>) {
+    return function <T extends Component>(_: T, key: keyof T & string, propertyDescriptor: TypedPropertyDescriptor<(event?: Events.Base) => void>) {
         return {
             get: function (): (event?: Events.Base) => void {
                 const method = propertyDescriptor.value.bind(this);
-                method.toString = (): string => this.on(type, key as keyof T);
+                method.toString = (): string => this.on(type, key);
                 return method;
-            },
-            set: function (value: any): void {
-                propertyDescriptor.value = value;
             },
             enumerable: true,
             configurable: true
