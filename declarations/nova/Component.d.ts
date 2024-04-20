@@ -9,7 +9,7 @@ export declare abstract class Component {
     readonly subscribers: [Component | (() => void), keyof this & string][];
     shouldUpdate: boolean;
     constructor(element: HTMLElement);
-    protected static define(tag: string): ComponentDefinition;
+    static define(tag: string): ComponentDefinition;
     render(): string;
     update(before?: () => void | Promise<void>): void;
     on(event: keyof GlobalEventHandlersEventMap, call: keyof this & string): string;
