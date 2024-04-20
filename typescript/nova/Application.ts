@@ -9,9 +9,7 @@ declare global {
     }
 
     interface HTMLElement {
-        component?: Component;
-        /** @internal */
-        dirty?: boolean;
+        appComponent?: { instance: Component, dirty: boolean };
     }
 }
 
@@ -32,13 +30,13 @@ export class Application {
         };
     }
 
-    public static launch(components: ComponentDefinition[]): void {
+    public static launch(componentDefinitions: ComponentDefinition[]): void {
         if (this._instance !== null) {
             throw new Error("Application has already been launched");
         }
 
         const app: Application = this._getInstance();
-        app._initializeComponents([...new Set(components)]);
+        app._initializeComponents([...new Set(componentDefinitions)]);
         app._initializeEvents();
     }
 
@@ -51,14 +49,14 @@ export class Application {
 
     public static queryComponent<T extends Component>(selector: string, element: HTMLElement = document.documentElement): T | null {
         this._throwIfUninitialized();
-        return (element.querySelector(selector) as HTMLElement)?.component as T || null;
+        return (element.querySelector(selector) as HTMLElement)?.appComponent?.instance as T || null;
     }
 
     public static queryComponents<T extends Component>(selector: string, element: HTMLElement = document.documentElement): T[] {
         this._throwIfUninitialized();
         const components: T[] = [];
         for (const foundElement of Array.from(element.querySelectorAll(selector))) {
-            const component: Component | undefined = (foundElement as HTMLElement).component;
+            const component: Component | undefined = (foundElement as HTMLElement).appComponent?.instance;
             if (component) {
                 components.push(component as T);
             }
@@ -74,8 +72,9 @@ export class Application {
             return null;
         }
 
-        if (foundElement.component) {
-            return foundElement.component as T;
+        const component: Component | undefined = foundElement.appComponent?.instance;
+        if (component) {
+            return component as T;
         }
 
         return this.closestComponent(selector, foundElement.parentElement);
@@ -114,8 +113,9 @@ export class Application {
         const newElement: HTMLElement = component.element.cloneNode(false) as HTMLElement;
         morphdom(component.element, newElement, this._morphdomOptions);
         for (const element of Array.from(component.element.parentElement.querySelectorAll("*")) as HTMLElement[]) {
-            if (element.dirty === true) {
-                element.dirty = false;
+            const appComponent: { instance: Component, dirty: boolean } | undefined = element.appComponent;
+            if (appComponent && appComponent.dirty) {
+                appComponent.dirty = false;
                 this._onElementUpdated(element);
             }
         }
@@ -123,14 +123,14 @@ export class Application {
 
     /** @internal */
     private _onBeforeElementUpdated(fromElement: HTMLElement, toElement: HTMLElement): boolean {
-        const component: Component | undefined = fromElement.component;
+        const component: Component | undefined = fromElement.appComponent?.instance;
         if (component && component.initialized && component.keys.includes("render")) {
             toElement.innerHTML = component.shouldUpdate ? component.render() : fromElement.innerHTML;
             toElement.style.display = "contents";
             toElement.setAttribute("data-uuid", component.uuid);
             if (component.shouldUpdate) {
                 const morphResult: void | boolean = component.onMorph(toElement);
-                fromElement.dirty = true;
+                fromElement.appComponent.dirty = true;
                 if (morphResult === false) {
                     return false;
                 }
@@ -142,29 +142,29 @@ export class Application {
 
     /** @internal */
     private _onElementUpdated(element: HTMLElement): void {
-        const component: Component | undefined = element.component;
+        const component: Component | undefined = element.appComponent?.instance;
         if (component && component.appeared) {
             component.onUpdate();
         }
     }
 
     /** @internal */
-    private _initializeComponents(components: ComponentDefinition[]): void {
-        for (const component of components) {
+    private _initializeComponents(componentDefinitions: ComponentDefinition[]): void {
+        for (const component of componentDefinitions) {
             this._initializeComponent(component);
         }
     }
 
     /** @internal */
-    private _initializeComponent(component: ComponentDefinition): void {
+    private _initializeComponent(componentDefinition: ComponentDefinition): void {
         const app = this;
 
         class ComponentElement extends HTMLElement {
             public connectedCallback(): void {
                 this.style.display = "contents";
-                this.component = new component.ctor(this);
-                this.setAttribute("data-uuid", this.component.uuid);
-                const initResult: void | Promise<void> = this.component.onInit();
+                this.appComponent = {instance: new componentDefinition.ctor(this), dirty: false};
+                this.setAttribute("data-uuid", this.appComponent.instance.uuid);
+                const initResult: void | Promise<void> = this.appComponent.instance.onInit();
                 if (initResult instanceof Promise) {
                     initResult.then(() => app._initializeElement(this));
                     return;
@@ -174,21 +174,22 @@ export class Application {
             }
 
             public disconnectedCallback(): void {
-                this.component.onDestroy();
+                this.appComponent.instance.onDestroy();
             }
         }
 
-        customElements.define(component.tag, ComponentElement);
+        customElements.define(componentDefinition.tag, ComponentElement);
     }
 
     /** @internal */
     private _initializeElement(element: HTMLElement): void {
-        (element.component as any).initialized = true;
-        this._observeAttributes(element.component);
-        this.registerComponentEvents(element.component);
-        this._updateComponent(element.component);
-        element.component.onAppear();
-        (element.component as any).appeared = true;
+        const component: Component = element.appComponent.instance;
+        (component as any).initialized = true;
+        this._observeAttributes(component);
+        this.registerComponentEvents(component);
+        this._updateComponent(component);
+        component.onAppear();
+        (component as any).appeared = true;
     }
 
     /** @internal */
@@ -212,7 +213,7 @@ export class Application {
         }
 
         const [uuid, call] = eventElement.getAttribute(`data-on-${event.type}`).split(";");
-        const component: Component = (eventElement.closest(`[data-uuid="${uuid}"]`) as HTMLElement).component;
+        const component: Component = (eventElement.closest(`[data-uuid="${uuid}"]`) as HTMLElement).appComponent.instance;
         if (component[call](event) !== false) {
             this._handleEvent(event, eventElement.parentElement);
         }
@@ -237,7 +238,7 @@ export class Application {
         }
 
         if (value !== undefined && value !== null) {
-            const component: Component = (bindElement.closest(`[data-uuid="${uuid}"]`) as HTMLElement).component;
+            const component: Component = (bindElement.closest(`[data-uuid="${uuid}"]`) as HTMLElement).appComponent.instance;
             component[key] = value;
         }
     }

@@ -8,12 +8,12 @@ export class Application {
             onBeforeElUpdated: (fromEl, toEl) => this._onBeforeElementUpdated(fromEl, toEl)
         };
     }
-    static launch(components) {
+    static launch(componentDefinitions) {
         if (this._instance !== null) {
             throw new Error("Application has already been launched");
         }
         const app = this._getInstance();
-        app._initializeComponents([...new Set(components)]);
+        app._initializeComponents([...new Set(componentDefinitions)]);
         app._initializeEvents();
     }
     static updateComponent(component) {
@@ -23,15 +23,16 @@ export class Application {
         }
     }
     static queryComponent(selector, element = document.documentElement) {
-        var _a;
+        var _a, _b;
         this._throwIfUninitialized();
-        return ((_a = element.querySelector(selector)) === null || _a === void 0 ? void 0 : _a.component) || null;
+        return ((_b = (_a = element.querySelector(selector)) === null || _a === void 0 ? void 0 : _a.appComponent) === null || _b === void 0 ? void 0 : _b.instance) || null;
     }
     static queryComponents(selector, element = document.documentElement) {
+        var _a;
         this._throwIfUninitialized();
         const components = [];
         for (const foundElement of Array.from(element.querySelectorAll(selector))) {
-            const component = foundElement.component;
+            const component = (_a = foundElement.appComponent) === null || _a === void 0 ? void 0 : _a.instance;
             if (component) {
                 components.push(component);
             }
@@ -39,13 +40,15 @@ export class Application {
         return components;
     }
     static closestComponent(selector, element) {
+        var _a;
         this._throwIfUninitialized();
         const foundElement = element.closest(selector);
         if (!foundElement) {
             return null;
         }
-        if (foundElement.component) {
-            return foundElement.component;
+        const component = (_a = foundElement.appComponent) === null || _a === void 0 ? void 0 : _a.instance;
+        if (component) {
+            return component;
         }
         return this.closestComponent(selector, foundElement.parentElement);
     }
@@ -75,21 +78,23 @@ export class Application {
         const newElement = component.element.cloneNode(false);
         morphdom(component.element, newElement, this._morphdomOptions);
         for (const element of Array.from(component.element.parentElement.querySelectorAll("*"))) {
-            if (element.dirty === true) {
-                element.dirty = false;
+            const appComponent = element.appComponent;
+            if (appComponent && appComponent.dirty) {
+                appComponent.dirty = false;
                 this._onElementUpdated(element);
             }
         }
     }
     _onBeforeElementUpdated(fromElement, toElement) {
-        const component = fromElement.component;
+        var _a;
+        const component = (_a = fromElement.appComponent) === null || _a === void 0 ? void 0 : _a.instance;
         if (component && component.initialized && component.keys.includes("render")) {
             toElement.innerHTML = component.shouldUpdate ? component.render() : fromElement.innerHTML;
             toElement.style.display = "contents";
             toElement.setAttribute("data-uuid", component.uuid);
             if (component.shouldUpdate) {
                 const morphResult = component.onMorph(toElement);
-                fromElement.dirty = true;
+                fromElement.appComponent.dirty = true;
                 if (morphResult === false) {
                     return false;
                 }
@@ -98,24 +103,25 @@ export class Application {
         return !fromElement.isEqualNode(toElement);
     }
     _onElementUpdated(element) {
-        const component = element.component;
+        var _a;
+        const component = (_a = element.appComponent) === null || _a === void 0 ? void 0 : _a.instance;
         if (component && component.appeared) {
             component.onUpdate();
         }
     }
-    _initializeComponents(components) {
-        for (const component of components) {
+    _initializeComponents(componentDefinitions) {
+        for (const component of componentDefinitions) {
             this._initializeComponent(component);
         }
     }
-    _initializeComponent(component) {
+    _initializeComponent(componentDefinition) {
         const app = this;
         class ComponentElement extends HTMLElement {
             connectedCallback() {
                 this.style.display = "contents";
-                this.component = new component.ctor(this);
-                this.setAttribute("data-uuid", this.component.uuid);
-                const initResult = this.component.onInit();
+                this.appComponent = { instance: new componentDefinition.ctor(this), dirty: false };
+                this.setAttribute("data-uuid", this.appComponent.instance.uuid);
+                const initResult = this.appComponent.instance.onInit();
                 if (initResult instanceof Promise) {
                     initResult.then(() => app._initializeElement(this));
                     return;
@@ -123,18 +129,19 @@ export class Application {
                 app._initializeElement(this);
             }
             disconnectedCallback() {
-                this.component.onDestroy();
+                this.appComponent.instance.onDestroy();
             }
         }
-        customElements.define(component.tag, ComponentElement);
+        customElements.define(componentDefinition.tag, ComponentElement);
     }
     _initializeElement(element) {
-        element.component.initialized = true;
-        this._observeAttributes(element.component);
-        this.registerComponentEvents(element.component);
-        this._updateComponent(element.component);
-        element.component.onAppear();
-        element.component.appeared = true;
+        const component = element.appComponent.instance;
+        component.initialized = true;
+        this._observeAttributes(component);
+        this.registerComponentEvents(component);
+        this._updateComponent(component);
+        component.onAppear();
+        component.appeared = true;
     }
     _initializeEvents() {
         for (const eventName of this._eventNames) {
@@ -151,7 +158,7 @@ export class Application {
             return;
         }
         const [uuid, call] = eventElement.getAttribute(`data-on-${event.type}`).split(";");
-        const component = eventElement.closest(`[data-uuid="${uuid}"]`).component;
+        const component = eventElement.closest(`[data-uuid="${uuid}"]`).appComponent.instance;
         if (component[call](event) !== false) {
             this._handleEvent(event, eventElement.parentElement);
         }
@@ -171,7 +178,7 @@ export class Application {
             value = bindElement.getAttribute("value");
         }
         if (value !== undefined && value !== null) {
-            const component = bindElement.closest(`[data-uuid="${uuid}"]`).component;
+            const component = bindElement.closest(`[data-uuid="${uuid}"]`).appComponent.instance;
             component[key] = value;
         }
     }
