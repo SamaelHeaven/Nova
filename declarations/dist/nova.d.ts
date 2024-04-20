@@ -72,10 +72,9 @@ export declare abstract class Component {
     onTransitionEnd(event: Events.Transition): any;
     onTransitionCancel(event: Events.Transition): any;
 }
-export type ComponentConstructor = (new (element: HTMLElement) => Component);
 export type ComponentDefinition = {
     tag: string;
-    ctor: ComponentConstructor;
+    ctor: (new (element: HTMLElement) => Component);
 };
 export declare class Debounce {
     constructor(callback: Function, wait: number);

@@ -914,9 +914,7 @@ export abstract class Component {
     public onTransitionCancel(event: Events.Transition): any {}
 }
 
-export type ComponentConstructor = (new (element: HTMLElement) => Component);
-
-export type ComponentDefinition = { tag: string, ctor: ComponentConstructor };
+export type ComponentDefinition = { tag: string, ctor: (new (element: HTMLElement) => Component) };
 
 export class Debounce {
     /** @internal */

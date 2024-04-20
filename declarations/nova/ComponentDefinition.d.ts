@@ -1,5 +1,5 @@
-import { ComponentConstructor } from "./ComponentConstructor.js";
+import { Component } from "./Component";
 export type ComponentDefinition = {
     tag: string;
-    ctor: ComponentConstructor;
+    ctor: (new (element: HTMLElement) => Component);
 };
