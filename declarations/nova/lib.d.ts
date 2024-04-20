@@ -1,6 +1,5 @@
 export { Application } from "./Application.js";
 export { Component } from "./Component.js";
-export { ComponentConstructor } from "./ComponentConstructor.js";
 export { ComponentDefinition } from "./ComponentDefinition.js";
 export { Event } from "./Event.js";
 export { Events } from "./Events.js";
